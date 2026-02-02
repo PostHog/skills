@@ -2,7 +2,7 @@
 
 A collection of PostHog skills for enhancing AI-assisted workflows.
 
-** This repo is currently under construction by #team-docs-and-wizard 🚧 👷**
+**🚧 This repo is currently under construction by #team-docs-and-wizard👷**
 
 ----
 
