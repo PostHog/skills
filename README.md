@@ -1,6 +1,10 @@
-# Claude Skills Collection
+# Skills collection
 
-A collection of Claude skills for enhancing AI-assisted workflows.
+A collection of PostHog skills for enhancing AI-assisted workflows.
+
+** This repo is currently under construction by #team-docs-and-wizard 🚧 👷**
+
+----
 
 ## What are Skills?
 
