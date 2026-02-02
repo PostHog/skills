@@ -15,6 +15,7 @@ Skills are modular packages that extend Claude's capabilities with specialized k
 | Skill | Description |
 |-------|-------------|
 | [PostHog Survey Creator](skills/posthog-survey-creator/) | Create surveys in PostHog through guided conversation. Includes 22 survey templates (NPS, CSAT, CES, PMF, etc.) and PostHog MCP integration. |
+| [PostHog Debugger](skills/posthog-debugger/) | Debug and inspect PostHog implementations on any website. Uses Chrome DevTools or Playwright MCP to analyze configuration, network traffic, feature flags, and detect issues. |
 
 ## Installation
 
