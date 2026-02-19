@@ -1,4 +1,4 @@
 # Community skills
 
-Skills contributed by the PostHog community. 
+Skills made by the PostHog community. 
 
