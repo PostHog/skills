@@ -1,10 +1,6 @@
 # Team skills
 
-Hand-authored skills built by the PostHog team. These are maintained via pull requests and reviewed by #team-docs-and-wizard.
+Skills built by the [teams](https://posthog.com/teams) at PostHog.
 
-## Available skills
 
-| Skill | Description |
-|-------|-------------|
-| [PostHog Debugger](posthog-debugger/) | Debug and inspect PostHog implementations on any website using browser automation |
-| [Survey Creator](posthog-survey-creator/) | Create surveys in PostHog through guided conversation with 22+ templates |
+![Small teams](https://res.cloudinary.com/dmukukwp6/image/upload/q_auto,f_auto/pasted_image_2026_02_19_T19_47_46_863_Z_f0cf3dcc56.png)
