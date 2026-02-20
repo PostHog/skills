@@ -11,7 +11,7 @@ A collection of PostHog skills for enhancing AI-assisted workflows.
 Copy any skill directory to `.claude/skills/` in your project:
 
 ```bash
-cp -r skills/team/posthog-debugger .claude/skills/posthog-debugger
+cp -r skills/team/customer-success/posthog-debugger .claude/skills/posthog-debugger
 ```
 
 ## Skills library
