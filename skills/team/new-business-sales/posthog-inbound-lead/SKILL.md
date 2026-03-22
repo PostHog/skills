@@ -1,6 +1,6 @@
 ---
 name: posthog-inbound-leads
-description: Evaluate and respond to inbound PostHog sales leads from Salesforce. Use this skill when any PostHog TAE needs to triage an inbound lead — deciding whether to qualify for a call, route to self-serve, or disqualify — and then draft an appropriate response email. Triggers on "respond to this lead", "triage this inbound", "write a response to this lead", "disposition this lead", "evaluate this Salesforce lead", or any request involving an inbound sales inquiry that needs qualification and a reply. Also trigger when a TAE pastes or describes lead details and asks what to do with them.
+description: Evaluate and respond to inbound PostHog sales leads from Salesforce. Use this skill when any PostHog TAE needs to triage an inbound lead — deciding whether to qualify for a call, route to self-serve, or disqualify — and then draft an appropriate response email. Checks Vitally for existing account context before qualifying. Triggers on "respond to this lead", "triage this inbound", "write a response to this lead", "disposition this lead", "evaluate this Salesforce lead", or any request involving an inbound sales inquiry that needs qualification and a reply. Also trigger when a TAE pastes or describes lead details and asks what to do with them.
 ---
 
 # PostHog Inbound Lead Disposition
@@ -10,11 +10,49 @@ Evaluate inbound leads from Salesforce and either draft a response email or reco
 ## Core Workflow
 
 1. **Ingest lead context** — Read whatever the TAE provides (Salesforce fields, email body, notes)
-2. **Identify the use case** — Map the lead to one or more of PostHog's six use cases (see below)
-3. **Qualify the lead** — Apply the disposition framework
-4. **Recommend a disposition** — State the recommended action and identified use case(s) clearly
-5. **Draft a response** — Write the appropriate email, framed around their use case
-6. **Validate all URLs** — Fetch every link in the draft email to confirm it resolves and points to the intended content (see Step 4 below)
+2. **Check Vitally for existing account context** — Search for the lead's email and email domain (see Step 0 below)
+3. **Identify the use case** — Map the lead to one or more of PostHog's six use cases (see below)
+4. **Qualify the lead** — Apply the disposition framework
+5. **Recommend a disposition** — State the recommended action and identified use case(s) clearly
+6. **Draft a response** — Write the appropriate email, framed around their use case
+7. **Validate all URLs** — Fetch every link in the draft email to confirm it resolves and points to the intended content (see Step 4 below)
+
+## Step 0: Check Vitally for Existing Account Context
+
+Before qualifying or drafting anything, check Vitally to see if this lead (or their company) is already a PostHog user. This changes the disposition and email framing significantly — an existing customer asking for help is different from a cold inbound.
+
+### What to check
+
+Run two Vitally lookups using the lead's email address:
+
+1. **Search by exact email** — `vitally:search_users` with `email` set to the lead's email address. This tells you if this specific person already has a PostHog account.
+2. **Search by email domain** — `vitally:search_users` with `emailSubdomain` set to the domain portion of the lead's email (e.g., `acme.com` from `jane@acme.com`). This tells you if anyone at their company is already using PostHog.
+
+If either search returns results, pull up the associated account with `vitally:get_account_full` using the `accountId` from the user record(s). Use `detailLevel: "summary"` for a quick overview.
+
+### How to use what you find
+
+**Lead's email is an existing user:**
+- They're already in PostHog. The email should acknowledge this ("I can see you're already using PostHog") and focus on their specific ask rather than onboarding-style resources.
+- Check their account's MRR and health score — this informs whether they're a self-serve user reaching out to grow, or an existing account with an expansion opportunity.
+
+**Different person at the same company is already a user:**
+- Their company is already on PostHog. Reference this in the email ("I see your team is already using PostHog") and ask how their request relates to the existing usage.
+- Check who else is on the account — the lead may need to connect with the internal champion rather than start a separate evaluation.
+- If the account already has a TAE assigned, flag this to avoid stepping on someone's book of business.
+
+**No results in Vitally:**
+- Net new lead. Proceed with the standard qualification workflow below.
+
+### What to surface to the TAE
+
+When presenting the Vitally findings, include:
+- Whether the person or company was found
+- Account name and current MRR (if applicable)
+- Health score (if applicable)
+- Assigned TAE (if any — important for routing)
+- Number of users on the account
+- A one-line recommendation on how this changes the response (e.g., "Existing $3K/mo account, no TAE assigned — this is an expansion opportunity, not a new lead")
 
 ## Step 1: Identify the Use Case
 
@@ -228,11 +266,12 @@ Read these before drafting responses:
 
 ## Critical Reminders
 
-1. **$20K threshold is firm** — Do not offer calls below this, regardless of how politely the lead asks
-2. **Always identify the use case** — This is the foundation for everything: the disposition, the framing, and the resources you link
-3. **Always recommend a disposition** — Don't just write an email; state the qualification decision explicitly so the TAE can update Salesforce
-4. **Always mention in-app support** for product questions — it's the fastest path to help
-5. **PostHog is built for product engineers** — If no engineer is involved, that's a red flag for qualification
-6. **Frame around problems, not products** — "Here's how to understand why users drop off" not "Here's our Product Analytics feature"
-7. **Match specificity to specificity** — Vague inbound gets pointed to resources with a clarifying question; specific technical questions get specific answers tied to their use case
-8. **Always validate URLs before presenting the draft** — Fetch every link to confirm it resolves and points to the right content. Never send a broken link.
+1. **Always check Vitally first** — Search for the lead's email and email domain before doing anything else. An existing customer changes everything about the response.
+2. **$20K threshold is firm** — Do not offer calls below this, regardless of how politely the lead asks
+3. **Always identify the use case** — This is the foundation for everything: the disposition, the framing, and the resources you link
+4. **Always recommend a disposition** — Don't just write an email; state the qualification decision explicitly so the TAE can update Salesforce
+5. **Always mention in-app support** for product questions — it's the fastest path to help
+6. **PostHog is built for product engineers** — If no engineer is involved, that's a red flag for qualification
+7. **Frame around problems, not products** — "Here's how to understand why users drop off" not "Here's our Product Analytics feature"
+8. **Match specificity to specificity** — Vague inbound gets pointed to resources with a clarifying question; specific technical questions get specific answers tied to their use case
+9. **Always validate URLs before presenting the draft** — Fetch every link to confirm it resolves and points to the right content. Never send a broken link.
