@@ -1,0 +1,33 @@
+name: Generate Marketplace
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**'
+  workflow_dispatch:
+
+jobs:
+  generate-marketplace:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Discover plugins and generate marketplace.json
+        run: ./scripts/generate-marketplace.sh
+
+      - name: Commit marketplace.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .claude-plugin/marketplace.json
+          if git diff --cached --quiet; then
+            echo "No changes to marketplace.json"
+          else
+            git commit -m "Update marketplace.json (auto-discovered plugins)"
+            git push
+          fi

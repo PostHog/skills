@@ -1,0 +1,7 @@
+{
+  "name": "posthog-debugger",
+  "description": "Debug and inspect PostHog implementations on any website",
+  "version": "1.0.0",
+  "author": { "name": "PostHog" },
+  "keywords": ["posthog", "debugging", "customer-success"]
+}

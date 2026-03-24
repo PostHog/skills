@@ -1,0 +1,7 @@
+{
+  "name": "posthog-survey-creator",
+  "description": "Create and configure surveys in PostHog through guided conversation",
+  "version": "1.0.0",
+  "author": { "name": "PostHog" },
+  "keywords": ["posthog", "surveys", "customer-success"]
+}
