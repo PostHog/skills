@@ -1,0 +1,14 @@
+{
+  "name": "posthog-feature-flags",
+  "description": "Skills for implementing PostHog feature flags across frameworks",
+  "version": "1.9.4",
+  "author": {
+    "name": "PostHog"
+  },
+  "keywords": [
+    "posthog",
+    "feature-flags",
+    "experiments",
+    "ab-testing"
+  ]
+}

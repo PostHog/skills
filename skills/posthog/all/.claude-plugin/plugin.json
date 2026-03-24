@@ -1,0 +1,16 @@
+{
+  "name": "posthog-all",
+  "description": "Complete set of all PostHog skills for agents and power users",
+  "version": "1.9.4",
+  "author": {
+    "name": "PostHog"
+  },
+  "keywords": [
+    "posthog",
+    "analytics",
+    "feature-flags",
+    "llm",
+    "logs",
+    "error-tracking"
+  ]
+}

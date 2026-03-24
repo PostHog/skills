@@ -1,0 +1,14 @@
+{
+  "name": "posthog-error-tracking",
+  "description": "Skills for setting up PostHog error tracking across frameworks",
+  "version": "1.9.4",
+  "author": {
+    "name": "PostHog"
+  },
+  "keywords": [
+    "posthog",
+    "error-tracking",
+    "exceptions",
+    "monitoring"
+  ]
+}

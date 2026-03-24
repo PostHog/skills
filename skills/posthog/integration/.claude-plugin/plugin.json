@@ -1,0 +1,14 @@
+{
+  "name": "posthog-integration",
+  "description": "Skills for integrating PostHog analytics into your application",
+  "version": "1.9.4",
+  "author": {
+    "name": "PostHog"
+  },
+  "keywords": [
+    "posthog",
+    "analytics",
+    "integration",
+    "tracking"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "name": "posthog-tools",
+  "description": "Utility skills for working with PostHog (HogQL, etc.)",
+  "version": "1.9.4",
+  "author": {
+    "name": "PostHog"
+  },
+  "keywords": [
+    "posthog",
+    "hogql",
+    "analytics",
+    "tools"
+  ]
+}

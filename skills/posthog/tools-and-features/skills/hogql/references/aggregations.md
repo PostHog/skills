@@ -1,0 +1,193 @@
+# Supported aggregations - Docs
+
+This is an [ever-expanding](https://github.com/PostHog/posthog/blob/dfce91d924fe038568c626416fa23e67d0f0906f/posthog/hogql/constants.py#L489) list of enabled aggregations.
+
+You can find their full definitions in the [ClickHouse documentation](https://clickhouse.com/docs/en/sql-reference/aggregate-functions/reference). Additionally, we include a list of popular ones and their uses in the [HogQL expressions](/docs/hogql/expressions.md#functions-and-aggregations) and [SQL insight](/docs/product-analytics/sql.md#useful-functions) documentation.
+
+## Standard aggregate functions
+
+-   `count`
+-   `countIf`
+-   `countState`
+-   `countMerge`
+-   `countStateIf`
+-   `countDistinctIf`
+-   `countMapIf`
+-   `min`
+-   `minForEach`
+-   `minIf`
+-   `max`
+-   `maxIf`
+-   `sum`
+-   `sumForEach`
+-   `sumIf`
+-   `avg`
+-   `avgIf`
+-   `avgMap`
+-   `avgMapIf`
+-   `avgMapState`
+-   `avgMapMerge`
+-   `avgMapMergeIf`
+-   `any`
+-   `anyIf`
+-   `stddevPop`
+-   `stddevPopIf`
+-   `stddevSamp`
+-   `stddevSampIf`
+-   `varPop`
+-   `varPopIf`
+-   `varSamp`
+-   `varSampIf`
+-   `covarPop`
+-   `covarPopIf`
+-   `covarSamp`
+-   `covarSampIf`
+-   `corr`
+
+## ClickHouse-specific aggregate functions
+
+-   `anyHeavy`
+-   `anyHeavyIf`
+-   `anyLast`
+-   `anyLastIf`
+-   `argMin`
+-   `argMinIf`
+-   `argMinMerge`
+-   `argMax`
+-   `argMaxIf`
+-   `argMaxMerge`
+-   `avgState`
+-   `avgStateIf`
+-   `avgMerge`
+-   `avgMergeIf`
+-   `avgWeighted`
+-   `avgWeightedIf`
+-   `avgArray`
+-   `topK`
+-   `groupArray`
+-   `groupArrayIf`
+-   `groupUniqArray`
+-   `groupUniqArrayIf`
+-   `groupArrayInsertAt`
+-   `groupArrayInsertAtIf`
+-   `groupArrayMovingAvg`
+-   `groupArrayMovingAvgIf`
+-   `groupArrayMovingSum`
+-   `groupArrayMovingSumIf`
+-   `groupArraySample`
+-   `groupArraySampleIf`
+-   `groupBitAnd`
+-   `groupBitAndIf`
+-   `groupBitOr`
+-   `groupBitOrIf`
+-   `groupBitXor`
+-   `groupBitXorIf`
+-   `groupBitmap`
+-   `groupBitmapIf`
+-   `groupBitmapAnd`
+-   `groupBitmapAndIf`
+-   `groupBitmapOr`
+-   `groupBitmapOrIf`
+-   `groupBitmapXor`
+-   `groupBitmapXorIf`
+-   `sumWithOverflow`
+-   `sumWithOverflowIf`
+-   `deltaSum`
+-   `deltaSumIf`
+-   `deltaSumTimestamp`
+-   `deltaSumTimestampIf`
+-   `sumMap`
+-   `sumMapIf`
+-   `sumMapMerge`
+-   `sumMapMergeIf`
+-   `sumMerge`
+-   `sumMergeIf`
+-   `sumState`
+-   `sumStateIf`
+-   `minMap`
+-   `minMapIf`
+-   `maxMap`
+-   `maxMapIf`
+-   `median`
+-   `medianIf`
+-   `medianExact`
+-   `medianExactIf`
+-   `medianExactLow`
+-   `medianExactLowIf`
+-   `medianExactHigh`
+-   `medianExactHighIf`
+-   `medianExactWeighted`
+-   `medianExactWeightedIf`
+-   `medianTiming`
+-   `medianTimingIf`
+-   `medianTimingWeighted`
+-   `medianTimingWeightedIf`
+-   `medianDeterministic`
+-   `medianDeterministicIf`
+-   `medianTDigest`
+-   `medianTDigestIf`
+-   `medianTDigestWeighted`
+-   `medianTDigestWeightedIf`
+-   `medianBFloat16`
+-   `medianBFloat16If`
+-   `medianArray`
+-   `skewSamp`
+-   `skewSampIf`
+-   `skewPop`
+-   `skewPopIf`
+-   `kurtSamp`
+-   `kurtSampIf`
+-   `kurtPop`
+-   `kurtPopIf`
+-   `uniq`
+-   `uniqIf`
+-   `uniqExact`
+-   `uniqExactIf`
+-   `uniqHLL12`
+-   `uniqHLL12If`
+-   `uniqTheta`
+-   `uniqThetaIf`
+-   `uniqMerge`
+-   `uniqMergeIf`
+-   `uniqMap`
+-   `uniqMapMerge`
+-   `uniqMapMergeIf`
+-   `uniqState`
+-   `uniqStateIf`
+-   `uniqUpToMerge`
+-   `uniqExactMerge`
+-   `quantile`
+-   `quantileIf`
+-   `quantiles`
+-   `quantilesIf`
+-   `simpleLinearRegression`
+-   `simpleLinearRegressionIf`
+-   `contingency`
+-   `contingencyIf`
+-   `cramersV`
+-   `cramersVIf`
+-   `cramersVBiasCorrected`
+-   `cramersVBiasCorrectedIf`
+-   `theilsU`
+-   `theilsUIf`
+-   `maxIntersections`
+-   `maxIntersectionsIf`
+-   `maxIntersectionsPosition`
+-   `maxIntersectionsPositionIf`
+-   `windowFunnel`
+-   `md5`
+
+## PostgreSQL-style aggregate functions
+
+-   `array_agg`
+-   `json_agg`
+-   `string_agg`
+-   `every`
+
+### Community questions
+
+Ask a question
+
+### Was this page useful?
+
+HelpfulCould be better
