@@ -1,0 +1,7 @@
+{
+  "name": "posthog-pls-big-fish",
+  "description": "Research, qualify, and suggest outreach for PostHog big fish product-led leads",
+  "version": "1.0.0",
+  "author": { "name": "PostHog" },
+  "keywords": ["posthog", "sales", "leads", "outbound"]
+}

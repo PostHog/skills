@@ -1,0 +1,53 @@
+{
+  "name": "posthog-skills",
+  "owner": {
+    "name": "PostHog"
+  },
+  "metadata": {
+    "description": "PostHog skills for Claude Code — analytics, feature flags, error tracking, and more"
+  },
+  "plugins": [
+    {
+      "name": "posthog-debugger",
+      "source": "./skills/team/customer-success/posthog-debugger",
+      "description": "Debug and inspect PostHog implementations on any website",
+      "keywords": [
+        "posthog",
+        "debugging",
+        "customer-success"
+      ]
+    },
+    {
+      "name": "posthog-survey-creator",
+      "source": "./skills/team/customer-success/posthog-survey-creator",
+      "description": "Create and configure surveys in PostHog through guided conversation",
+      "keywords": [
+        "posthog",
+        "surveys",
+        "customer-success"
+      ]
+    },
+    {
+      "name": "posthog-inbound-lead",
+      "source": "./skills/team/new-business-sales/posthog-inbound-lead",
+      "description": "Evaluate and respond to inbound PostHog sales leads from Salesforce",
+      "keywords": [
+        "posthog",
+        "sales",
+        "leads",
+        "inbound"
+      ]
+    },
+    {
+      "name": "posthog-pls-big-fish",
+      "source": "./skills/team/new-business-sales/posthog-pls-big-fish",
+      "description": "Research, qualify, and suggest outreach for PostHog big fish product-led leads",
+      "keywords": [
+        "posthog",
+        "sales",
+        "leads",
+        "outbound"
+      ]
+    }
+  ]
+}

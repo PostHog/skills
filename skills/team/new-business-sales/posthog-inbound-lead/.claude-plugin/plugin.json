@@ -1,0 +1,7 @@
+{
+  "name": "posthog-inbound-lead",
+  "description": "Evaluate and respond to inbound PostHog sales leads from Salesforce",
+  "version": "1.0.0",
+  "author": { "name": "PostHog" },
+  "keywords": ["posthog", "sales", "leads", "inbound"]
+}
