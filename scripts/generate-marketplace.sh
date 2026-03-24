@@ -45,7 +45,7 @@ mkdir -p .claude-plugin
 jq -n \
   --argjson plugins "$PLUGINS_JSON" \
   '{
-    name: "posthog-skills",
+    name: "PostHog-skills",
     owner: { name: "PostHog" },
     metadata: {
       description: "PostHog skills for Claude Code — analytics, feature flags, error tracking, and more"
