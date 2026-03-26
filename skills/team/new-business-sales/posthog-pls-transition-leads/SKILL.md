@@ -82,6 +82,8 @@ Use `get_account_users` on the account ID. Note:
 
 For transition leads, user count still matters for prioritization, but unlike big fish leads, even a single-user account can be worth outreach if the spend is significant. A solo founder burning $3K/month on PostHog deserves a heads-up about their credits expiring.
 
+**Who to address the outreach to:** The lead email from Salesforce is typically the person who created the PostHog account — but that's not always the right person to email. Look at who's actually active: recent last-seen dates and the highest number of sessions/segments. The most active user is your best target — they're the one with the deepest relationship to PostHog and the most context on how the team uses it. If the lead contact hasn't been active recently but someone else on the team has, address the email to the team (e.g., "Hey [Company] team") or to the most active user directly. Note the discrepancy in your output so the TAE can make the call.
+
 ### 2d: Check Products and Usage
 
 From the account traits and user segments, identify:
@@ -92,6 +94,8 @@ From the account traits and user segments, identify:
 ### 2e: Check Conversations and Notes
 
 Use `get_account_conversations` and `get_account_notes` to see if anyone from PostHog has already been in touch. For startup accounts, there's often a conversation from when they joined the startup program — note when it happened and who was involved, but it doesn't mean someone is actively working the account.
+
+**Pay special attention to recent billing-related support tickets.** If the account filed a support ticket about billing, usage, or costs in the last 1-2 weeks, that changes the outreach significantly — they're already thinking about costs and have already engaged with PostHog on the topic. Flag this prominently in your output. The TAE's outreach should feel like a natural extension of that conversation (e.g., "saw your team had some questions about replay billing — happy to help you think through the bigger picture on costs as usage grows"), not a separate cold touch that ignores the context. Piling on with a generic transition email right after a billing support ticket feels tone-deaf.
 
 ### 2f: Check for Duplicate Accounts
 
@@ -128,6 +132,8 @@ This is unique to transition leads. Before drafting outreach, identify specific 
 
 5. **Autocapture tuning** — PostHog autocaptures pageviews and page leaves by default. Disabling autocapture and manually capturing only the events that matter can reduce event volume.
 
+   **Autocapture is also a spend quality signal.** If the bulk of an account's event volume is coming from autocapture rather than custom-instrumented events, their actual committed spend may be much lower than the forecasted invoice suggests — because autocapture is easy to turn off or tune down without losing anything they rely on. An account whose $2K forecast is 80% autocapture events is very different from one that's $2K on intentionally instrumented custom events. When checking products and usage, try to assess whether the event volume is primarily autocapture or custom. If it's heavily autocapture, flag this in your output — the forecasted spend may overstate how "stuck" the account actually is.
+
 6. **Data warehouse / batch export optimization** — If they're exporting large volumes, there may be ways to filter or reduce what's exported.
 
 Don't try to surface ALL of these in the outreach email — pick the 1-2 most relevant based on what's actually driving their costs. The email should feel targeted, not like a generic cost-cutting checklist.
@@ -139,6 +145,14 @@ The point isn't to make PostHog seem cheaper — it's to help them get the same 
 Be honest about what their costs will look like. Don't hide the number — surface it and pair it with optimization suggestions.
 
 ## Step 5: Qualify and Recommend a Play
+
+### Billing Limits as a Qualification Signal
+
+Before choosing a play, check whether the account has set billing limits — and if so, what they're set to. This is one of the strongest intent signals available because it represents a deliberate, specific decision about how much they're willing to spend.
+
+An account that's set a total billing limit of $1,500/month across all products is telling you exactly what their budget is. They're unlikely to become a $20K account without a meaningful change in circumstances — treating them as a high-potential lead would be misreading the signal. Conversely, an account with no billing limits and growing usage may not have thought about costs yet, which is both an opportunity (they might welcome optimization help) and a risk (sticker shock when the invoice arrives).
+
+Factor billing limits into your play recommendation and note them prominently in the billing analysis output.
 
 ### Play: Outreach (Slack Channel + Email)
 
