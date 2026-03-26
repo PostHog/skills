@@ -1,24 +1,22 @@
 # Outreach Hooks: High First Invoice (>= $2K)
 
-Templates and patterns for reaching out to customers whose first real invoice will be >= $2K. These fall into two sub-types:
+Templates and patterns for reaching out to customers whose first real invoice will be >= $2K. Two sub-types:
 
-1. **Free-tier-to-paid** — They've been on the free tier and just crossed the threshold where usage-based billing kicks in at a meaningful level. They may have added a payment method recently, or they may not have one yet (in which case they'll hit billing limits).
-2. **New signup, heavy usage** — They signed up recently and immediately started generating significant usage. Their first invoice will be large and they may not have calibrated expectations yet.
-
-The outreach goal is the same for both: make sure they understand what's coming, help them optimize, and be a resource if they have questions.
+1. **Free-tier-to-paid** - They've been on the free tier and crossed into meaningful usage-based billing.
+2. **New signup, heavy usage** - Signed up recently and immediately started generating significant usage.
 
 ---
 
 ## Context: What the Customer Is Experiencing
 
-Most PostHog users start on the free tier and gradually increase usage. The free tier is generous — most people don't pay anything for months. When they cross the threshold into meaningful billing, it can feel sudden:
+Most PostHog users start on the free tier and gradually increase usage. When they cross into meaningful billing, it can feel sudden:
 
-- They may not have been tracking their usage closely
-- They may not realize which products are driving the most cost
-- They may not have billing limits set, meaning their invoice is uncapped
-- If they're a fast-growing startup, usage can spike without warning
+- They may not have been tracking usage closely
+- They may not realize which products are driving cost
+- They may not have billing limits set
+- If they're growing fast, usage can spike without warning
 
-Your outreach should help them feel in control of their spend, not surprised by it.
+Your outreach should help them feel in control of their spend, not surprised by it. But the email itself should be brief - the Slack channel is where the real help happens.
 
 ---
 
@@ -26,24 +24,20 @@ Your outreach should help them feel in control of their spend, not surprised by 
 
 **Priority:** High. A team generating $2K+ monthly usage is a real customer. Slack channel + email.
 
-**Approach:** Lead with what their team is doing in PostHog — the specific products and usage patterns from Vitally. Then surface what their usage translates to in cost, and offer to help optimize. Don't assume they know what they're spending — many users on the free tier never look at billing until the first invoice arrives.
+**Approach:** Lead with the Slack channel and ground it in something specific about their setup. Use your research to make a tight connection between what they're doing and why a direct line to PostHog engineering support is useful for them. End with a question that's interesting enough to answer in Slack.
 
-**Example (free-tier-to-paid, broad usage):**
+**Example (broad usage, first invoice incoming):**
 
 ```
-Subject: Your PostHog setup
+Subject: Slack channel for [Company] <> PostHog
 
 Hey [Company] team,
 
-Your team has ramped up quickly in PostHog — [specific products, e.g., "product analytics, session replay, and feature flags"] across [N] users and [N] projects. Looks like a thorough setup.
+Setting up a shared Slack channel for you - [reason grounded in their usage, e.g., "you've got analytics and flags running across [N] projects with [N] people in the account, so a direct line for technical questions will save you time"].
 
-As usage grows, costs can creep up in ways that aren't always obvious. [One specific, relevant optimization, e.g., "Feature flags get evaluated on every page load — if you have flags that are no longer in use, archiving them stops the charges immediately."] [Link to guide.]
+One thing worth flagging: enhanced person profiles are driving about [X]% of your forecasted spend right now. If there are interactions where you don't need user-level attribution, [capturing those as anonymous events](https://posthog.com/docs/data/anonymous-vs-identified-events) can cut that by up to 4x. Happy to dig into the specifics in Slack.
 
-[If no billing limits are set:] One thing worth doing now: setting per-product billing limits so you have a ceiling on spend. [Link to billing limits guide.]
-
-Also sending over a Slack invite — easiest way to get quick answers on billing or anything technical.
-
-What's your team using PostHog for primarily?
+[Conversation starter, e.g., "What's the main thing your team is trying to learn from the analytics?"]
 
 [Your name]
 ```
@@ -51,17 +45,15 @@ What's your team using PostHog for primarily?
 **Example (new signup, heavy usage from day one):**
 
 ```
-Subject: Your PostHog setup
+Subject: Slack channel for [Company] <> PostHog
 
 Hey [Company] team,
 
-Noticed your team hit the ground running — [specific observation, e.g., "you've already got analytics, replay, and experiments set up with 5+ users active in the first couple weeks"]. That's a fast ramp.
+Sending a Slack channel invite - [reason, e.g., "with the pace you're ramping at, it'll be the fastest way to get answers on implementation or billing as things come up"].
 
-Given the pace, wanted to make sure you have visibility into what your usage looks like. PostHog's billing is usage-based, and at your current volume, your first invoice will be in the $[X] range. [One optimization suggestion, e.g., "If you're capturing a lot of events from autocapture, tuning which events you track can meaningfully reduce costs without losing the insights that matter."] [Link.]
+PostHog billing is usage-based, and at your current volume your first invoice will be in the $[X] range. Happy to walk through what's driving that in Slack - there are usually a few quick wins.
 
-Also sending a Slack invite — happy to answer any billing or implementation questions as you get settled.
-
-What prompted the move to PostHog?
+[Conversation starter, e.g., "Are you instrumenting events manually or mostly using autocapture right now?"]
 
 [Your name]
 ```
@@ -70,22 +62,20 @@ What prompted the move to PostHog?
 
 ## Single User Account (But >= $2K Usage)
 
-**Priority:** Medium-high. A single user generating $2K+ is notable — they're likely a technical founder or lead engineer making infrastructure decisions. Email only, no Slack channel.
+**Priority:** Medium-high. A single user generating $2K+ is notable - likely a technical founder or lead engineer. Email only, no Slack channel.
 
-**Approach:** Personal, direct. This person is probably building something and chose PostHog deliberately. Respect that — be helpful, not overbearing.
+**Approach:** Short and direct. This person chose PostHog deliberately. Respect that.
 
 **Example:**
 
 ```
-Subject: Your PostHog setup
+Subject: Your PostHog billing
 
 Hey [First name],
 
-Noticed you've got PostHog set up with [specific products, e.g., "analytics, replay, and feature flags"] — looks like you're building on most of the platform.
+Quick heads-up - at your current usage, your next invoice will be around $[X]. [One specific optimization with link, e.g., "Setting per-product billing limits takes a couple minutes and caps your spend - [link]."]
 
-Quick heads-up on billing: at your current usage, your next invoice will be around $[X]. [One optimization, e.g., "Setting per-product billing limits takes a couple minutes and caps your spend — here's how."] [Link.]
-
-Happy to help if you have any questions about billing or your setup.
+Happy to help if questions come up.
 
 [Your name]
 ```
@@ -94,9 +84,9 @@ Happy to help if you have any questions about billing or your setup.
 
 ## When They Don't Have a Payment Method Yet
 
-Some high-usage accounts hit the free tier limits and get data ingestion paused rather than generating an invoice. These accounts are valuable — they've demonstrated demand but haven't committed to paying yet.
+Some high-usage accounts hit free tier limits and get data ingestion paused. These accounts are valuable - they've demonstrated demand but haven't committed to paying.
 
-**Approach:** The outreach should acknowledge the usage and offer to help them figure out what their costs would look like if they add a payment method. Don't push them to add one — help them understand the economics.
+**Approach:** Acknowledge the usage, surface what costs would look like, and offer a specific optimization. Don't push them to add a payment method.
 
 **Example:**
 
@@ -105,11 +95,11 @@ Subject: Your PostHog setup
 
 Hey [Name / Company team],
 
-Noticed your team has been actively using PostHog — [usage observation]. Looks like you've hit some of the free tier limits on [product, e.g., "session replay"].
+Looks like you've hit some free tier limits on [product, e.g., "session replay"]. If you're thinking about adding a payment method, your monthly spend at current usage would be roughly $[X].
 
-If you're thinking about adding a payment method, your monthly spend at current usage would be roughly $[X]. [One optimization, e.g., "Replay sampling — recording a percentage of sessions instead of all of them — can cut that significantly while still giving you the sessions that matter."] [Link.]
+[One optimization, e.g., "Replay sampling - recording a percentage of sessions instead of all of them - can cut that significantly. [Link.]"]
 
-No rush on any of this, but happy to walk through the numbers if it'd help.
+No rush, but happy to walk through the numbers.
 
 [Your name]
 ```
@@ -120,22 +110,22 @@ No rush on any of this, but happy to walk through the numbers if it'd help.
 
 | | Startup Rolloff | High First Invoice |
 |---|---|---|
-| **They know PostHog costs money** | Yes, but credits masked it | Maybe not — free tier can feel like "free forever" |
-| **Billing context** | Credits expiring, transition to paid | First real invoice arriving, may be unexpected |
+| **They know PostHog costs money** | Yes, but credits masked it | Maybe not - free tier can feel like "free forever" |
 | **Urgency source** | Calendar (credit expiry date) | Usage growth (costs rising) |
-| **Cost framing** | "Here's what you'll pay after credits" | "Here's what your usage translates to" |
-| **Optimization framing** | "Control costs during the transition" | "Get visibility into what drives your bill" |
-| **Open question** | About the transition | About their use case / what they're building |
+| **Cost framing** | "Credits winding down, here's what you'll pay" | "Here's what your usage translates to" |
+| **Slack pitch** | "Direct line for the transition" | "Direct line as you scale" |
+| **Conversation starter** | Tied to their heaviest usage or transition | Tied to what they're building or how they're instrumenting |
 
 ---
 
 ## Anti-Patterns (Never Do These)
 
-- **"Your bill is going to be $X"** without an optimization suggestion — feels like a threat, not help.
-- **"You should add a payment method"** — pushy. They'll add one when they're ready.
-- **Referencing their exact event counts or data volumes** — feels surveillance-y. Reference products and general patterns, not precise numbers.
-- **"PostHog is very affordable compared to [competitor]"** — unsolicited competitor comparisons are tacky.
-- **Sending the email before checking Vitally conversations** — someone may already be in touch. Don't pile on.
-- **Feature laundry lists** — pick the 2-3 products they actually use. Don't list everything PostHog offers.
-- **Bare URLs** — always use anchor text. Bare URLs look automated.
-- **Citing enrichment data** — same rule as everywhere: only reference what you can verify from Vitally usage or public sources.
+- **"Your team's ramped up fast!" / "That's impressive"** - patronizing. State what you know without cheerleading. These are engineers, not interns.
+- **"Your bill is going to be $X"** without context or an optimization - feels like a threat.
+- **"You should add a payment method"** - pushy.
+- **Long emails with multiple optimization suggestions** - save it for Slack. The email gets them in the door.
+- **Referencing exact event counts or data volumes** - feels surveillance-y. Reference products and patterns, not precise numbers.
+- **"PostHog is very affordable compared to [competitor]"** - unsolicited competitor comparisons are tacky.
+- **Feature laundry lists** - pick 1-2 products relevant to the hook.
+- **Bare URLs** - always use anchor text.
+- **Citing enrichment data** - only reference what you can verify from Vitally usage or public sources.

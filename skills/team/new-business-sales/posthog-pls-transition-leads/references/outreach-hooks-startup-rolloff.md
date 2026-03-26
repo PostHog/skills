@@ -1,6 +1,6 @@
 # Outreach Hooks: Startup Rolloff
 
-Templates and patterns for reaching out to startup program customers whose credits are winding down. These accounts already know PostHog — the outreach is about helping them navigate the transition to paid, not introducing the product.
+Templates and patterns for reaching out to startup program customers whose credits are winding down. These accounts already know PostHog - the outreach is about helping them navigate the transition to paid, not introducing the product.
 
 ---
 
@@ -8,10 +8,10 @@ Templates and patterns for reaching out to startup program customers whose credi
 
 Startup program customers got $50K in free credits valid for 1 year. They've been using PostHog without thinking about cost. Now one of two things is happening:
 
-1. **Time-based rolloff** — The year is ending and they have unused credits that will expire. They may not realize how much they'll lose, or what their first real invoice will look like.
-2. **Spend-based rolloff** — They've burned through credits faster than expected and will hit $0 before the year is up. They may already be seeing charges they didn't expect.
+1. **Time-based rolloff** - The year is ending and they have unused credits that will expire. They may not realize how much they'll lose, or what their first real invoice will look like.
+2. **Spend-based rolloff** - They've burned through credits faster than expected and will hit $0 before the year is up. They may already be seeing charges they didn't expect.
 
-Either way, the transition can feel abrupt. Your outreach should make it feel manageable.
+Either way, the transition can feel abrupt. Your outreach should make it feel manageable. Unlike big fish or first-invoice leads, it's OK to mention pricing options or discounts here - these customers have been using PostHog for free and could be staring down a significant bill. Offering to discuss pricing is a natural and expected part of supporting the transition.
 
 ---
 
@@ -19,22 +19,20 @@ Either way, the transition can feel abrupt. Your outreach should make it feel ma
 
 **Priority:** High. The team is embedded in PostHog. Create a Slack channel and send an email.
 
-**Approach:** Lead with a genuine observation about their team's adoption breadth. Reference the credit transition directly but pair it with a specific optimization suggestion. The observation should come from Vitally data — which products, how many users, how many projects.
+**Approach:** Lead with the Slack channel - it's the most tangible value you're offering. Use what you know from Vitally to explain why it'll be useful for *them* specifically (e.g., if they're heavy on feature flags, mention getting help with flag management as credits wind down). Keep it short. The goal is to get them into Slack, not to deliver a billing briefing via email.
 
 **Example (broad adoption, credits expiring soon):**
 
 ```
-Subject: Your PostHog setup
+Subject: Slack channel for [Company] <> PostHog
 
 Hey [Company] team,
 
-Your team's been putting PostHog to serious use — [specific products from Vitally, e.g., "analytics, session replay, feature flags, experiments, and error tracking"] across [N] projects. That's broad adoption for a team your size, and it's clear PostHog is core to how you're building [product/company].
+Setting up a shared Slack channel for you - [specific reason it's useful for them, e.g., "given you're running analytics, replay, flags, and experiments across 2 projects, it'll be the fastest way to get help with any of it"].
 
-Your startup credits are winding down over the next [few weeks / couple months]. Given how embedded PostHog is in your workflow, it's worth getting ahead of the transition — things like [one specific optimization with link, e.g., "archiving inactive feature flags" or "setting billing limits per product"] can help you control costs without changing how you work.
+Your startup credits wind down in [timeframe], so this is also a good place to talk through billing, optimization, or pricing options as you transition.
 
-Happy to walk through your usage breakdown and help optimize before credits roll off. Also sending over a Slack invite — easiest way to get quick answers as things come up.
-
-What's top of mind for your team as you think about the transition?
+Invite incoming - [conversation starter, e.g., "curious what you're using feature flags for - the 500K requests/month caught my eye"].
 
 [Your name]
 ```
@@ -42,19 +40,15 @@ What's top of mind for your team as you think about the transition?
 **Example (high spend rate, credits running out early):**
 
 ```
-Subject: Your PostHog usage
+Subject: Slack channel for [Company] <> PostHog
 
 Hey [Company] team,
 
-Noticed your team is getting serious mileage out of PostHog — [specific observation, e.g., "90K+ session recordings and nearly 500K feature flag requests this month alone"]. That's a sign you're using it the way it's meant to be used.
+Sending over a shared Slack channel invite - easiest way to get quick answers from someone technical on our side.
 
-Heads up: at your current usage rate, your startup credits will run out [before the year mark / in the next few weeks]. Your monthly spend is sitting around $[X], which is what your first real invoice will look like once credits are exhausted.
+Heads up: at your current run rate (~$[X]/month), your startup credits will run out [before the year mark / in the next few weeks]. Happy to dig into what's driving that in Slack - whether that's optimizing usage or talking through pricing options for the transition.
 
-A couple quick wins that can bring that down without changing your workflow: [one specific optimization, e.g., "archiving stale feature flags stops them from being evaluated on every page load — here's how"]. [Link to relevant doc.]
-
-Also sending over a Slack invite — happy to walk through your billing dashboard and help you plan for the transition.
-
-What are your priorities as you think about the next phase?
+[Conversation starter tied to their heaviest usage, e.g., "Are the 90K replays intentional or would sampling work for what you're doing?"]
 
 [Your name]
 ```
@@ -63,22 +57,22 @@ What are your priorities as you think about the next phase?
 
 ## Single User Account (But Meaningful Spend)
 
-**Priority:** Medium. One person, but they're spending real money. Email only — no Slack channel.
+**Priority:** Medium. One person, but they're spending real money. Email only - no Slack channel.
 
-**Approach:** Shorter, more personal. Address by first name. Same structure: usage observation, credit heads-up, one optimization, open question.
+**Approach:** Short and direct. Address by first name. Credit heads-up, one specific optimization, and an easy way to get help.
 
 **Example:**
 
 ```
-Subject: Your PostHog setup
+Subject: Your PostHog credits
 
 Hey [First name],
 
-Noticed you've got a solid PostHog setup going — [specific observation, e.g., "analytics and session replay across 2 projects, plus feature flags"].
+Quick heads-up - your startup credits are winding down in [timeframe]. At your current usage (~$[X]/month), that's roughly what your first invoice will look like.
 
-Quick heads-up: your startup credits are winding down in [timeframe]. At your current usage (~$[X]/month), that's roughly what your first invoice will look like after the transition. [One optimization suggestion with link, e.g., "Setting per-product billing limits is the easiest way to avoid surprises — here's the guide."]
+[One specific optimization with link, e.g., "If you haven't set per-product billing limits yet, it's the fastest way to cap spend - [link]."]
 
-Happy to help you think through the transition if anything comes up.
+Happy to help if anything comes up.
 
 [Your name]
 ```
@@ -87,7 +81,7 @@ Happy to help you think through the transition if anything comes up.
 
 ## Urgent: Credits Expire in < 14 Days
 
-**Priority:** High regardless of user count. Time pressure changes the tone — be more direct.
+**Priority:** High regardless of user count. Time pressure changes the tone - be more direct.
 
 **Example:**
 
@@ -96,11 +90,11 @@ Subject: PostHog credits expiring [date]
 
 Hey [Name / Company team],
 
-Quick heads-up: your PostHog startup credits expire on [date] — that's [N] days from now. After that, billing switches to usage-based at your current run rate of ~$[X]/month.
+Your PostHog startup credits expire on [date] - [N] days from now. After that, billing switches to usage-based at your current run rate of ~$[X]/month.
 
-If you haven't already, [one high-impact optimization, e.g., "setting billing limits per product is the fastest way to cap spend — takes about 2 minutes"]. [Link.]
+[One high-impact optimization, e.g., "Setting billing limits per product is the fastest way to cap spend - takes about 2 minutes. [Link.]"]
 
-Let me know if you want to walk through your usage or have any questions about what the transition looks like.
+Let me know if you want to walk through your usage.
 
 [Your name]
 ```
@@ -109,14 +103,14 @@ Let me know if you want to walk through your usage or have any questions about w
 
 ## Slack Channel Welcome Message (Multi-User Only)
 
-Send alongside the email. Can be more conversational and direct than the email.
+Send alongside the email. Can be more direct and conversational than the email.
 
 ```
-Hey [Company] team — your PostHog usage has been growing steadily, and with your startup credits winding down in [timeframe], wanted to make sure you have a direct line for questions about the transition.
+Hey [Company] team - [your name] from PostHog. This channel is a direct line for anything technical, billing, or otherwise as your startup credits wind down over the next [timeframe].
 
-Happy to help with billing questions, optimization tips, or anything technical — async here or a quick call, whatever works.
+[Conversation starter grounded in their usage, e.g., "I noticed you're running experiments alongside feature flags - are you using flags to control experiment rollouts, or are those separate workflows?"]
 
-[Your name]
+Async here or a quick call, whatever works.
 ```
 
 ---
@@ -125,22 +119,24 @@ Happy to help with billing questions, optimization tips, or anything technical �
 
 | | Big Fish | Startup Rolloff |
 |---|---|---|
-| **First sentence** | Usage observation | Usage observation (same) |
-| **Billing mention** | Never | Yes — direct and helpful |
+| **Lead with** | Usage observation | Slack channel + why it's useful for them |
+| **Billing mention** | Never | Yes - direct, one sentence |
 | **Costs/pricing** | Never mention | Reference their actual monthly spend |
-| **Optimization links** | Optional (nice to have) | Required (pair every cost mention with a way to reduce it) |
-| **Slack channel** | Always (if multi-user) | Multi-user only |
-| **Tone** | "Supporting your evaluation" | "Helping you plan the transition" |
-| **Open question** | "What prompted the evaluation?" | "What's top of mind for the transition?" |
+| **Slack channel** | Mentioned, not centerpiece | The centerpiece - get them in there |
+| **Tone** | "Supporting your evaluation" | Engineer-to-engineer, "here's a direct line" |
+| **Length** | Medium | Short - save the details for Slack |
+| **Goal** | Get them to respond | Get them into Slack |
 
 ---
 
 ## Anti-Patterns (Never Do These)
 
-- **"Your free ride is ending"** — condescending. They earned those credits by being in the startup program.
-- **"I'm reaching out because your credits are expiring"** — leads with you, not them. Lead with their usage.
-- **"Let me know if you want to discuss pricing options"** — too sales-y. Offer specific optimization help, not a pricing conversation.
-- **Listing every product they use** — reference the 2-3 most notable. Laundry lists feel automated.
-- **Vague optimization advice** — "there are ways to optimize" is useless. Name the specific thing and link to the guide.
-- **Panic-inducing language** — "you're about to lose $38K in credits" makes them feel bad, not helped. Focus on what they'll pay going forward, not what they're losing.
-- **Citing enrichment data as fact** — same rule as big fish. Only reference what you can verify from Vitally or their public website.
+- **"Your team's ramped up fast!"** or **"That's impressive adoption"** - patronizing. These are competent engineers, not kids who drew a nice picture. State what you know without cheerleading.
+- **"Your free ride is ending"** - condescending. They earned those credits by being in the startup program.
+- **"I'm reaching out because your credits are expiring"** - leads with you, not value.
+- **"Let me know if you want to discuss pricing options"** as the only value prop - pricing is fine to mention for startup rolloffs (they're facing a real billing change), but it shouldn't be the *only* thing you're offering. Pair it with something technical.
+- **Long emails with multiple optimization suggestions** - save it for Slack. The email is a door, not the room.
+- **Listing every product they use** - reference 1-2 that are most relevant to the hook.
+- **Vague optimization advice** - "there are ways to optimize" is useless. Name the specific thing.
+- **Panic-inducing language** - "you're about to lose $38K in credits" makes them feel bad, not helped.
+- **Citing enrichment data as fact** - same rule as big fish. Only reference what you can verify from Vitally or their public website.

@@ -191,12 +191,11 @@ Read the appropriate reference file before drafting:
 
 ### Shared Principles (All Transition Leads)
 
-1. **Lead with a usage observation.** Even though this is a billing-adjacent conversation, start with what they're doing in PostHog — it shows you've looked at their account and care about their use case, not just their wallet.
-2. **Be direct about the transition.** Don't bury the lede. If credits are expiring, say so. If their first invoice will be $2K, help them understand why. Transparency builds trust.
-3. **Pair every cost mention with an optimization suggestion.** Don't just tell them they'll pay $X/month — tell them how to get the same value at $Y/month. Link to one specific, relevant resource.
-4. **Slack invite (if multi-user).** Mention naturally, not as the centerpiece.
-5. **One open question at the end.** About them and their priorities, not about PostHog.
-6. **Follow PostHog's writing style.** Get to the point. No fluff. American English, Oxford comma, sentence case, en dashes with spaces. No bare URLs — always use anchor text.
+1. **Lead with the Slack channel.** The shared Slack channel is the most valuable thing you're offering - a direct line to someone technical at PostHog who can help them ship faster. Don't bury it three paragraphs in. Open with it, explain why it's useful for their specific situation (using intel from your research), and make it easy for them to jump in. From the PostHog handbook: "We use shared Slack channels to provide timely support and to build relationships with those at our customers shipping things with PostHog." The Slack channel is also strategically important beyond the immediate transition. Even if the short-term outcome is helping them optimize and spend less, being in the room when they're building new features, hitting new problems, or wondering "does PostHog do X?" is where expansion happens organically. You won't know if there's opportunity to introduce them to parts of PostHog they aren't using or thinking about unless you can get them talking.
+2. **Write like a fellow engineer, not a salesperson.** These are competent developers who are hard to engage precisely because they don't want emails from sales. The TAEs are deeply technical too. Write the way you'd message a colleague - direct, concise, no praise or cheerleading about their setup ("your team's ramped up fast!" reads as patronizing). State what you know, say what you're offering, and ask something that makes them want to reply.
+3. **Keep it short.** The initial outreach should be brief. Slack channel, why it's useful for them specifically, and a conversation starter that entices them to actually open Slack and fire off a message. That's it. Save the billing optimization details for the Slack conversation itself - that's the whole point of getting them in there.
+4. **Be direct about the transition.** If credits are expiring, say so. If their first invoice will be meaningful, help them understand why. Transparency builds trust. But keep it to a sentence, not a paragraph. For startup rolloffs specifically, it's OK to mention discussing pricing options or discounts - these customers have had PostHog for free and could be facing a significant bill. Offering to talk through options is a natural part of helping them through the transition.
+5. **Follow PostHog's writing style.** Get to the point. No fluff. American English, Oxford comma, hyphens (not em/en dashes). No bare URLs - always use anchor text.
 
 ### Data Integrity Rule
 
@@ -243,5 +242,5 @@ One follow-up is fine. Keep it short — reference the original email and the up
 3. **Pair costs with optimization.** Every cost mention should come with a way to reduce it.
 4. **Check conversations first.** Someone from the startup program or CS team may already be in touch.
 5. **Single users still matter here.** Unlike big fish (where 1 user = low priority), a single user spending $2K/month is absolutely worth outreach.
-6. **Lead with usage, not billing.** The first sentence of the email should be about what they're doing in PostHog, not about their credits or invoice.
+6. **Lead with the Slack channel, not billing.** The first sentence of the email should be about the Slack channel and why it's useful for them. Billing context comes after.
 7. **Validate URLs before presenting the draft.**
