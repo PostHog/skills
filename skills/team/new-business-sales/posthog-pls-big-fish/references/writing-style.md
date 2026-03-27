@@ -73,7 +73,7 @@ Avoid over-formatting with:
 ### Punctuation
 - **Oxford comma**: "bananas, apples, and oranges"
 - **Straight quotes**: Not curly quotes or apostrophes
-- **British-style en dashes**: Use " – " (with spaces) not "—" (no spaces)
+- **Hyphens only**: Use hyphens (-) instead of em dashes (—) or en dashes (–). Em/en dashes read as AI-generated to some people, and nobody is going to be impressed by typographically correct punctuation in a sales email. Just use a hyphen with spaces on either side when you need a break in thought - like this.
 
 ### Numbers
 - Abbreviate thousands to billions: 10M, 100B (capital letter, no space)
