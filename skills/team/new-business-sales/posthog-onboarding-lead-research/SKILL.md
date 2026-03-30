@@ -283,19 +283,25 @@ Recommend when:
 - Score 0-39 (Unlikely)
 - Non-ICP industry with no offsetting signals
 - Usage declining with no business growth to suggest recovery
-- Account shows churn risk (past due billing, declining spend, unresponsive)
+- Account shows churn risk (past due billing, declining spend)
+- Customer explicitly declined engagement (said "no thanks" or similar) - unless their spend is high enough that hearing about discounts from a TAE would be genuinely useful to them
 
 **When recommending Skip, you MUST provide a DQ Reason** - a plain-text summary of why this lead is not qualified. The DQ reason must be 250 characters or fewer so the TAE can copy-paste it directly into the Salesforce disqualification field. Be specific - name the concrete signals, not generic language.
 
+**Important: Non-response is NOT a disqualification signal.** If the onboarding team reached out and the customer simply didn't reply, that is not evidence they don't want to hear from PostHog - they may have been busy, missed the email, or the timing wasn't right. Do not cite "no engagement" or "didn't respond to onboarding" as a DQ reason. The only engagement-related DQ signal is an *explicit* opt-out - the customer actively responded to say they're not interested. Even then, if their spend is meaningful and a TAE could offer genuine value (e.g. volume discounts, billing optimization), an explicit opt-out from onboarding doesn't necessarily mean they'd reject a TAE with a different angle.
+
 Good DQ reasons:
-- "MRR declining $1,763->$696 forecast. Single product (analytics). Skipped onboarding. 8 employees, 3 engineers. No growth signals despite $9.1M revenue."
-- "Non-ICP: school bus routing company (founded 1977). Analytics-only, $1,369 flat MRR. 4.78 health. No engagement. No expansion signals."
+- "MRR declining $1,763->$696 forecast. Single product (analytics). 8 employees, 3 engineers. No growth signals despite $9.1M revenue. Group Analytics likely unnecessary."
+- "Non-ICP: school bus routing company (founded 1977). Analytics-only, $1,369 flat MRR. 4.78 health. No expansion signals. Govt/education customer base."
 - "Past due billing. MRR forecast drops 49% ($2,130->$1,086). 7-person seed startup. Likely cash-constrained despite Khosla backing."
+- "Explicitly declined onboarding engagement. $380 MRR, single product, no growth trajectory. No value angle for TAE outreach."
 
 Bad DQ reasons:
 - "Not a good fit" (too vague)
 - "Low score" (doesn't explain why)
 - "Small company" (which signal matters?)
+- "No engagement with onboarding" (non-response is not a signal - they may have been busy)
+- "Unresponsive" (same problem - silence is not rejection)
 
 ### Play: Wait and Watch
 
