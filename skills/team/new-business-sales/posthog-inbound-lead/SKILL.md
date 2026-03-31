@@ -175,6 +175,63 @@ Draft a helpful email that:
 - Spam or irrelevant inquiry
 - No response needed, or a brief polite decline
 
+### Disqualification Reasons & Notes
+
+When recommending any disposition other than "Qualify for Call," you MUST provide a **disqualification reason** (from the list below) and **disqualification notes** (250 characters or fewer, specific and copy-pasteable into the Salesforce disqualification notes field).
+
+**Available disqualification reasons:**
+
+- BAA / DPA Request
+- Below Sales Assist Threshold - Pass
+- Below Sales Assist Threshold - Prospect
+- Billing Support Request
+- Business Closed
+- Duplicate Lead
+- Event request
+- Existing customer inquiry
+- Feedback
+- Invalid Contact Info
+- No Budget
+- No Current Need
+- No Product Fit
+- No Response - Pass
+- No Response - Prospect
+- No Technical Resource
+- Non-Commercial
+- Not a Good Fit
+- Other
+- Partnership request
+- Resource Constraints
+- Self-Hosted Requirement
+- Spam
+- Stale - autoclosed
+- Startup Plan / YC
+- Support Request
+- Using Competitor / Unsolicited RFP
+
+**How to choose the right reason:**
+
+- **Below Sales Assist Threshold - Pass**: Below $20K potential and no realistic growth path to get there. Use for small companies routed to self-serve.
+- **Below Sales Assist Threshold - Prospect**: Below $20K now but company shows signals it could grow into threshold (e.g. recent funding, growing team). Worth revisiting later.
+- **BAA / DPA Request**: Lead requires a BAA or DPA. Note: BAAs are available starting at the Boost add-on ($250/month + usage-based pricing) for standard (no redlines) BAAs, or Enterprise ($2K/month paid annually) for custom/redlined BAAs. Use this reason when the lead's primary need is HIPAA/BAA and they've been given the relevant pricing info.
+- **No Technical Resource**: The contact is non-technical and no engineer is mentioned or expected to be involved.
+- **Startup Plan / YC**: Early-stage company routed to the startup plan application.
+- **Support Request**: They're asking a support question, not evaluating PostHog for purchase.
+- **Existing customer inquiry**: Already a PostHog customer with a product/billing question - not a new sales opportunity.
+- **No Product Fit**: What they need isn't something PostHog does well (e.g. self-hosted requirement, industry mismatch).
+
+**Disqualification notes must be specific and copy-pasteable.** Include the key data points that justify the disqualification.
+
+Good DQ notes:
+- "30-employee e-commerce agency, $1M-$10M revenue. Marketing role, no engineer. 250K MAUs on free tier. Feature flag question answered, routed to self-serve."
+- "Bay Area nonprofit, 20K MAUs, ICP -5. Sr Dir Product, strong use case but well below $20K threshold. BAA available via Boost ($250/mo). Routed to self-serve with HIPAA + funnel guidance."
+- "15-person seed startup. Developer asking about feature flags. Free tier covers their needs. Pointed to docs + in-app support."
+
+Bad DQ notes:
+- "Not a good fit" (too vague)
+- "Small company" (which signal matters?)
+- "Routed to self-serve" (why?)
+
 ## Step 3: Write the Response Email
 
 Read `references/writing-style.md` before drafting. Key rules:
@@ -246,8 +303,39 @@ Read `references/writing-style.md` before drafting. Key rules:
 - [Installation guide](https://posthog.com/docs/getting-started/install)
 - [Pricing page](https://posthog.com/pricing)
 - [Community questions](https://posthog.com/questions)
+- [HIPAA compliance guide](https://posthog.com/docs/privacy/hipaa-compliance)
+- [BAA generator](https://posthog.com/baa)
 - In-app support button (always mention for product questions)
 - Free tier: 1M events/month, all core features included
+
+## BAA / HIPAA Pricing Reference
+
+When a lead mentions HIPAA, BAA, or healthcare data, use this pricing info:
+
+**Standard BAA (no redlines):**
+- Available on the **Boost add-on** at **$250/month** + usage-based pricing
+- Also available on Scale and Enterprise add-ons
+- The BAA can be generated at posthog.com/baa for PostHog to countersign
+
+**Custom/redlined BAA:**
+- Requires the **Enterprise plan** at **$2K/month** (paid annually) + usage-based pricing
+- Only needed if the customer wants to modify the standard BAA terms
+
+**Key framing:** Lead with Boost as the standard path. $250/month is accessible for most organizations, including nonprofits and smaller companies. Don't default to "enterprise pricing" - that scares off leads who could easily afford Boost.
+
+**Practical note for leads with mixed PHI/non-PHI data:** If only some of their funnels or data flows touch PHI, they can start tracking non-PHI activity on the free tier immediately while sorting out the BAA for the PHI-touching portions.
+
+## Non-Profit Discount Reference
+
+PostHog offers non-profit discounts on credit purchases:
+
+- **Credit purchases below $25K:** 15% discount
+- **Credit purchases $25K-$100K:** additional 5% on top of standard volume discount
+- **Credit purchases above $100K:** standard volume discounts apply (no additional non-profit discount)
+
+To qualify, the customer needs to provide proof they fit their country's definition of a non-profit entity (tax law in country of origin).
+
+**Note:** At low MAU volumes where usage stays within the free tier, the non-profit discount won't matter yet - their main cost would be the platform add-on (e.g. Boost for BAA). Mention the discount so they know it exists for when they grow into it.
 
 ## Output Format
 
@@ -255,7 +343,9 @@ When responding to the TAE, always provide:
 
 1. **Use case assessment** — Which of the six use cases this lead maps to, and why (based on persona, company, and message)
 2. **Disposition recommendation** — Qualify / Self-serve / Startup plan / Disqualify
-3. **Draft email** — The response to send, framed around the identified use case
+3. **Disqualification reason** — From the available list (required for all dispositions except Qualify for Call)
+4. **Disqualification notes** — 250 characters or fewer, specific and copy-pasteable (required for all dispositions except Qualify for Call)
+5. **Draft email** — The response to send, framed around the identified use case
 
 ## Reference Files
 
@@ -275,3 +365,4 @@ Read these before drafting responses:
 7. **Frame around problems, not products** — "Here's how to understand why users drop off" not "Here's our Product Analytics feature"
 8. **Match specificity to specificity** — Vague inbound gets pointed to resources with a clarifying question; specific technical questions get specific answers tied to their use case
 9. **Always validate URLs before presenting the draft** — Fetch every link to confirm it resolves and points to the right content. Never send a broken link.
+10. **Always provide a DQ reason and DQ notes** — For every disposition except Qualify for Call, include the disqualification reason from the available list and copy-pasteable notes (250 chars or fewer). Be specific - name concrete signals, not generic language.

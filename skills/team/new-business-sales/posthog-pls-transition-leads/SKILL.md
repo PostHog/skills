@@ -176,6 +176,58 @@ Recommend skipping when:
 - **Very low spend** — post-transition cost will be < $500/month and usage isn't growing
 - **Account looks abandoned** — no active users in last 30 days despite having credits
 
+**When recommending Skip, you MUST provide a disqualification reason and disqualification notes** so the TAE can update Salesforce directly.
+
+**Available disqualification reasons:**
+
+- BAA / DPA Request
+- Below Sales Assist Threshold - Pass
+- Below Sales Assist Threshold - Prospect
+- Billing Support Request
+- Business Closed
+- Duplicate Lead
+- Event request
+- Existing customer inquiry
+- Feedback
+- Invalid Contact Info
+- No Budget
+- No Current Need
+- No Product Fit
+- No Response - Pass
+- No Response - Prospect
+- No Technical Resource
+- Non-Commercial
+- Not a Good Fit
+- Other
+- Partnership request
+- Resource Constraints
+- Self-Hosted Requirement
+- Spam
+- Stale - autoclosed
+- Startup Plan / YC
+- Support Request
+- Using Competitor / Unsolicited RFP
+
+**How to choose the right reason for transition leads:**
+
+- **Below Sales Assist Threshold - Pass**: Post-transition spend clearly below $500/month with no growth signals. Most common for small startup rolloffs.
+- **Below Sales Assist Threshold - Prospect**: Below threshold now but usage trajectory or business growth suggests they could cross it. Worth revisiting.
+- **No Current Need**: Account looks abandoned or usage is declining - they may not continue with PostHog post-transition.
+- **Duplicate Lead**: Another PostHog org on the same domain is the real account.
+- **Existing customer inquiry**: Lead is actually a support or billing question, not a sales opportunity.
+
+**Disqualification notes must be 250 characters or fewer, specific, and copy-pasteable.** Include key billing data points.
+
+Good DQ notes:
+- "Startup rolloff, $340/mo post-credit spend. 2 users, analytics only. 12-person seed startup. Billing limit set at $400. No expansion signals."
+- "First invoice $1.1K but 80% autocapture events. Actual committed spend ~$220/mo. 5-person team, no growth trajectory."
+- "Abandoned - last active user seen 45 days ago. $18K credits remaining, expiring in 30 days. No engagement with onboarding."
+
+Bad DQ notes:
+- "Low spend" (how low? what's driving it?)
+- "Small company" (which signal matters?)
+- "Not worth pursuing" (why not?)
+
 ### Play: Urgent Outreach
 
 Recommend urgent outreach when:
@@ -212,6 +264,8 @@ When responding to the TAE, provide:
 1. **Lead type** — Startup rolloff or high first invoice (or both)
 2. **Company snapshot** — Brief: what they do, size, stage. Skip the deep dive unless needed.
 3. **Vitally account summary** — Users (count, active, roles), products in use, health score
+3a. **Disqualification reason** — From the available list (required when recommending Skip)
+3b. **Disqualification notes** — 250 characters or fewer, specific and copy-pasteable (required when recommending Skip)
 4. **Billing analysis** — This is the core of the output. Credits remaining, expiry date, current spend, post-transition cost, credit utilization, optimization opportunities.
 5. **Recommended play** — Outreach / Light Touch / Skip / Urgent, with reasoning
 6. **Draft email** — Using the appropriate hooks for the lead type
@@ -244,3 +298,21 @@ One follow-up is fine. Keep it short — reference the original email and the up
 5. **Single users still matter here.** Unlike big fish (where 1 user = low priority), a single user spending $2K/month is absolutely worth outreach.
 6. **Lead with the Slack channel, not billing.** The first sentence of the email should be about the Slack channel and why it's useful for them. Billing context comes after.
 7. **Validate URLs before presenting the draft.**
+8. **Always provide a DQ reason and DQ notes when recommending Skip.** Include the disqualification reason from the available list and copy-pasteable notes (250 chars or fewer). Be specific - name concrete billing data and signals, not generic language.
+
+## BAA / HIPAA Pricing Reference
+
+When a transition lead mentions HIPAA, BAA, or healthcare data:
+
+- **Standard BAA (no redlines):** Boost add-on at **$250/month** + usage-based pricing. BAA can be generated at posthog.com/baa.
+- **Custom/redlined BAA:** Enterprise plan at **$2K/month** (paid annually) + usage-based pricing.
+
+Lead with Boost as the standard path. Don't default to "enterprise pricing."
+
+## Non-Profit Discount Reference
+
+- **Credit purchases below $25K:** 15% discount
+- **Credit purchases $25K-$100K:** additional 5% on top of standard volume discount
+- **Credit purchases above $100K:** standard volume discounts apply
+
+Customer needs proof of non-profit status per their country's tax law.
