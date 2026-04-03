@@ -1,0 +1,141 @@
+name: Sync omnibus skills
+
+on:
+  schedule:
+    - cron: '0 12 * * *' # Daily at midday UTC
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch to sync skills into'
+        required: false
+        default: ''
+
+jobs:
+  sync-omnibus:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+        with:
+          app-id: ${{ secrets.GH_APP_AI_PLUGIN_RELEASER_APP_ID }}
+          private-key: ${{ secrets.GH_APP_AI_PLUGIN_RELEASER_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Download skills from PostHog release
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh release download agent-skills-latest \
+            --repo PostHog/posthog \
+            --pattern 'skills.zip' \
+            --dir /tmp
+
+      - name: Download skills from context-mill
+        run: |
+          curl -fsSL --retry 2 --retry-delay 3 \
+            -o /tmp/context-mill.zip \
+            "https://github.com/PostHog/context-mill/releases/latest/download/skills-mcp-resources.zip"
+
+      - name: Sync omnibus skills directory
+        run: |
+          MANIFEST="skills/omnibus/.sync-manifest"
+
+          # Delete only previously-synced skills (listed in manifest)
+          if [ -f "$MANIFEST" ]; then
+            while IFS= read -r dir; do
+              [ -n "$dir" ] && rm -rf "skills/omnibus/$dir"
+            done < "$MANIFEST"
+          fi
+
+          # Extract PostHog release skills
+          unzip -o /tmp/skills.zip -d skills/omnibus/
+
+          # Extract context-mill skills (nested zips, strip omnibus- prefix)
+          tmp_cm=$(mktemp -d)
+          unzip -q -o /tmp/context-mill.zip -d "$tmp_cm"
+          cm_manifest=$(mktemp)
+          while read -r inner_zip; do
+            skill_name="$(basename "$inner_zip" .zip)"
+            skill_name="${skill_name#omnibus-}"
+            echo "$skill_name" >> "$cm_manifest"
+            mkdir -p "skills/omnibus/$skill_name"
+            unzip -q -o "$inner_zip" -d "skills/omnibus/$skill_name"
+            find "skills/omnibus/$skill_name" -name 'SKILL.md' -type f -exec sed -i 's/^\(name: *\)omnibus-/\1/' {} +
+            find "skills/omnibus/$skill_name" -name 'SKILL.md' -type f -exec sed -i '/^  version: .*/d' {} +
+          done < <(find "$tmp_cm" -name 'omnibus-*.zip' -type f)
+          rm -rf "$tmp_cm"
+
+          # Rebuild manifest from both sources
+          {
+            zipinfo -1 /tmp/skills.zip | grep '/' | cut -d'/' -f1
+            cat "$cm_manifest"
+          } | sort -u > "$MANIFEST"
+          rm -f "$cm_manifest"
+
+      - name: Check for changes
+        id: check
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          git add -A skills/omnibus/
+          if git diff --cached --quiet; then
+            echo "No changes detected."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+
+          # Extract version info from both sources
+          PH_BODY=$(gh release view agent-skills-latest --repo PostHog/posthog --json body -q '.body' 2>/dev/null || echo "")
+          PH_VERSION=$(echo "$PH_BODY" | grep -oE 'agent-skills-v[0-9.]+' | head -1)
+
+          CM_TAG=$(gh release view --repo PostHog/context-mill --json tagName -q '.tagName' 2>/dev/null || echo "")
+
+          VERSIONS=""
+          [ -n "$PH_VERSION" ] && VERSIONS="$PH_VERSION"
+          [ -n "$CM_TAG" ] && VERSIONS="${VERSIONS:+$VERSIONS, }context-mill@$CM_TAG"
+          VERSIONS="${VERSIONS:-latest}"
+
+          echo "commit_message=chore: sync omnibus skills ($VERSIONS)" >> "$GITHUB_OUTPUT"
+
+      - name: Create sync branch
+        if: steps.check.outputs.has_changes == 'true'
+        id: branch
+        run: |
+          BRANCH="chore/sync-omnibus-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH"
+          git push origin "$BRANCH"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          echo "base=$BASE_REF" >> "$GITHUB_OUTPUT"
+        env:
+          BASE_REF: ${{ github.event.inputs.ref || github.ref_name }}
+
+      - name: Commit and push
+        if: steps.check.outputs.has_changes == 'true'
+        uses: planetscale/ghcommit-action@25309d8005ac7c3bcd61d3fe19b69e0fe47dbdde # v0.2.20
+        with:
+          commit_message: ${{ steps.check.outputs.commit_message }}
+          repo: ${{ github.repository }}
+          branch: ${{ steps.branch.outputs.branch }}
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Create PR with auto-merge
+        if: steps.check.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          COMMIT_MESSAGE: ${{ steps.check.outputs.commit_message }}
+          BASE_REF: ${{ steps.branch.outputs.base }}
+          HEAD_REF: ${{ steps.branch.outputs.branch }}
+        run: |
+          PR_URL=$(gh pr create \
+            --base "$BASE_REF" \
+            --head "$HEAD_REF" \
+            --title "$COMMIT_MESSAGE" \
+            --body "Automated skill sync from PostHog release and context-mill.")
+          gh pr merge "$PR_URL" --auto --squash
