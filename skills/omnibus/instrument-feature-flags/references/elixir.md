@@ -1,0 +1,47 @@
+# Elixir feature flags installation - Docs
+
+> This library was built by the community but it's being maintained by the PostHog core team since v1.0.0. Thank you to [Nick Kezhaya](https://github.com/nkezhaya) for building it originally. Thank you to [Alex Martsinovich](https://github.com/martosaur) for contributing v2.0.0.
+
+The package can be installed by adding `posthog` to your list of dependencies in `mix.exs`:
+
+Elixir
+
+PostHog AI
+
+```elixir
+def deps do
+  [
+    {:posthog, "~> 2.2.0"}
+  ]
+end
+```
+
+### Configuration
+
+config/config.exs
+
+PostHog AI
+
+```elixir
+config :posthog,
+  enable: true,
+  api_host: "https://us.i.posthog.com",
+  api_key: "<ph_project_token>",
+  in_app_otp_apps: [:my_app]
+```
+
+You can see all the available configuration options in the [PostHog.Config](https://hexdocs.pm/posthog/PostHog.Config.html) module.
+
+Optionally, you might want to enable the [Plug integration](https://hexdocs.pm/posthog/PostHog.Integrations.Plug.html) to automatically capture events from your Plug-based applications including Phoenix.
+
+#### Development/Test mode
+
+For a test environment, you can pass in `test_mode: true` value to the config. This causes events to be dropped instead of sent to PostHog.
+
+### Community questions
+
+Ask a question
+
+### Was this page useful?
+
+HelpfulCould be better
