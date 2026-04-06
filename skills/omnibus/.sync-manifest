@@ -2,6 +2,7 @@ analyzing-experiment-session-replays
 auditing-experiments-flags
 cleaning-up-stale-feature-flags
 exploring-llm-clusters
+exploring-llm-traces
 instrument-error-tracking
 instrument-feature-flags
 instrument-integration
@@ -10,3 +11,4 @@ instrument-logs
 instrument-product-analytics
 query-examples
 signals
+skills-store
