@@ -99,6 +99,11 @@ Once you have the account ID, pull:
 1. **`get_account_full`** (with `detailLevel: "full"`) — Gets everything: MRR, health scores, traits, product usage, billing data, team assignments
 2. **`get_account_health`** — Detailed health score breakdown
 
+**Always extract these three fields for the Quick Links section:**
+- `organization_id` (in traits) → Vitally URL: `https://posthog.vitally-eu.io/customers/{organization_id}`
+- `sfdc.Id` (in traits) → Salesforce URL: `https://posthog.my.salesforce.com/{sfdc.Id}`
+- `usage_dashboard_link` (in traits) → direct Metabase usage dashboard link
+
 **Extract and analyze:**
 
 **Current billing:**
@@ -321,7 +326,7 @@ When the recommended play is Outreach or Light Touch, draft the email using the 
 All draft emails must use this blockquoted format for easy copy-paste:
 
 ```
-> **To:** [full email address - e.g. william@medallion.co]
+> **To:** [full email address - e.g. contact@acmecorp.com]
 > **Subject:** [subject line]
 >
 > [email body]
@@ -395,14 +400,14 @@ Don't reference the onboarding team at all - they clearly didn't want that engag
 
 **Example 1: Multi-user, high-growth, engaged with onboarding**
 
-> **To:** william@medallion.co
-> **Subject:** Slack channel for Medallion <> PostHog
+> **To:** team@acmecorp.com
+> **Subject:** Slack channel for Acme <> PostHog
 >
-> Hey Medallion team,
+> Hey Acme team,
 >
 > Setting up a shared Slack channel for you - with 57 people in the account across analytics, replay, and error tracking, a direct line for questions will be useful as you scale.
 >
-> One thing that might be worth exploring: Feature Flags for safe rollouts. With CredAlliance launching as a clearinghouse, gradual rollouts and instant kill switches are the kind of thing that keeps deploys boring. Happy to walk through the setup in Slack.
+> One thing that might be worth exploring: Feature Flags for safe rollouts. With your new product line launching as a platform, gradual rollouts and instant kill switches are the kind of thing that keeps deploys boring. Happy to walk through the setup in Slack.
 >
 > What's the main thing your team is trying to learn from the analytics right now?
 >
@@ -410,10 +415,10 @@ Don't reference the onboarding team at all - they clearly didn't want that engag
 
 **Example 2: Multi-user, flat spend, optimization hook**
 
-> **To:** darlan@alternativepayments.io
-> **Subject:** Slack channel for Alternative Payments <> PostHog
+> **To:** eng@example-payments.com
+> **Subject:** Slack channel for Example Payments <> PostHog
 >
-> Hey Alternative Payments team,
+> Hey Example Payments team,
 >
 > Sending over a Slack channel invite - with 42 people using analytics, flags, and replay, it'll be the fastest way to get answers on implementation or billing as things come up.
 >
@@ -425,7 +430,7 @@ Don't reference the onboarding team at all - they clearly didn't want that engag
 
 **Example 3: Single user, growing spend, never engaged**
 
-> **To:** dev@studley.ai
+> **To:** dev@example-ai.com
 > **Subject:** Your PostHog setup
 >
 > Hey,
@@ -446,6 +451,11 @@ Present the research brief as a structured report with clear sections. Use the V
 
 ```markdown
 ## [Company Name] - Onboarding Lead Research Brief
+
+### Quick Links
+- **Vitally:** [https://posthog.vitally-eu.io/customers/{organization_id}](https://posthog.vitally-eu.io/customers/{organization_id})
+- **Salesforce:** [https://posthog.my.salesforce.com/{sfdc.Id}](https://posthog.my.salesforce.com/{sfdc.Id})
+- **Usage Dashboard:** [{usage_dashboard_link}]({usage_dashboard_link}) *(or "Not available" if trait is blank)*
 
 ### Company Overview
 - **What they do:** [one sentence]
@@ -543,6 +553,29 @@ Projection: Currently at $[X]/month - projected $[X]/month in 3 months
 **Suggested angle:** [One sentence explaining why this hook was chosen and what it's designed to accomplish.]
 ```
 
+### When Processing Multiple Leads
+
+After completing all individual research briefs, output a **Summary & Priority Stack Rank** table at the top of the combined output (or as a final summary section). Rank accounts by score descending.
+
+```markdown
+## Summary & Priority Stack Rank
+
+| Rank | Account | Score | Tier | MRR | Trend | Action |
+|------|---------|-------|------|-----|-------|--------|
+| 1 | [Company] | [X]/100 | High confidence | $[X] | Growing | Outreach |
+| 2 | [Company] | [X]/100 | Moderate confidence | $[X] | Flat | Light Touch |
+| 3 | [Company] | [X]/100 | Unlikely | $[X] | Declining | Skip |
+```
+
+**Column guidance:**
+- **Score:** The final $2K+ likelihood score (0-100) with the adjusted figure if business trajectory warranted an adjustment
+- **Tier:** High confidence (80-100) / Moderate confidence (60-79) / Low confidence (40-59) / Unlikely (0-39)
+- **MRR:** Current MRR from Vitally billing data
+- **Trend:** Growing / Flat / Declining - based on billing trajectory, not just business signals
+- **Action:** Outreach / Light Touch / Skip / Wait and Watch
+
+---
+
 ## Reference Files
 
 - `references/scoring-model.md` - Full $2K+ spend likelihood scoring model with weights and criteria
@@ -561,5 +594,5 @@ Projection: Currently at $[X]/month - projected $[X]/month in 3 months
 9. **Industry context matters for the growth mapping.** How a company grows affects *how* PostHog usage grows. A platform/marketplace company gets multiplicative event growth per customer. A SaaS company gets linear growth per customer. An infrastructure company may generate heavy backend events but few replays. Map the business model to the right PostHog products.
 10. **DQ reasons must be copy-pasteable.** When recommending Skip, the DQ reason goes directly into Salesforce. Keep it under 250 characters, make it specific, and include the key data points that justify the disqualification.
 11. **Draft outreach follows the writing style guide.** Read `references/writing-style.md`. Hyphens only (never em/en dashes). No bare URLs. No feature laundry lists. One question per email. Lead with the Slack channel for multi-user accounts.
-12. **Use full email addresses.** When listing contacts or drafting outreach, always use the full email address (e.g. william@medallion.co) for easy copy-paste.
+12. **Use full email addresses.** When listing contacts or drafting outreach, always use the full email address (e.g. contact@acmecorp.com) for easy copy-paste.
 13. **Validate all URLs before presenting the draft.** Fetch every link in the email to confirm it resolves. If broken, search for the correct page or remove the link.
