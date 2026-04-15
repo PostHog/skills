@@ -81,7 +81,7 @@ Flag every open item clearly. These are the things that will make the transition
 
 ## Step 2: Pull PostHog Usage Data
 
-Run these queries in parallel via the `query-run` MCP tool. Use the `organization_id` (externalId from Vitally) to scope queries where needed.
+Run these queries in parallel via the `query-run` MCP tool. Every query must be scoped to the account's project — pass the `organization_id` (externalId from Vitally) as the `project_id` parameter in the `query-run` tool call so the events table only returns data for that account.
 
 ### 2a: Event Volume Trend (last 90 days, weekly)
 
@@ -91,6 +91,7 @@ SELECT
   count() AS event_count
 FROM events
 WHERE timestamp >= now() - INTERVAL 90 DAY
+  AND properties.$organization_id = '{externalId}'
 GROUP BY week
 ORDER BY week
 ```
@@ -103,6 +104,7 @@ This shows whether usage is growing, flat, or declining — critical context for
 SELECT event, count() AS cnt
 FROM events
 WHERE timestamp >= now() - INTERVAL 30 DAY
+  AND properties.$organization_id = '{externalId}'
   AND event NOT IN (
     '$feature_flag_called',
     '$autocapture',
@@ -132,6 +134,7 @@ SELECT
   max(timestamp) AS last_active
 FROM events
 WHERE timestamp >= now() - INTERVAL 30 DAY
+  AND properties.$organization_id = '{externalId}'
   AND person.properties.email IS NOT NULL
   AND person.properties.email != ''
 GROUP BY email
