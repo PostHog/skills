@@ -7,6 +7,7 @@ configuring-experiment-rollout
 creating-experiments
 diagnosing-failed-warehouse-syncs
 diagnosing-missing-recordings
+diagnosing-sdk-health
 exploring-autocapture-events
 exploring-llm-clusters
 exploring-llm-evaluations
