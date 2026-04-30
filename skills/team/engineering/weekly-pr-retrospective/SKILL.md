@@ -127,4 +127,4 @@ End with a `[View your retrospective](computer://...)` link to the file. Keep th
 - Never auto-rewrite the config file in the course of a normal run. The config is only written by the setup flow.
 - If the goals source cannot be fetched (renamed, private, deleted, network error), report that and offer to re-run setup — do not silently fall back to inferred themes.
 - If there are zero PRs in the last 7 days for the chosen scope, still produce the report saying so.
-- In team mode, paginate carefully if any one author exceeds the `--limit 100` window — but 100 PRs/week/person is unrealistic, so prefer a single fetch per author and only fall back to client-side filtering if a fetch returns ≥100 items.
+- In team mode, paginate carefully if any one author exceeds the `--limit 100` window — but 100 PRs/week/person can happen though, so prefer a single fetch per author and only fall back to client-side filtering if a fetch returns ≥100 items.
