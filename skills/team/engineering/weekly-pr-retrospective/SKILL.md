@@ -100,6 +100,7 @@ For each PR:
 ### Step 7 — Write the report
 
 Resolve the current ISO year-week with `date +"%G-W%V"` (e.g. `2026-W17`). Ensure `~/Development/<year-week>/` exists (create it if needed), then write the markdown file to `~/Development/<year-week>/pr-retrospective-<scope>-YYYY-MM-DD.md`, where `<scope>` is `user` in single-user mode or `team` in team mode. Use today's date for `YYYY-MM-DD`.
+Important: do not blame any of the team mates, this report is solely for ease of use and creating transparency for asking the right questions and not intended as any kind of performance report. 
 
 Structure:
 - Header with mode (single-user vs. team), the list of authors covered, the date range, total PR count, and the goals source used (issue ref or URL).
