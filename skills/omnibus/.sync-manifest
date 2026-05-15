@@ -21,6 +21,7 @@ exploring-llm-traces
 feature-usage-feed
 finding-experiments
 finding-replay-for-issue
+formatting-insight-axes
 inbox-exploration
 instrument-error-tracking
 instrument-feature-flags
