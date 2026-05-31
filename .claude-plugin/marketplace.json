@@ -8,6 +8,85 @@
   },
   "plugins": [
     {
+      "name": "posthog-all",
+      "source": "./skills/posthog/all",
+      "description": "Complete set of all PostHog skills for agents and power users",
+      "keywords": [
+        "posthog",
+        "analytics",
+        "feature-flags",
+        "llm",
+        "logs",
+        "error-tracking"
+      ]
+    },
+    {
+      "name": "posthog-error-tracking",
+      "source": "./skills/posthog/error-tracking",
+      "description": "Skills for setting up PostHog error tracking across frameworks",
+      "keywords": [
+        "posthog",
+        "error-tracking",
+        "exceptions",
+        "monitoring"
+      ]
+    },
+    {
+      "name": "posthog-feature-flags",
+      "source": "./skills/posthog/feature-flags",
+      "description": "Skills for implementing PostHog feature flags across frameworks",
+      "keywords": [
+        "posthog",
+        "feature-flags",
+        "experiments",
+        "ab-testing"
+      ]
+    },
+    {
+      "name": "posthog-integration",
+      "source": "./skills/posthog/integration",
+      "description": "Skills for integrating PostHog analytics into your application",
+      "keywords": [
+        "posthog",
+        "analytics",
+        "integration",
+        "tracking"
+      ]
+    },
+    {
+      "name": "posthog-llm-analytics",
+      "source": "./skills/posthog/llm-analytics",
+      "description": "Skills for monitoring LLM usage with PostHog",
+      "keywords": [
+        "posthog",
+        "llm",
+        "ai",
+        "observability"
+      ]
+    },
+    {
+      "name": "posthog-logs",
+      "source": "./skills/posthog/logs",
+      "description": "Skills for setting up PostHog log capture",
+      "keywords": [
+        "posthog",
+        "logs",
+        "logging",
+        "observability"
+      ]
+    },
+    {
+      "name": "posthog-tools",
+      "source": "./skills/posthog/tools-and-features",
+      "description": "Utility skills for working with PostHog (HogQL, etc.)",
+      "keywords": [
+        "posthog",
+        "hogql",
+        "analytics",
+        "tools"
+      ]
+    },
+    {
       "name": "posthog-debugger",
       "source": "./skills/team/customer-success/posthog-debugger",
       "description": "Debug and inspect PostHog implementations on any website",
@@ -28,25 +107,25 @@
       ]
     },
     {
-      "name": "posthog-inbound-lead",
-      "source": "./skills/team/new-business-sales/posthog-inbound-lead",
-      "description": "Evaluate and respond to inbound PostHog sales leads from Salesforce",
-      "keywords": [
-        "posthog",
-        "sales",
-        "leads",
-        "inbound"
-      ]
-    },
-    {
       "name": "posthog-pls-big-fish",
-      "source": "./skills/team/new-business-sales/posthog-pls-big-fish",
+      "source": "./skills/team/new-business-sales/big-fish-lead",
       "description": "Research, qualify, and suggest outreach for PostHog big fish product-led leads",
       "keywords": [
         "posthog",
         "sales",
         "leads",
         "outbound"
+      ]
+    },
+    {
+      "name": "posthog-inbound-lead",
+      "source": "./skills/team/new-business-sales/inbound-lead",
+      "description": "Evaluate and respond to inbound PostHog sales leads from Salesforce",
+      "keywords": [
+        "posthog",
+        "sales",
+        "leads",
+        "inbound"
       ]
     }
   ]
