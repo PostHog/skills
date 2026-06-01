@@ -19,8 +19,10 @@ Supported platforms: React, Next.js, React Native, Web (JavaScript), Node.js, Py
 Follow these steps IN ORDER:
 
 STEP 1: Analyze the codebase and detect the platform.
-  - Look for dependency files (package.json, requirements.txt, go.mod, Gemfile, composer.json, etc.) to determine the language and framework.
-  - Look for lockfiles (pnpm-lock.yaml, package-lock.json, yarn.lock, bun.lockb) to determine the package manager.
+  -
+ Look for dependency files (package.json, pubspec.yaml, Podfile, Package.swift, requirements.txt, go.mod, Gemfile, composer.json, mix.exs, etc.) to determine the language and framework.
+  -
+ Look for lockfiles (pnpm-lock.yaml, package-lock.json, yarn.lock, bun.lockb, go.sum, pubspec.lock, Podfile.lock, Package.resolved, mix.lock) to determine the package manager.
   - Check for existing PostHog setup (SDK initialization, env vars, etc.). If PostHog is already installed and initialized, skip to STEP 3.
 
 STEP 2: Research instrumentation. (Skip if PostHog is already set up.)
@@ -65,9 +67,11 @@ STEP 6: Set up environment variables.
 - `references/java.md` - Java feature flags installation - docs
 - `references/rust.md` - Rust feature flags installation - docs
 - `references/dotnet.md` - .net feature flags installation - docs
+- `references/dotnet.md` - .net - docs
 - `references/elixir.md` - Elixir feature flags installation - docs
 - `references/android.md` - Android feature flags installation - docs
 - `references/ios.md` - Ios feature flags installation - docs
+- `references/usage.md` - Ios SDK usage - docs
 - `references/flutter.md` - Flutter feature flags installation - docs
 - `references/api.md` - API feature flags installation - docs
 - `references/next-js.md` - Next.js - docs

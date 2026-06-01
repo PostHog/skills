@@ -1,6 +1,6 @@
 # Traces - Docs
 
-Traces are a collection of [generations](/docs/ai-observability/generations.md) and [spans](/docs/ai-observability/spans.md) that capture a full interaction between a user and an LLM. The [traces tab](https://app.posthog.com/llm-analytics/traces) lists them along with the properties autocaptured by PostHog like the person, total cost, total latency, and more.
+Traces are a collection of [generations](/docs/ai-observability/generations.md) and [spans](/docs/ai-observability/spans.md) that capture a full interaction between a user and an LLM. The [traces tab](https://app.posthog.com/ai-observability/traces) lists them along with the properties autocaptured by PostHog like the person, total cost, total latency, and more.
 
 ## Sessions vs Traces
 
@@ -35,7 +35,7 @@ PostHog can classify the sentiment of user messages in a trace as negative, neut
 
 ## Search traces with PostHog AI
 
-[PostHog AI](/docs/posthog-ai.md) can search and analyze your LLM traces using natural language. When you're on an [AI Observability page](https://app.posthog.com/llm-analytics), PostHog AI automatically switches to its AI Observability mode, giving it access to tools for searching traces by date range, model, cost, error status, and other properties.
+[PostHog AI](/docs/posthog-ai.md) can search and analyze your LLM traces using natural language. When you're on an [AI Observability page](https://app.posthog.com/ai-observability), PostHog AI automatically switches to its AI Observability mode, giving it access to tools for searching traces by date range, model, cost, error status, and other properties.
 
 Example prompts you can try:
 

@@ -98,7 +98,7 @@
 
     ![LLM generations in PostHog](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250807_syne_ecd0801880.png)![LLM generations in PostHog](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250807_syjm_5baab36590.png)
 
-    [Check for LLM events in PostHog](https://app.posthog.com/llm-analytics/generations)
+    [Check for LLM events in PostHog](https://app.posthog.com/ai-observability/generations)
 
 5.  4
 

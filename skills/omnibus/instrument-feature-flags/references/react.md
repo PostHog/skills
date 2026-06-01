@@ -41,7 +41,7 @@
     PostHog AI
 
     ```bash
-    VITE_POSTHOG_TOKEN=<ph_project_token>
+    VITE_POSTHOG_PROJECT_TOKEN=<ph_project_token>
     VITE_POSTHOG_HOST=https://us.i.posthog.com
     ```
 
@@ -69,7 +69,7 @@
     } as const
     createRoot(document.getElementById('root')).render(
       <StrictMode>
-        <PostHogProvider apiKey={import.meta.env.VITE_POSTHOG_TOKEN} options={options}>
+        <PostHogProvider apiKey={import.meta.env.VITE_POSTHOG_PROJECT_TOKEN} options={options}>
           <App />
         </PostHogProvider>
       </StrictMode>

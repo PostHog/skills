@@ -63,7 +63,7 @@ bun add posthog-js @posthog/react
 PostHog AI
 
 ```shell
-VITE_POSTHOG_TOKEN=<ph_project_token>
+VITE_POSTHOG_PROJECT_TOKEN=<ph_project_token>
 VITE_POSTHOG_HOST=https://us.i.posthog.com
 ```
 
@@ -81,7 +81,7 @@ import './index.css'
 import App from './App.jsx'
 import posthog from 'posthog-js';
 import { PostHogProvider } from '@posthog/react'
-posthog.init(import.meta.env.VITE_POSTHOG_TOKEN, {
+posthog.init(import.meta.env.VITE_POSTHOG_PROJECT_TOKEN, {
   api_host: import.meta.env.VITE_POSTHOG_HOST,
   defaults: '2026-01-30',
 });
@@ -120,7 +120,7 @@ PostHog AI
 // src/index.js
 import posthog from 'posthog-js';
 import { PostHogProvider} from '@posthog/react'
-posthog.init(process.env.REACT_APP_PUBLIC_POSTHOG_TOKEN, {
+posthog.init(process.env.REACT_APP_PUBLIC_POSTHOG_PROJECT_TOKEN, {
   api_host: process.env.REACT_APP_PUBLIC_POSTHOG_HOST,
   defaults: '2026-01-30',
 });

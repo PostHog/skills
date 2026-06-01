@@ -1,4 +1,4 @@
-# Nuxt error tracking installation (v3.7 and above) - Docs
+# Nuxt Error Tracking installation (v3.7 and above) - Docs
 
 1.  1
 
