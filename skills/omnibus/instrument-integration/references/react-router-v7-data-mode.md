@@ -49,7 +49,7 @@ This guide walks you through setting up PostHog for React Router V7 in data mode
     PostHog AI
 
     ```shell
-    VITE_POSTHOG_TOKEN=<ph_project_token>
+    VITE_POSTHOG_PROJECT_TOKEN=<ph_project_token>
     VITE_POSTHOG_HOST=https://us.i.posthog.com
     ```
 
@@ -72,7 +72,7 @@ This guide walks you through setting up PostHog for React Router V7 in data mode
     import Root, { RootErrorBoundary } from "./app/root";
     import posthog from 'posthog-js';
     import { PostHogProvider } from '@posthog/react'
-    posthog.init(import.meta.env.VITE_POSTHOG_TOKEN, {
+    posthog.init(import.meta.env.VITE_POSTHOG_PROJECT_TOKEN, {
       api_host: import.meta.env.VITE_POSTHOG_HOST,
       defaults: '2026-01-30',
     });
@@ -329,7 +329,7 @@ This guide walks you through setting up PostHog for React Router V7 in data mode
     PostHog AI
 
     ```jsx
-    posthog.init(import.meta.env.VITE_POSTHOG_TOKEN, {
+    posthog.init(import.meta.env.VITE_POSTHOG_PROJECT_TOKEN, {
       api_host: import.meta.env.VITE_POSTHOG_HOST,
       defaults: '2026-01-30',
       __add_tracing_headers: [ window.location.host, 'localhost' ],
