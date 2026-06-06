@@ -8,6 +8,18 @@
   },
   "plugins": [
     {
+      "name": "impersonation-toolkit",
+      "source": "./skills/team/customer-success/impersonation-toolkit",
+      "description": "Run safer impersonation-scoped audits against a customer's PostHog project via Claude Code + the PostHog MCP plugin. Read-only by default; prompts before any mutative MCP call.",
+      "keywords": [
+        "posthog",
+        "impersonation",
+        "audit",
+        "customer-success",
+        "experiments"
+      ]
+    },
+    {
       "name": "posthog-debugger",
       "source": "./skills/team/customer-success/posthog-debugger",
       "description": "Debug and inspect PostHog implementations on any website",
