@@ -9,7 +9,6 @@
       "mcp__plugin_posthog_posthog__*-search",
       "mcp__plugin_posthog_posthog__query-*",
       "mcp__plugin_posthog_posthog__read-*",
-      "mcp__plugin_posthog_posthog__execute-sql",
       "mcp__plugin_posthog_posthog__*-stats",
       "mcp__plugin_posthog_posthog__*-counts",
       "mcp__plugin_posthog_posthog__*-count",
@@ -39,11 +38,12 @@
       "mcp__plugin_posthog_posthog__agent-feedback",
       "mcp__plugin_posthog_posthog__web-analytics-weekly-digest",
       "mcp__plugin_posthog_posthog__get-llm-total-costs-for-project",
-      "mcp__plugin_posthog_posthog__llma-personal-spend",
-      "mcp__plugin_posthog_posthog__*-create",
-      "mcp__plugin_posthog_posthog__create-*"
+      "mcp__plugin_posthog_posthog__llma-personal-spend"
     ],
     "ask": [
+      "mcp__plugin_posthog_posthog__execute-sql",
+      "mcp__plugin_posthog_posthog__*-create",
+      "mcp__plugin_posthog_posthog__create-*",
       "mcp__plugin_posthog_posthog__*-update",
       "mcp__plugin_posthog_posthog__*-update-*",
       "mcp__plugin_posthog_posthog__*-partial-update",

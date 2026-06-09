@@ -67,12 +67,12 @@ The toolkit relies on two independent layers of defense — both have to fail fo
 
 2. **Claude Code permission rules (client-side).** `assets/settings.local.json` is copied into every customer folder on each run as `.claude/settings.local.json`. It defines two lists:
 
-   - **`allow`** — auto-approved patterns. Reads (list/get/retrieve/search/query/execute-sql/stats/etc.) **and creates** (`*-create`, `create-*`). We allow creates so you can spin up example experiments / dashboards / surveys in the customer's account during an audit walkthrough without clicking through prompts. The skill itself is read-only by design — creates are user-driven, not skill-driven.
-   - **`ask`** — patterns that always prompt for explicit confirmation: updates, deletes, archives, plus 7 specific exact-name overrides for destructive `*-create` tools that the broad pattern doesn't catch (e.g. `feature-flags-bulk-delete-create`).
+   - **`allow`** — auto-approved patterns. Strictly reads — list/get/retrieve/search/query/stats/counts/etc.
+   - **`ask`** — patterns that always prompt for explicit confirmation: updates, deletes, archives, creates (`*-create`, `create-*`), and `execute-sql`. The skill itself is read-only by design — creates and SQL are user-driven (e.g. spinning up an example experiment during a demo, or running an ad-hoc HogQL query), and require an explicit one-click approval each time. 7 specific exact-name overrides for destructive `*-create` tools (e.g. `feature-flags-bulk-delete-create`) remain even though the broad `*-create` pattern now covers them — they serve as documentation of the known-destructive set.
 
    Anything not matched by either list falls through to Claude Code's default behavior (prompt).
 
-The combination means: even if you forget to switch impersonation to read-only, mutative operations still surface as a prompt before they fire. And even if a tool slips through the prompt logic, a read-only token rejects it server-side.
+The combination means: every mutative operation surfaces as a prompt before it fires (client-side defense), AND if a tool somehow slipped through, the read-only impersonation token rejects the write at the API layer (server-side defense). Both have to fail for an unwanted change to land.
 
 Updates to the permission template ship via `claude plugin update`.
 
