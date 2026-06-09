@@ -57,7 +57,10 @@ cat <<EOF
 
 STEP 1: Impersonate the customer's user in Django Admin
   - Open PostHog Django Admin in your browser
-  - Find the user → click "Impersonate" → select read+write scope
+  - Find the user → click "Impersonate" → select read-only scope
+    (read+write is only needed if you'll create something in their account
+    during the audit — e.g. an example experiment or dashboard. Default
+    to read-only.)
   - Keep that browser tab open through the whole audit
 
 EOF
