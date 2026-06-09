@@ -52,21 +52,29 @@ impersonate-audit givebutter
 The script will:
 
 1. Create (or reuse) `~/impersonate/<customer-slug>/` and refresh the permissions config from the plugin's template
-2. Pause and remind you to impersonate the customer's user in Django Admin (manual step — pick read+write)
+2. Pause and remind you to impersonate the customer's user in Django Admin (manual step — pick **read-only** by default; only pick read+write if you'll actually need to create something in the customer's account during the audit, e.g. an example experiment or dashboard)
 3. Launch Claude Code in the folder
 4. Inside Claude Code: run `/mcp`, find the `posthog` plugin, **clear authentication** then **authenticate** — this binds a fresh token from your active impersonation session
 5. Sanity check by asking Claude `what project am I in?` — should be the customer's project, not yours
 6. Run the audit by asking e.g. `audit <customer>'s experiment named "<experiment name>"` — the `experiment-audit` skill auto-triggers
 7. On exit, the script auto-disables the posthog plugin if it's still connected and reminds you to log out of Django Admin
 
-## How permissions work
+## Security model
 
-`assets/settings.local.json` is copied into every customer folder on each run as `.claude/settings.local.json`. It defines two lists:
+The toolkit relies on two independent layers of defense — both have to fail for an unwanted mutation to land in a customer's account:
 
-- **`allow`** — auto-approved patterns (reads + safe creates). No prompts.
-- **`ask`** — patterns that always prompt for explicit confirmation (updates, deletes, archives, plus specific destructive `*-create` tools the PostHog MCP exposes).
+1. **Impersonation token scope (server-side).** When you impersonate a user in Django Admin and select **read-only**, PostHog's OAuth authorization server downgrades every `:write` scope to `:read` before minting the access token. Even if a client requests broad scopes, the resulting token literally cannot write. This is enforced server-side, not by the client. Default to read-only impersonation; only escalate to read+write when you need to create something in the customer's account.
 
-Updates to the template ship via `claude plugin update`.
+2. **Claude Code permission rules (client-side).** `assets/settings.local.json` is copied into every customer folder on each run as `.claude/settings.local.json`. It defines two lists:
+
+   - **`allow`** — auto-approved patterns. Reads (list/get/retrieve/search/query/execute-sql/stats/etc.) **and creates** (`*-create`, `create-*`). We allow creates so you can spin up example experiments / dashboards / surveys in the customer's account during an audit walkthrough without clicking through prompts. The skill itself is read-only by design — creates are user-driven, not skill-driven.
+   - **`ask`** — patterns that always prompt for explicit confirmation: updates, deletes, archives, plus 7 specific exact-name overrides for destructive `*-create` tools that the broad pattern doesn't catch (e.g. `feature-flags-bulk-delete-create`).
+
+   Anything not matched by either list falls through to Claude Code's default behavior (prompt).
+
+The combination means: even if you forget to switch impersonation to read-only, mutative operations still surface as a prompt before they fire. And even if a tool slips through the prompt logic, a read-only token rejects it server-side.
+
+Updates to the permission template ship via `claude plugin update`.
 
 ## Updating
 
