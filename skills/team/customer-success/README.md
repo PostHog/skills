@@ -7,3 +7,4 @@
 | [User Deep Dive](user-deep-dive/) | Investigate user PostHog usage and prepare outreach |
 | [Workload Analysis](workload-analysis/) | Break down an account in Vitally to understand feature coverage and library usage (with visuals) |
 | [PostHog Onboarding](posthog-onboarding/) | Create a customer facing implementation/event clean-up plan based on industry standards |
+| [Monthly to Annual](monthly-to-annual/) | Build the case for converting a monthly/PAYG customer to an annual prepaid credit plan — invoice trajectory + handbook discount tiers + confounding-variable scan (Slack/Gmail/Granola) + Exa momentum anchors + rep-voice-matched Slack draft |
