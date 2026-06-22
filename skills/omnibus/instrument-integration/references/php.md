@@ -508,7 +508,9 @@ PostHog::withContext([
 });
 ```
 
-You can extract PostHog context from frontend tracing headers with `contextFromHeaders()`:
+You can extract PostHog context from frontend tracing headers with `contextFromHeaders()`. If you're using [PostHog JS](/docs/libraries/js.md) on the frontend, configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your PHP backend hostname so browser requests include the session and distinct ID headers.
+
+Then read the incoming headers on the server:
 
 PHP
 
@@ -524,6 +526,8 @@ PostHog::withContext($context, function () {
 ```
 
 Call `PostHog::getContext()` to read the currently active context. Pass `['fresh' => true]` as the third argument to `withContext()` if you don't want to inherit any existing context.
+
+Tracing headers are client-controlled analytics context, not authentication or authorization. Pass an authenticated `distinctId` explicitly for security-sensitive server-side decisions.
 
 ## Error tracking
 
@@ -581,7 +585,7 @@ All possible options below:
 | verify_batch_events_requestType: BooleanDefault: true | Whether to verify successful delivery of batch events (true, synchronous) or fire and forget (false, asynchronous) with the lib_curl consumer. |
 | feature_flag_request_timeout_msType: IntegerDefault: 3000 | Request timeout for feature flags in milliseconds. |
 | maximum_backoff_durationType: IntegerDefault: 10000 | Request retry backoff. Retries stop after this duration is hit. |
-| consumerType: StringDefault: lib_curl | One of socket, file, lib_curl, and fork_curl. Determines what transport option to use for analytics capture. |
+| consumerType: StringDefault: lib_curl | One of socket, file, lib_curl, fork_curl, and noop. Determines what transport option to use for analytics capture. |
 | debugType: BooleanDefault: false | Output debug logs or not. |
 | max_queue_sizeType: IntegerDefault: 1000 | Maximum number of events to queue before rejecting new events. Applies to queued consumers. |
 | batch_sizeType: IntegerDefault: 100 | Number of queued events to send in each batch. Applies to queued consumers. |
