@@ -1,6 +1,6 @@
 # PostHog Node.js SDK
 
-**SDK Version:** 5.36.2
+**SDK Version:** <version>
 
 PostHog Node.js SDK allows you to capture events and send them to PostHog from your Node.js applications.
 
@@ -563,6 +563,37 @@ client.groupIdentify({
 
 ---
 
+#### groupIdentifyImmediate()
+
+**Release Tag:** public
+
+Create or update a group and its properties immediately (synchronously).
+
+### Parameters
+
+- **`{ groupType, groupKey, properties, distinctId, disableGeoip, }`** (`GroupIdentifyMessage`)
+
+### Returns
+
+- `Promise<void>`
+
+### Examples
+
+```node
+// Immediately create or update a company group
+await client.groupIdentifyImmediate({
+  groupType: 'company',
+  groupKey: 'acme-corp',
+  properties: {
+    name: 'Acme Corporation',
+    industry: 'Technology',
+    employee_count: 500
+  }
+})
+```
+
+---
+
 #### identify()
 
 **Release Tag:** public
@@ -633,6 +664,57 @@ await client.identifyImmediate({
     name: 'John Doe',
     email: 'john@example.com'
   }
+})
+```
+
+---
+
+#### setPersonProperties()
+
+**Release Tag:** public
+
+Set properties on a person profile.
+
+### Parameters
+
+- **`{ distinctId, properties, propertiesOnce }`** (`SetPersonPropertiesMessage`)
+
+### Returns
+
+- `void`
+
+### Examples
+
+```node
+client.setPersonProperties({
+  distinctId: 'user_123',
+  properties: { plan: 'premium' },
+  propertiesOnce: { first_seen: '2026-06-15' }
+})
+```
+
+---
+
+#### unsetPersonProperties()
+
+**Release Tag:** public
+
+Remove properties from a person profile.
+
+### Parameters
+
+- **`{ distinctId, properties }`** (`UnsetPersonPropertiesMessage`)
+
+### Returns
+
+- `void`
+
+### Examples
+
+```node
+client.unsetPersonProperties({
+  distinctId: 'user_123',
+  properties: ['plan', 'email']
 })
 ```
 
