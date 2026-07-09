@@ -408,7 +408,7 @@ Evaluating feature flags requires making a request to PostHog for each flag. How
 
 It is best practice to use local evaluation flags when possible, since this enables you to resolve flags faster and with fewer API calls.
 
-To load feature flag definitions for local evaluation, initialize the SDK with your feature flags secure API key as `personalAPIKey`:
+To load feature flag definitions for local evaluation, initialize the SDK with your secret API key as `personalAPIKey`:
 
 PHP
 
@@ -418,11 +418,11 @@ PostHog AI
 PostHog::init(
     '<ph_project_token>',
     ['host' => 'https://us.i.posthog.com'],
-    personalAPIKey: 'your feature flags secure API key'
+    personalAPIKey: 'your secret API key'
 );
 ```
 
-For details on how to implement local evaluation, see our [local evaluation guide](/docs/feature-flags/local-evaluation.md).
+For details on how to implement local evaluation, see our [local evaluation guide](/docs/feature-flags/local-evaluation.md). For distributed or stateless PHP applications, use `flag_definition_cache_provider` to share flag definitions across workers or requests. See [local evaluation in distributed environments](/docs/feature-flags/local-evaluation/distributed-environments?tab=PHP.md).
 
 ### Experiments (A/B tests)
 
@@ -508,7 +508,9 @@ PostHog::withContext([
 });
 ```
 
-You can extract PostHog context from frontend tracing headers with `contextFromHeaders()`:
+You can extract PostHog context from frontend tracing headers with `contextFromHeaders()`. If you're using [PostHog JS](/docs/libraries/js.md) on the frontend, configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your PHP backend hostname so browser requests include the session and distinct ID headers.
+
+Then read the incoming headers on the server:
 
 PHP
 
@@ -524,6 +526,8 @@ PostHog::withContext($context, function () {
 ```
 
 Call `PostHog::getContext()` to read the currently active context. Pass `['fresh' => true]` as the third argument to `withContext()` if you don't want to inherit any existing context.
+
+Tracing headers are client-controlled analytics context, not authentication or authorization. Pass an authenticated `distinctId` explicitly for security-sensitive server-side decisions.
 
 ## Error tracking
 
@@ -580,8 +584,9 @@ All possible options below:
 | timeoutType: IntegerDefault: 10000 | Request timeout in milliseconds. |
 | verify_batch_events_requestType: BooleanDefault: true | Whether to verify successful delivery of batch events (true, synchronous) or fire and forget (false, asynchronous) with the lib_curl consumer. |
 | feature_flag_request_timeout_msType: IntegerDefault: 3000 | Request timeout for feature flags in milliseconds. |
+| flag_definition_cache_providerType: PostHog\\FlagDefinitionCacheProviderDefault: null | Provider for distributed local-evaluation flag definition caching. See [local evaluation in distributed environments](/docs/feature-flags/local-evaluation/distributed-environments?tab=PHP.md). |
 | maximum_backoff_durationType: IntegerDefault: 10000 | Request retry backoff. Retries stop after this duration is hit. |
-| consumerType: StringDefault: lib_curl | One of socket, file, lib_curl, and fork_curl. Determines what transport option to use for analytics capture. |
+| consumerType: StringDefault: lib_curl | One of socket, file, lib_curl, fork_curl, and noop. Determines what transport option to use for analytics capture. |
 | debugType: BooleanDefault: false | Output debug logs or not. |
 | max_queue_sizeType: IntegerDefault: 1000 | Maximum number of events to queue before rejecting new events. Applies to queued consumers. |
 | batch_sizeType: IntegerDefault: 100 | Number of queued events to send in each batch. Applies to queued consumers. |
@@ -599,6 +604,18 @@ All possible options below:
 | excluded_exceptionsType: Array of class stringsDefault: [] | Throwable classes to skip during automatic capture. |
 | max_framesType: IntegerDefault: 20 | Maximum number of stack frames included in $exception_list. |
 | context_providerType: Callable or nullDefault: null | Callback that returns distinctId and extra event properties for automatic captures. |
+
+## Flushing and shutting down
+
+Call `PostHog::flush()` to send queued events without closing resources. When a script or long-running worker stops, call `PostHog::shutdown()` instead; it flushes queued events and releases resources held by providers such as `flag_definition_cache_provider`.
+
+PHP
+
+PostHog AI
+
+```php
+PostHog::shutdown();
+```
 
 ## Debug mode
 
