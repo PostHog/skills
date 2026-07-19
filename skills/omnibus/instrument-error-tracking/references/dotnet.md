@@ -8,7 +8,7 @@ The `PostHog` package supports any .NET platform that targets .NET Standard 2.1 
 
 > **Note:** We actively test with ASP.NET Core. Other platforms should work but haven't been specifically tested. If you encounter issues, please [report them on GitHub](https://github.com/PostHog/posthog-dotnet/issues).
 
-> **Not supported:** Classic UWP (requires .NET Standard 2.0 only). Microsoft has [deprecated UWP](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/migrate-to-windows-app-sdk/migrate-to-windows-app-sdk-ovw) in favor of the Windows App SDK. For Unity projects, see our dedicated [Unity SDK](/docs/libraries/unity.md) (currently in beta).
+> **Not supported:** Classic UWP (requires .NET Standard 2.0 only). Microsoft has [deprecated UWP](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/migrate-to-windows-app-sdk/migrate-to-windows-app-sdk-ovw) in favor of the Windows App SDK. For Unity projects, see our dedicated [Unity SDK](/docs/libraries/unity.md).
 
 Terminal
 
@@ -287,9 +287,47 @@ posthog.CapturePageView(
     HttpContext.Request.GetDisplayUrl());
 ```
 
+## Request context
+
+For ASP.NET Core apps using `PostHog.AspNetCore`, add request context middleware before routes that call PostHog. This reads incoming PostHog tracing headers and attaches request metadata to captures, exceptions, and feature flag evaluation inside the request.
+
+Program.cs
+
+PostHog AI
+
+```csharp
+using PostHog;
+using PostHog.AspNetCore;
+var builder = WebApplication.CreateBuilder(args);
+builder.AddPostHog();
+var app = builder.Build();
+app.UsePostHogRequestContext();
+```
+
+If you're using [PostHog JS](/docs/libraries/js.md) on the frontend, configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your ASP.NET Core backend hostname so browser requests include the session and distinct ID headers.
+
+The middleware reads `X-PostHog-Distinct-Id` and `X-PostHog-Session-Id` as request-scoped analytics context. It also adds request metadata such as `$current_url`, `$request_method`, `$request_path`, `$user_agent`, and `$ip`. Explicit distinct IDs and event properties always override request context.
+
+Tracing headers are client-controlled analytics context, not authentication or authorization. For security-sensitive server-side decisions, pass an authenticated distinct ID explicitly. You can ignore tracing headers while still collecting request metadata:
+
+C#
+
+PostHog AI
+
+```csharp
+app.UsePostHogRequestContext(options =>
+{
+    options.UseTracingHeaders = false;
+});
+```
+
+Request-context overloads like `posthog.Capture("checkout started")` and `posthog.EvaluateFlagsAsync()` use the current request distinct ID when one is available.
+
 ## Error tracking
 
 You can manually capture exceptions using `CaptureException`. This sends a `$exception` event with stack frames, inner exceptions, aggregate exceptions, source context when available, and .NET runtime metadata.
+
+File names, line numbers, and source context depend on debug information already available from the captured .NET stack trace. PostHog doesn't support uploading .NET PDB files yet, so production builds without runtime-accessible debug information may show less detailed stack frames.
 
 C#
 
@@ -699,6 +737,12 @@ if (variant == "variant-name")
 ```
 
 It's also possible to [run experiments without using feature flags](/docs/experiments/running-experiments-without-feature-flags.md).
+
+## AI observability
+
+`PostHog.AI` adds [AI observability](/docs/ai-observability.md) for .NET applications using OpenAI or Azure OpenAI. It is currently pre-release, so expect breaking changes before a stable release.
+
+For installation instructions, see the [OpenAI guide for .NET](/docs/ai-observability/installation/openai.md#net-support) or the [Azure OpenAI guide for .NET](/docs/ai-observability/installation/azure-openai.md#net-support).
 
 ## GeoIP properties
 
