@@ -8,7 +8,7 @@ This guide walks you through integrating PostHog into your Rails app using the [
 
 Install PostHog for Rails in seconds with our wizard by running this prompt with [LLM coding agents](/blog/envoy-wizard-llm-agent.md) like Cursor and Bolt, or by running it in your terminal.
 
-`npx @posthog/wizard@latest`
+`npx @posthog/wizard`
 
 [Learn more](/wizard.md)
 
@@ -22,6 +22,7 @@ Or, to integrate manually, continue with the rest of this guide.
 -   **Smart filtering** – Excludes common Rails exceptions (404s, etc.) by default
 -   **Request context** – Adds request metadata and optional PostHog tracing header identity/session context to captured events
 -   **Rails 7.0+ error reporter** – Integrates with Rails' built-in error reporting
+-   **Log forwarding** – Optionally forwards `Rails.logger` output to [PostHog Logs](/docs/logs.md) over OpenTelemetry, automatically correlated with request context (Ruby 3.3+)
 
 ## Installation
 
@@ -32,7 +33,7 @@ Gemfile
 PostHog AI
 
 ```ruby
-gem 'posthog-ruby'
+gem 'posthog-ruby', require: 'posthog'
 gem 'posthog-rails'
 ```
 
@@ -193,6 +194,10 @@ PostHog Rails automatically applies request-scoped context to events captured du
 
 When `use_tracing_headers` is enabled, PostHog tracing headers (`X-PostHog-Distinct-Id` and `X-PostHog-Session-Id`) are also used as default `distinct_id` and `$session_id` values. Explicit `distinct_id` and properties passed to `PostHog.capture` always take precedence.
 
+If you're using [PostHog JS](/docs/libraries/js.md) on the frontend, configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your Rails backend hostname so browser requests include the session and distinct ID headers.
+
+Tracing headers are client-controlled analytics context, not authentication or authorization. Pass an authenticated `distinct_id` explicitly for security-sensitive server-side decisions.
+
 Disable tracing header identity/session capture if you do not want client-supplied tracing headers used for server-side events. Request metadata is still captured:
 
 Ruby
@@ -202,6 +207,10 @@ PostHog AI
 ```ruby
 PostHog::Rails.config.use_tracing_headers = false
 ```
+
+## Logs
+
+To set up [PostHog Logs](/docs/logs.md) in your Rails app, follow the [Ruby on Rails logs installation guide](/docs/logs/installation/ruby-on-rails.md). The integration forwards `Rails.logger` output to PostHog Logs over OpenTelemetry, automatically correlated with each request's distinct ID and session ID. Requires Ruby 3.3+.
 
 ## Error tracking
 
