@@ -11,11 +11,92 @@ blocks (`EventsNode`, `ActionsNode`, `ExperimentDataWarehouseNode`) and the
 property-filter types are defined once under `$defs` and referenced by `$ref`.
 The schema is authoritative; the prose and examples below are guidance.
 
+## Contents
+
+- Schema
+- Mean metric
+- Funnel metric
+- Ratio metric
+- Retention metric
+- Adding metrics to an experiment
+- Property filters
+
 ## Schema
 
 ```json
 {
   "$defs": {
+    "AccountCustomPropertyFilter": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "operator": {
+          "$ref": "#/$defs/PropertyOperator"
+        },
+        "type": {
+          "const": "account_custom_property",
+          "default": "account_custom_property",
+          "description": "Customer analytics account custom property \u2014 the key is the property definition id",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "key",
+        "operator"
+      ],
+      "title": "AccountCustomPropertyFilter",
+      "type": "object"
+    },
     "ActionsNode": {
       "additionalProperties": false,
       "properties": {
@@ -35,12 +116,15 @@ The schema is authoritative; the prose and examples below are guidance.
           "anyOf": [
             {
               "items": {
-                "anyOf": [
+                "oneOf": [
                   {
                     "$ref": "#/$defs/EventPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/PersonPropertyFilter"
+                  },
+                  {
+                    "$ref": "#/$defs/PersonMetadataPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/ElementPropertyFilter"
@@ -88,10 +172,16 @@ The schema is authoritative; the prose and examples below are guidance.
                     "$ref": "#/$defs/LogPropertyFilter"
                   },
                   {
+                    "$ref": "#/$defs/MetricPropertyFilter"
+                  },
+                  {
                     "$ref": "#/$defs/SpanPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/RevenueAnalyticsPropertyFilter"
+                  },
+                  {
+                    "$ref": "#/$defs/AccountCustomPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/WorkflowVariablePropertyFilter"
@@ -251,12 +341,15 @@ The schema is authoritative; the prose and examples below are guidance.
           "anyOf": [
             {
               "items": {
-                "anyOf": [
+                "oneOf": [
                   {
                     "$ref": "#/$defs/EventPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/PersonPropertyFilter"
+                  },
+                  {
+                    "$ref": "#/$defs/PersonMetadataPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/ElementPropertyFilter"
@@ -304,10 +397,16 @@ The schema is authoritative; the prose and examples below are guidance.
                     "$ref": "#/$defs/LogPropertyFilter"
                   },
                   {
+                    "$ref": "#/$defs/MetricPropertyFilter"
+                  },
+                  {
                     "$ref": "#/$defs/SpanPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/RevenueAnalyticsPropertyFilter"
+                  },
+                  {
+                    "$ref": "#/$defs/AccountCustomPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/WorkflowVariablePropertyFilter"
@@ -1310,12 +1409,15 @@ The schema is authoritative; the prose and examples below are guidance.
           "anyOf": [
             {
               "items": {
-                "anyOf": [
+                "oneOf": [
                   {
                     "$ref": "#/$defs/EventPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/PersonPropertyFilter"
+                  },
+                  {
+                    "$ref": "#/$defs/PersonMetadataPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/ElementPropertyFilter"
@@ -1363,10 +1465,16 @@ The schema is authoritative; the prose and examples below are guidance.
                     "$ref": "#/$defs/LogPropertyFilter"
                   },
                   {
+                    "$ref": "#/$defs/MetricPropertyFilter"
+                  },
+                  {
                     "$ref": "#/$defs/SpanPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/RevenueAnalyticsPropertyFilter"
+                  },
+                  {
+                    "$ref": "#/$defs/AccountCustomPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/WorkflowVariablePropertyFilter"
@@ -1550,12 +1658,15 @@ The schema is authoritative; the prose and examples below are guidance.
           "anyOf": [
             {
               "items": {
-                "anyOf": [
+                "oneOf": [
                   {
                     "$ref": "#/$defs/EventPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/PersonPropertyFilter"
+                  },
+                  {
+                    "$ref": "#/$defs/PersonMetadataPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/ElementPropertyFilter"
@@ -1603,10 +1714,16 @@ The schema is authoritative; the prose and examples below are guidance.
                     "$ref": "#/$defs/LogPropertyFilter"
                   },
                   {
+                    "$ref": "#/$defs/MetricPropertyFilter"
+                  },
+                  {
                     "$ref": "#/$defs/SpanPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/RevenueAnalyticsPropertyFilter"
+                  },
+                  {
+                    "$ref": "#/$defs/AccountCustomPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/WorkflowVariablePropertyFilter"
@@ -1680,12 +1797,15 @@ The schema is authoritative; the prose and examples below are guidance.
           "anyOf": [
             {
               "items": {
-                "anyOf": [
+                "oneOf": [
                   {
                     "$ref": "#/$defs/EventPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/PersonPropertyFilter"
+                  },
+                  {
+                    "$ref": "#/$defs/PersonMetadataPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/ElementPropertyFilter"
@@ -1733,10 +1853,16 @@ The schema is authoritative; the prose and examples below are guidance.
                     "$ref": "#/$defs/LogPropertyFilter"
                   },
                   {
+                    "$ref": "#/$defs/MetricPropertyFilter"
+                  },
+                  {
                     "$ref": "#/$defs/SpanPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/RevenueAnalyticsPropertyFilter"
+                  },
+                  {
+                    "$ref": "#/$defs/AccountCustomPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/WorkflowVariablePropertyFilter"
@@ -1892,12 +2018,15 @@ The schema is authoritative; the prose and examples below are guidance.
           "anyOf": [
             {
               "items": {
-                "anyOf": [
+                "oneOf": [
                   {
                     "$ref": "#/$defs/EventPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/PersonPropertyFilter"
+                  },
+                  {
+                    "$ref": "#/$defs/PersonMetadataPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/ElementPropertyFilter"
@@ -1945,10 +2074,16 @@ The schema is authoritative; the prose and examples below are guidance.
                     "$ref": "#/$defs/LogPropertyFilter"
                   },
                   {
+                    "$ref": "#/$defs/MetricPropertyFilter"
+                  },
+                  {
                     "$ref": "#/$defs/SpanPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/RevenueAnalyticsPropertyFilter"
+                  },
+                  {
+                    "$ref": "#/$defs/AccountCustomPropertyFilter"
                   },
                   {
                     "$ref": "#/$defs/WorkflowVariablePropertyFilter"
@@ -2367,6 +2502,19 @@ The schema is authoritative; the prose and examples below are guidance.
             }
           ],
           "title": "Source"
+        },
+        "threshold": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "When set, reports the percentage of users whose per-user summed/counted value reaches or exceeds this threshold. Only meaningful for sum/count math types.",
+          "title": "Threshold"
         },
         "upper_bound_percentile": {
           "anyOf": [
@@ -3400,6 +3548,76 @@ The schema is authoritative; the prose and examples below are guidance.
       "title": "MathGroupTypeIndex",
       "type": "number"
     },
+    "MetricPropertyFilter": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "operator": {
+          "$ref": "#/$defs/PropertyOperator"
+        },
+        "type": {
+          "const": "metric_attribute",
+          "default": "metric_attribute",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "key",
+        "operator"
+      ],
+      "title": "MetricPropertyFilter",
+      "type": "object"
+    },
     "MultipleBreakdownType": {
       "enum": [
         "person",
@@ -3415,6 +3633,77 @@ The schema is authoritative; the prose and examples below are guidance.
       ],
       "title": "MultipleBreakdownType",
       "type": "string"
+    },
+    "PersonMetadataPropertyFilter": {
+      "additionalProperties": false,
+      "properties": {
+        "key": {
+          "title": "Key",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "operator": {
+          "$ref": "#/$defs/PropertyOperator"
+        },
+        "type": {
+          "const": "person_metadata",
+          "default": "person_metadata",
+          "description": "Top-level columns on the persons table (e.g. created_at), not properties JSON",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "boolean"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Value"
+        }
+      },
+      "required": [
+        "key",
+        "operator"
+      ],
+      "title": "PersonMetadataPropertyFilter",
+      "type": "object"
     },
     "PersonPropertyFilter": {
       "additionalProperties": false,
@@ -4123,13 +4412,27 @@ required and controls how users with multiple start events are anchored:
 `"first_seen"` (anchor on first occurrence) or `"last_seen"` (anchor on most
 recent).
 
-### Right — 7-day retention
+The window is measured **from the start event** and bucketed by
+`retention_window_unit`, which is `"day"` or `"hour"`. The start occurrence never
+counts as its own completion — only a *distinct* later event does — so the start
+and completion events may be the same:
+
+- **Different events** (e.g. `$pageview` → `uploaded_file`) — conversion retention:
+  "did the user reach the target action within the window?"
+- **Same event** (e.g. `nav_panel_clicked` → `nav_panel_clicked`) —
+  repeat retention: "did the user fire it _again_ within the window?" `From 0`
+  counts a repeat from the same period onward (same-day/same-hour repeats count);
+  `From N` (N ≥ 1) requires the repeat in a later period. Use `start_handling: "first_seen"`
+  so in-experiment repeats fall after the anchor — `last_seen` anchors on the user's
+  final occurrence, which has no in-experiment activity after it.
+
+### Right — conversion retention (different events)
 
 ```json
 {
   "kind": "ExperimentMetric",
   "metric_type": "retention",
-  "name": "7-day retention",
+  "name": "7-day file-upload retention",
   "start_event": {
     "kind": "EventsNode",
     "event": "$pageview"
@@ -4144,6 +4447,33 @@ recent).
   "start_handling": "first_seen"
 }
 ```
+
+### Right — repeat retention (same event)
+
+```json
+{
+  "kind": "ExperimentMetric",
+  "metric_type": "retention",
+  "name": "7-day repeat-click retention",
+  "start_event": {
+    "kind": "EventsNode",
+    "event": "nav_panel_clicked"
+  },
+  "completion_event": {
+    "kind": "EventsNode",
+    "event": "nav_panel_clicked"
+  },
+  "retention_window_start": 0,
+  "retention_window_end": 7,
+  "retention_window_unit": "day",
+  "start_handling": "first_seen"
+}
+```
+
+Measures "of users who clicked the promoted product, how many clicked it again
+within 7 days". The first click anchors the window and never counts as its own
+completion — only a later distinct click does, so a one-time clicker is correctly
+counted as not retained.
 
 ### Wrong — missing `retention_window_start` and `start_handling`
 
@@ -4164,14 +4494,54 @@ required on every retention metric — the schema is the source of truth.
 
 ## Adding metrics to an experiment
 
+A metric reaches an experiment via one of two independent `experiment-update`
+fields. Attaching a shared metric does **not** touch the inline `metrics` array,
+and vice versa.
+
+### Inline metric — `metrics`
+
 Call `experiment-update` with the full `metrics` array. This **replaces** the
-entire list.
+entire inline list.
 
 To add a metric without losing existing ones:
 
 1. Call `experiment-get` to get current metrics
 2. Append the new metric to the existing array
 3. Call `experiment-update` with the combined array
+
+### Shared (saved) metric — `saved_metrics_ids`
+
+Reuse a metric that already exists in the project instead of duplicating it
+inline. Resolve the id with `experiment-saved-metrics-list`, then attach it:
+
+1. Call `experiment-saved-metrics-list` to find the metric and its `id` (pass a
+   `search` term to resolve by name; results are paginated, so use `limit`/`offset`
+   when browsing a large project)
+2. Call `experiment-get` to read the experiment's current `saved_metrics`
+3. Call `experiment-update` with `saved_metrics_ids` — this **replaces** all
+   existing saved-metric links, so send the full desired set:
+
+```json
+{
+  "saved_metrics_ids": [
+    { "id": 42, "metadata": { "type": "primary" } },
+    { "id": 57, "metadata": { "type": "secondary" } }
+  ]
+}
+```
+
+The `id` here is the **saved-metric id**. Note the read/write asymmetry when you
+rebuild the set from `experiment-get`: each entry in the returned `saved_metrics`
+exposes a top-level `id` (the *link* row) and a separate `saved_metric` (the
+*metric* id). Map each existing entry's **`saved_metric`** into the `id` you
+resend — sending the link `id` attaches the wrong metric or fails validation.
+
+`metadata` is optional and defaults to `primary`. Pass an empty array to detach
+all shared metrics.
+
+To promote a one-off inline metric into a reusable shared metric, call
+`experiment-saved-metrics-create` with the same `query` (the `ExperimentMetric`
+object), then attach it via `saved_metrics_ids` as above.
 
 ## Property filters
 
