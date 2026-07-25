@@ -8,7 +8,7 @@ If your source maps are not publicly hosted, you will need to upload them during
 
 If you're using a JavaScript or TypeScript framework, set up source map uploading automatically with our wizard by running this command in your project directory with your terminal (it also works for [LLM coding agents](/blog/envoy-wizard-llm-agent.md) like Cursor and Bolt):
 
-`npx @posthog/wizard@latest upload-source-maps`
+`npx @posthog/wizard upload-source-maps`
 
 [Learn more](/wizard.md)
 
@@ -35,6 +35,8 @@ Otherwise, choose your platform below for manual instructions.
 -   [![](https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/contents/images/docs/integrate/flutter.svg)Flutter](/docs/error-tracking/upload-source-maps/flutter.md)
 
 -   [![](https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/contents/images/docs/integrate/ios.svg)iOS](/docs/error-tracking/upload-source-maps/ios.md)
+
+-   [![](https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/contents/images/docs/integrate/rust.svg)Rust](/docs/error-tracking/upload-source-maps/rust.md)
 
 -   [![](https://res.cloudinary.com/dmukukwp6/image/upload/Rollup_js_c306a2fde3.svg)Rollup](/docs/error-tracking/upload-source-maps/rollup.md)
 
