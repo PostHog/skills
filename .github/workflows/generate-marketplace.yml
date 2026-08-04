@@ -21,22 +21,43 @@ jobs:
       - name: Discover plugins and generate marketplace.json
         run: ./scripts/generate-marketplace.sh
 
-      - name: Create PR if marketplace.json changed
+      - name: Check whether marketplace.json changed
+        id: changes
+        run: |
+          if git diff --quiet .claude-plugin/marketplace.json; then
+            echo "No changes to marketplace.json"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Reset the branch to this run's base before committing. ghcommit-action adds
+      # a commit onto an existing remote branch rather than replacing it, so the
+      # force-push here takes the place of the old `git push -f`. It moves the
+      # branch to an already-signed commit, so nothing unsigned reaches the remote.
+      - name: Reset the marketplace branch
+        if: steps.changes.outputs.changed == 'true'
+        run: git push -f origin "HEAD:refs/heads/auto/update-marketplace"
+
+      # Commits through the GitHub API so it carries GitHub's signature, which the
+      # org-wide signed-commits ruleset requires. A plain `git push` is rejected.
+      - name: Commit marketplace.json
+        if: steps.changes.outputs.changed == 'true'
+        uses: planetscale/ghcommit-action@a6b150b81dca5dd027baa898604418eec9e11465 # v0.2.22
+        with:
+          commit_message: Update marketplace.json (auto-discovered plugins)
+          repo: ${{ github.repository }}
+          branch: auto/update-marketplace
+          file_pattern: .claude-plugin/marketplace.json
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Open PR if marketplace.json changed
+        if: steps.changes.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .claude-plugin/marketplace.json
-          if git diff --cached --quiet; then
-            echo "No changes to marketplace.json"
-            exit 0
-          fi
-
           BRANCH="auto/update-marketplace"
-          git checkout -B "$BRANCH"
-          git commit -m "Update marketplace.json (auto-discovered plugins)"
-          git push -f origin "$BRANCH"
 
           # Create PR if one doesn't already exist
           EXISTING=$(gh pr list --head "$BRANCH" --state open --json number --jq 'length')
