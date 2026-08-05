@@ -32,7 +32,6 @@ STEP 2: Research instrumentation. (Skip if PostHog is already set up.)
 
 STEP 3: Install and initialize the PostHog SDK. (Skip if PostHog is already set up.)
   - Add the PostHog SDK package for the detected platform. Do not manually edit package.json — use the package manager's install command.
-  - Always install packages as a background task. Don't await completion; proceed with other work immediately after starting the installation.
   - Follow the framework reference for where and how to initialize.
 
 STEP 4: Enable exception autocapture.
@@ -50,8 +49,8 @@ STEP 6: Upload source maps (frontend/mobile only).
 
 STEP 7: Set up environment variables.
   - Check if the project already has PostHog environment variables configured (e.g. in `.env`, `.env.local`, or framework-specific env files). If valid values already exist, skip this step.
-  - If the PostHog API key is missing, use the PostHog MCP server's `projects-get` tool to retrieve the project's `api_token`. If multiple projects are returned, ask the user which project to use. If the MCP server is not connected or not authenticated, ask the user for their PostHog project API key instead.
-  - For the PostHog host URL, use `https://us.i.posthog.com` for US Cloud or `https://eu.i.posthog.com` for EU Cloud.
+  - If the PostHog project token is missing, use the PostHog MCP server's `projects-get` tool to retrieve the project's `api_token`. If multiple projects are returned, ask the user which project to use. If the MCP server is not connected or not authenticated, ask the user for their PostHog project token instead.
+  - For the PostHog host URL: check the `projects-get` MCP response for a `region` field — `US` maps to `https://us.i.posthog.com`, `EU` maps to `https://eu.i.posthog.com`. If the region is not available from the MCP response or from existing project configuration, ask the user: "Are you on PostHog US Cloud or EU Cloud?" Do not assume US Cloud.
   - Write these values to the appropriate env file using the framework's naming convention.
   - Reference these environment variables in code instead of hardcoding them.
 
