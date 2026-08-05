@@ -74,7 +74,7 @@ This guide walks you through setting up PostHog for React Router V7 in data mode
     import { PostHogProvider } from '@posthog/react'
     posthog.init(import.meta.env.VITE_POSTHOG_PROJECT_TOKEN, {
       api_host: import.meta.env.VITE_POSTHOG_HOST,
-      defaults: '2026-01-30',
+      defaults: '2026-05-30',
     });
     const router = createBrowserRouter([...]);
     createRoot(document.getElementById("root")!).render(
@@ -322,7 +322,7 @@ This guide walks you through setting up PostHog for React Router V7 in data mode
 
     Now that you've set up PostHog for React Router V7 in data mode, you can continue to set up server-side analytics. You can find our other SDKs in the [SDKs page](/docs/libraries.md).
 
-    To help PostHog track your user sessions across the client and server, you'll need to add the `__add_tracing_headers: ['your-backend-domain1.com', 'your-backend-domain2.com', ...]` option to your PostHog initialization:
+    To help PostHog track your user sessions across the client and server, you'll need to add the `tracing_headers: ['your-backend-hostname1.com', 'your-backend-hostname2.com', ...]` option to your PostHog initialization:
 
     TSX
 
@@ -331,12 +331,12 @@ This guide walks you through setting up PostHog for React Router V7 in data mode
     ```jsx
     posthog.init(import.meta.env.VITE_POSTHOG_PROJECT_TOKEN, {
       api_host: import.meta.env.VITE_POSTHOG_HOST,
-      defaults: '2026-01-30',
-      __add_tracing_headers: [ window.location.host, 'localhost' ],
+      defaults: '2026-05-30',
+      tracing_headers: [ window.location.hostname, 'localhost' ],
     });
     ```
 
-    This adds the `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID` headers to your requests, which you can later use on the server-side.
+    This adds the `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID` headers to requests sent to the configured hostnames, which you can later use on the server-side.
 
 10.  9
 
