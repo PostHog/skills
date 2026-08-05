@@ -26,6 +26,10 @@ Follow the guides below to set up your logging client:
 
 -   [![](https://res.cloudinary.com/dmukukwp6/image/upload/Android_robot_bec2fb7318.svg)Android](/docs/logs/installation/android.md)
 
+-   [![](https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/contents/images/docs/integrate/flutter.svg)Flutter](/docs/logs/installation/flutter.md)
+
+-   [![](https://res.cloudinary.com/dmukukwp6/image/upload/rails_581d31c82d.svg)Ruby on Rails](/docs/logs/installation/ruby-on-rails.md)
+
 -   [Datadog](/docs/logs/installation/datadog.md)
 
 -   [Other languages](/docs/logs/installation/other.md)
@@ -69,6 +73,14 @@ Once your logs are flowing into PostHog, you can:
 
 [Learn how to search logs](/docs/logs/search.md)
 
+## Analyze log patterns
+
+The Patterns view automatically mines your logs to find recurring message templates. Use it to spot noisy log lines consuming your log budget, find new error shapes by their template structure, and see which patterns dominate your log volume.
+
+Expand any pattern and click **View matching logs** to pivot to the Logs view filtered to lines matching that template. The filter lands in the filter bar as a visible, removable chip, and your date range, service, and severity selections carry over.
+
+[Explore log patterns](/docs/logs/patterns.md)
+
 ## Set up alerts
 
 Get notified when your logs match specific conditions. Create alerts to:
@@ -101,7 +113,7 @@ Try out these prompts:
 
 ## Integrate your product data
 
-With PostHog, your logs live alongside your [Product Analytics](/docs/product-analytics.md), [Session Replays](/docs/session-replay.md), and [Error Tracking](/docs/error-tracking.md), so you can go from a log line to a user's session to the flag variant they were on without switching tools.
+With PostHog, your logs live alongside your [Product Analytics](/docs/product-analytics.md), [Session Replays](/docs/session-replay.md), [Error Tracking](/docs/error-tracking.md), and [Dashboards](/docs/product-analytics/dashboards.md), so you can go from a log line to a user's session to the flag variant they were on without switching tools.
 
 ### Session Replay
 
@@ -121,6 +133,10 @@ Logs with `$exception` events become issues you can assign, resolve, and alert o
 
 ![logs and session replay](https://res.cloudinary.com/dmukukwp6/image/upload/q_auto,f_auto/SCR_20260427_tpic_6c27c8b1e0.png)![logs and session replay](https://res.cloudinary.com/dmukukwp6/image/upload/q_auto,f_auto/SCR_20260427_tlie_6ffdbd4369.png)
 
+### Dashboards
+
+Add a Recent logs [widget](/docs/product-analytics/dashboards.md#adding-widgets) to any dashboard to monitor log entries alongside your other metrics and insights. Filter by severity level and service, and click a row to jump to that log on the Logs page.
+
 ## Use for free
 
 PostHog's Logs is built to be cost-effective by default, with a generous free tier and transparent usage-based pricing. Since we don't charge per seat, more than 90% of companies use PostHog for free.
@@ -128,8 +144,9 @@ PostHog's Logs is built to be cost-effective by default, with a generous free ti
 ## TL;DR 💸
 
 -   No credit card required to start
--   First 50 GB of ingested logs per month are free
--   Above 50 GB we have usage-based pricing at $0.25/GB with discounts
+-   First 10 GB of ingested logs per month are free
+-   Above 10 GB we have usage-based pricing at $0.25/GB with discounts
+-   All logs are retained 14 days by default, and we also offer 30-day (and soon 90-day) retention options for an additional storage charge – see [pricing](/pricing.md) for more details
 -   Set billing limits to avoid surprise charges
 -   See our [pricing page](/docs/logs/pricing.md) for more up-to-date details
 
@@ -139,9 +156,9 @@ That's it! You're ready to start integrating.
 
 [Install logs](/docs/logs/installation.md)
 
-1/7
+1/8
 
-[**Use your logging client** ***Required***](#quest-item-use-your-logging-client)[**Send context-rich logs** ***Required***](#quest-item-send-context-rich-logs)[**Search and analyze your logs** ***Required***](#quest-item-search-and-analyze-your-logs)[**Set up alerts** ***Recommended***](#quest-item-set-up-alerts)[**Use MCP and AI to debug** ***Recommended***](#quest-item-use-mcp-and-ai-to-debug)[**Integrate your product data** ***Recommended***](#quest-item-integrate-your-product-data)[**Use for free** ***Free 50 GB/mo***](#quest-item-use-for-free)
+[**Use your logging client** ***Required***](#quest-item-use-your-logging-client)[**Send context-rich logs** ***Required***](#quest-item-send-context-rich-logs)[**Search and analyze your logs** ***Required***](#quest-item-search-and-analyze-your-logs)[**Analyze log patterns** ***Recommended***](#quest-item-analyze-log-patterns)[**Set up alerts** ***Recommended***](#quest-item-set-up-alerts)[**Use MCP and AI to debug** ***Recommended***](#quest-item-use-mcp-and-ai-to-debug)[**Integrate your product data** ***Recommended***](#quest-item-integrate-your-product-data)[**Use for free** ***Free 10 GB/mo***](#quest-item-use-for-free)
 
 **Use your logging client**
 
