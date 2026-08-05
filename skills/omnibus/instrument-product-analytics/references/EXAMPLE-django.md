@@ -1,7 +1,7 @@
 # PostHog django Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/django
+Path: example-apps/django
 
 ---
 
@@ -263,7 +263,7 @@ class CoreConfig(AppConfig):
         posthog.api_key = settings.POSTHOG_PROJECT_TOKEN
         posthog.host = settings.POSTHOG_HOST
 
-        # Disable PostHog if configured (useful for testing)
+        # Honor the POSTHOG_DISABLED setting (useful for testing)
         if settings.POSTHOG_DISABLED:
             posthog.disabled = True
 
