@@ -37,9 +37,23 @@ You can find your project token and instance address in the [project settings](h
 
 ## Identifying users
 
-> **Identifying users is required.** Backend events need a `distinct_id` that matches the ID your frontend uses when calling `posthog.identify()`. Without this, backend events are orphaned — they can't be linked to frontend event captures, [session replays](/docs/session-replay.md), [LLM traces](/docs/ai-engineering.md), or [error tracking](/docs/error-tracking.md).
+> **Identifying users is required.** Backend events need a `distinct_id` to associate events with the correct user.
 >
-> See our guide on [identifying users](/docs/getting-started/identify-users.md) for how to set this up.
+> In Python, you can do this through a context. All event captures in the same context will be tagged automatically with the correct `distinct_id`. Typically, you would set a fresh context and identify at the top of each route.
+>
+> Python
+>
+> PostHog AI
+>
+> ```python
+> from posthog import new_context, identify_context, capture
+> @app.get("/foo")
+> def foo(current_user: User = Depends(get_current_user)):
+>     with new_context(): # Set context at the top of a route
+>         identify_context(current_user.id)
+>         capture("foo_viewed")
+>     return {"status": "ok"}
+> ```
 
 ## Capturing events
 
@@ -280,19 +294,7 @@ with new_context():
 
 **Using PostHog on your frontend too?**
 
-If you're using the PostHog JavaScript Web SDK on your frontend, it generates a session ID for you. You can pass it to your backend by adding your backend domain to `__add_tracing_headers` in your config. This will automatically add tracing headers to your requests.
-
-JavaScript
-
-PostHog AI
-
-```javascript
-posthog.init('<ph_project_token>', {
-    __add_tracing_headers: ['your-backend-domain.com']
-});
-```
-
-Alternatively, you can retrieve it on the frontend by calling `posthog.get_session_id()`. You then need to pass that session ID to your backend by setting the `X-POSTHOG-SESSION-ID` header on each fetch request.
+If you're using the PostHog JavaScript Web SDK on your frontend, it generates a session ID for you. Configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your backend hostname to add the session and distinct ID headers to browser requests automatically.
 
 You need to extract the header in your request handler (if you're using our Django middleware integration, this happens automatically).
 
@@ -771,6 +773,33 @@ posthog.set_socket_options([
 ```
 
 Pass `None` to `set_socket_options()` to reset to default behavior.
+
+## Filtering or modifying events before sending
+
+Use `before_send` to modify or drop events before they are queued for delivery. Return the modified event dictionary to send it, or `None` to drop it.
+
+Python
+
+PostHog AI
+
+```python
+from typing import Any
+import posthog
+def scrub_pii(event: dict[str, Any]) -> dict[str, Any] | None:
+    properties = event.get("properties", {})
+    if "email" in properties:
+        email = properties["email"]
+        properties["email"] = f"***@{email.split('@', 1)[1]}" if "@" in email else "***"
+    if event.get("event") == "test_event":
+        return None
+    return event
+client = posthog.Client(
+    "<ph_project_api_key>",
+    before_send=scrub_pii,
+)
+```
+
+If your callback raises an exception, the SDK logs the error and continues with the original unmodified event.
 
 ## Historical migrations
 

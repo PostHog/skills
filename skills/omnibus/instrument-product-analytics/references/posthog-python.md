@@ -1,6 +1,6 @@
 # PostHog Python SDK
 
-**SDK Version:** 7.17.0
+**SDK Version:** 7.25.0
 
 Integrate PostHog into any python application.
 
@@ -17,7 +17,7 @@ Integrate PostHog into any python application.
 
 ## PostHog
 
-This is the SDK reference for the PostHog Python SDK. You can learn more about example usage in the [Python SDK documentation](/docs/libraries/python). You can also follow [Flask](/docs/libraries/flask) and [Django](/docs/libraries/django) guides to integrate PostHog into your project.
+This is the SDK reference for the PostHog Python SDK. You can learn more about example usage in the [Python SDK documentation](/docs/libraries/python). You can also follow [Flask](/docs/libraries/flask) and [Django](/docs/libraries/django) guides to integrate PostHog into your project.  For long-running applications, create one client during application startup and reuse it for the lifetime of the process. This keeps background queues predictable and makes shutdown flushing straightforward. Multiple clients are still supported for intentional multi-project or multi-host setups.
 
 ### Initialization methods
 
@@ -43,12 +43,13 @@ Initialize a new PostHog client instance.
 - **`timeout`** (`int`) - HTTP request timeout in seconds for event uploads.
 - **`thread`** (`int`) - Number of background consumer threads.
 - **`poll_interval`** (`int`) - Seconds between local feature flag definition refreshes.
-- **`personal_api_key`** (`any`) - Personal API key used for local feature flag         evaluation and remote config payloads.
+- **`personal_api_key`** (`any`) - Deprecated alias for ``secret_key``. Still honored         for backwards compatibility; prefer ``secret_key``, which also         accepts a Project Secret API Key.
 - **`disabled`** (`bool`) - If True, disable captures and API requests. Useful in tests.
 - **`disable_geoip`** (`bool`) - Whether to disable server-side GeoIP enrichment.         Defaults to True.
 - **`is_server`** (`bool`) - Whether events are emitted from a server-side runtime.         Defaults to True; set to False when using the SDK as a client/CLI         so the device OS is attributed to the person normally.
 - **`historical_migration`** (`bool`) - Mark events as historical migration imports.
 - **`feature_flags_request_timeout_seconds`** (`int`) - Timeout in seconds for feature         flag and remote config requests.
+- **`feature_flags_request_max_retries`** (`int`) - Number of retries for feature flag         requests after network, transport, or timeout failures. Defaults         to 1. Set to 0 to disable retries.
 - **`super_properties`** (`any`) - Properties merged into every captured event.
 - **`enable_exception_autocapture`** (`bool`) - Automatically capture uncaught         exceptions.
 - **`log_captured_exceptions`** (`bool`) - Also log exceptions captured by error         tracking.
@@ -61,7 +62,18 @@ Initialize a new PostHog client instance.
 - **`capture_exception_code_variables`** (`bool`) - Capture local variable values on         exception stack frames.
 - **`code_variables_mask_patterns`** (`any`) - Variable-name patterns to mask when         capturing code variables.
 - **`code_variables_ignore_patterns`** (`any`) - Variable-name patterns to omit when         capturing code variables.
+- **`code_variables_mask_url_credentials`** (`any`) - Scrub credentials embedded in         URLs/DSNs (e.g. ``user:pass@host``) from captured code variables,         regardless of the surrounding variable name. Defaults to True.
+- **`code_variables_detect_secrets`** (`any`) - Last-resort entropy-based detection that         redacts high-entropy secret-looking values (API keys, tokens, strong         passwords) sitting in innocuously-named variables, after the name and         URL checks. Skips structured ids (UUIDs, ObjectIds, hashes). Defaults         to True.
 - **`in_app_modules`** (`UnionType[list[str], any]`) - Module/package prefixes treated as in-app frames in         captured exceptions.
+- **`enable_exception_autocapture_rate_limiting`** (`bool`) - Rate limit         autocaptured exceptions client-side with a token bucket per         exception type. Disabled by default.
+- **`exception_autocapture_bucket_size`** (`int`) - Maximum burst of autocaptured         exceptions allowed per exception type (token bucket size,         clamped to 0-100).
+- **`exception_autocapture_refill_rate`** (`int`) - Tokens restored per refill         interval for each exception type's bucket.
+- **`exception_autocapture_refill_interval_seconds`** (`int`) - Seconds between         token refills for autocaptured exception rate limiting.
+- **`capture_mode`** (`CaptureMode`) - Capture wire protocol to use. Defaults to         ``CaptureMode.V0`` (legacy ``/batch/``). Set ``CaptureMode.V1``         (or pass the string ``"v1"``) to opt into         ``/i/v1/analytics/events``. When omitted, the         ``POSTHOG_CAPTURE_MODE`` env var is consulted, then ``V0``.
+- **`capture_compression`** (`CaptureCompression`) - Request-body compression for capture-v1 uploads         (ignored in V0, which uses ``gzip``). ``CaptureCompression.GZIP``         or ``DEFLATE`` (or the strings ``"gzip"``/``"deflate"``). When         omitted, the ``POSTHOG_CAPTURE_COMPRESSION`` env var is consulted,         then the legacy ``gzip`` flag, then no compression.
+- **`secret_key`** (`any`) - A Personal API Key or Project Secret API Key, used to         authenticate local feature flag evaluation, remote config         payloads, and decrypted flag payloads. Example::              posthog.Client(project_api_key, secret_key="phx_...")
+- **`_dedicated_ai_endpoint`** (`bool`)
+- **`metrics?`** (`dict`)
 
 ### Returns
 
@@ -89,13 +101,13 @@ Create an alias between two distinct IDs.
 
 - **`previous_id?`** (`str`) - The previous distinct ID.
 - **`distinct_id?`** (`str`) - The new distinct ID to alias to.
-- **`timestamp`** (`any`) - The timestamp of the event.
-- **`uuid`** (`any`) - A unique identifier for the event.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP for this event.
+- **`timestamp`** (`datetime`) - The timestamp of the event.
+- **`uuid?`** (`str`) - A unique identifier for the event. If provided, it must be a         valid UUID string or uuid.UUID instance; invalid values are         ignored and replaced with a newly generated UUID.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP for this event.
 
 ### Returns
 
-- `None`
+- `Optional[str]`
 
 ### Examples
 
@@ -117,7 +129,7 @@ Identify a group and set its properties.
 - **`group_key?`** (`str`) - The unique identifier for the group.
 - **`properties?`** (`dict[str, Any]`) - A dictionary of properties to set on the group.
 - **`timestamp`** (`datetime`) - The timestamp of the event.
-- **`uuid?`** (`str`) - A unique identifier for the event.
+- **`uuid`** (`str`) - A unique identifier for the event. If provided, it must be a         valid UUID string or uuid.UUID instance; invalid values are         ignored and replaced with a newly generated UUID.
 - **`disable_geoip?`** (`bool`) - Whether to disable GeoIP for this event.
 - **`distinct_id`** (`Number`) - The distinct ID of the user performing the action.
 
@@ -248,7 +260,7 @@ posthog.capture('$pageview', distinct_id="distinct_id_of_the_user", properties={
 
 **Release Tag:** public
 
-Capture an exception for error tracking.
+Capture an exception for error tracking.  When OpenTelemetry is installed and a valid span is active, its trace and span IDs are added as ``$trace_id`` and ``$span_id`` event properties.
 
 ### Parameters
 
@@ -257,7 +269,7 @@ Capture an exception for error tracking.
 
 ### Returns
 
-- `None`
+- `Optional[str]`
 
 ### Examples
 
@@ -282,7 +294,7 @@ Evaluate all feature flags for a user in a single call and return a :class:`Feat
 ### Parameters
 
 - **`distinct_id`** (`Number`) - The user's distinct ID. If ``None``, falls back to the         context distinct_id. If still unresolvable, returns an empty snapshot.
-- **`groups?`** (`dict[str, str]`) - Mapping of group type to group key.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - Mapping of group type to group key.
 - **`person_properties?`** (`dict[str, Any]`) - Person properties to use for evaluation.
 - **`group_properties?`** (`dict[str, dict[str, Any]]`) - Group properties keyed by group type.
 - **`only_evaluate_locally`** (`bool`) - If True, never fall back to remote evaluation —         flags that can't be evaluated locally are simply omitted from the snapshot.
@@ -316,19 +328,19 @@ Check if a feature flag is enabled for a user.
 
 ### Parameters
 
-- **`key?`** (`any`) - The feature flag key.
-- **`distinct_id?`** (`any`) - The distinct ID of the user.
-- **`groups`** (`any`) - A dictionary of group information.
-- **`person_properties`** (`any`) - A dictionary of person properties.
-- **`group_properties`** (`any`) - A dictionary of group properties.
+- **`key?`** (`str`) - The feature flag key.
+- **`distinct_id?`** (`Number`) - The distinct ID of the user.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - A dictionary of group information.
+- **`person_properties?`** (`dict[str, Any]`) - A dictionary of person properties.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - A dictionary of group properties.
 - **`only_evaluate_locally`** (`bool`) - Whether to only evaluate locally.
 - **`send_feature_flag_events`** (`bool`) - Whether to send feature flag events.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP for this request.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP for this request.
 - **`device_id?`** (`str`) - The device ID for this request.
 
 ### Returns
 
-- `None`
+- `Optional[bool]`
 
 ### Examples
 
@@ -362,12 +374,12 @@ Get all feature flags for a user.
 
 ### Parameters
 
-- **`distinct_id?`** (`any`) - The distinct ID of the user.
-- **`groups`** (`any`) - A dictionary of group information.
-- **`person_properties`** (`any`) - A dictionary of person properties.
-- **`group_properties`** (`any`) - A dictionary of group properties.
+- **`distinct_id?`** (`Number`) - The distinct ID of the user.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - A dictionary of group information.
+- **`person_properties?`** (`dict[str, Any]`) - A dictionary of person properties.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - A dictionary of group properties.
 - **`only_evaluate_locally`** (`bool`) - Whether to only evaluate locally.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP for this request.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP for this request.
 - **`flag_keys_to_evaluate?`** (`list[str]`) - A list of specific flag keys to evaluate. If provided,         only these flags will be evaluated, improving performance.
 - **`device_id?`** (`str`) - The device ID for this request.
 
@@ -391,12 +403,12 @@ Get all feature flags and their payloads for a user.
 
 ### Parameters
 
-- **`distinct_id?`** (`any`) - The distinct ID of the user.
-- **`groups`** (`any`) - A dictionary of group information.
-- **`person_properties`** (`any`) - A dictionary of person properties.
-- **`group_properties`** (`any`) - A dictionary of group properties.
+- **`distinct_id?`** (`Number`) - The distinct ID of the user.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - A dictionary of group information.
+- **`person_properties?`** (`dict[str, Any]`) - A dictionary of person properties.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - A dictionary of group properties.
 - **`only_evaluate_locally`** (`bool`) - Whether to only evaluate locally.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP for this request.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP for this request.
 - **`flag_keys_to_evaluate?`** (`list[str]`) - A list of specific flag keys to evaluate. If provided,         only these flags will be evaluated, improving performance.
 - **`device_id?`** (`str`) - The device ID for this request.
 
@@ -420,14 +432,14 @@ Get multivariate feature flag value for a user.
 
 ### Parameters
 
-- **`key?`** (`any`) - The feature flag key.
-- **`distinct_id?`** (`any`) - The distinct ID of the user.
-- **`groups`** (`any`) - A dictionary of group information.
-- **`person_properties`** (`any`) - A dictionary of person properties.
-- **`group_properties`** (`any`) - A dictionary of group properties.
+- **`key?`** (`str`) - The feature flag key.
+- **`distinct_id?`** (`Number`) - The distinct ID of the user.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - A dictionary of group information.
+- **`person_properties?`** (`dict[str, Any]`) - A dictionary of person properties.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - A dictionary of group properties.
 - **`only_evaluate_locally`** (`bool`) - Whether to only evaluate locally.
 - **`send_feature_flag_events`** (`bool`) - Whether to send feature flag events.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP for this request.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP for this request.
 - **`device_id?`** (`str`) - The device ID for this request.
 
 ### Returns
@@ -454,20 +466,20 @@ Get the payload for a feature flag.
 
 ### Parameters
 
-- **`key?`** (`any`) - The feature flag key.
-- **`distinct_id?`** (`any`) - The distinct ID of the user.
+- **`key?`** (`str`) - The feature flag key.
+- **`distinct_id?`** (`Number`) - The distinct ID of the user.
 - **`match_value`** (`bool`) - The specific flag value to get payload for.
-- **`groups`** (`any`) - A dictionary of group information.
-- **`person_properties`** (`any`) - A dictionary of person properties.
-- **`group_properties`** (`any`) - A dictionary of group properties.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - A dictionary of group information.
+- **`person_properties?`** (`dict[str, Any]`) - A dictionary of person properties.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - A dictionary of group properties.
 - **`only_evaluate_locally`** (`bool`) - Whether to only evaluate locally.
 - **`send_feature_flag_events`** (`bool`) - Deprecated. Use get_feature_flag() instead if you need events.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP for this request.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP for this request.
 - **`device_id?`** (`str`) - The device ID for this request.
 
 ### Returns
 
-- `None`
+- `Optional[object]`
 
 ### Examples
 
@@ -490,11 +502,11 @@ Get feature flags and payloads for a user.
 
 ### Parameters
 
-- **`distinct_id?`** (`any`) - The distinct ID of the user.
-- **`groups`** (`any`) - A dictionary of group information.
-- **`person_properties`** (`any`) - A dictionary of person properties.
-- **`group_properties`** (`any`) - A dictionary of group properties.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP for this request.
+- **`distinct_id?`** (`Number`) - The distinct ID of the user.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - A dictionary of group information.
+- **`person_properties?`** (`dict[str, Any]`) - A dictionary of person properties.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - A dictionary of group properties.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP for this request.
 - **`flag_keys_to_evaluate?`** (`list[str]`) - A list of specific flag keys to evaluate. If provided,         only these flags will be evaluated, improving performance.
 - **`device_id?`** (`str`) - The device ID for this request.
 
@@ -518,11 +530,11 @@ Get feature flag payloads for a user.
 
 ### Parameters
 
-- **`distinct_id?`** (`any`) - The distinct ID of the user.
-- **`groups`** (`any`) - A dictionary of group information.
-- **`person_properties`** (`any`) - A dictionary of person properties.
-- **`group_properties`** (`any`) - A dictionary of group properties.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP for this request.
+- **`distinct_id?`** (`Number`) - The distinct ID of the user.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - A dictionary of group information.
+- **`person_properties?`** (`dict[str, Any]`) - A dictionary of person properties.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - A dictionary of group properties.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP for this request.
 - **`flag_keys_to_evaluate?`** (`list[str]`) - A list of specific flag keys to evaluate. If provided,         only these flags will be evaluated, improving performance.
 - **`device_id?`** (`str`) - The device ID for this request.
 
@@ -546,11 +558,11 @@ Get feature flag variants for a user.
 
 ### Parameters
 
-- **`distinct_id?`** (`any`) - The distinct ID of the user.
-- **`groups`** (`any`) - A dictionary of group information.
-- **`person_properties`** (`any`) - A dictionary of person properties.
-- **`group_properties`** (`any`) - A dictionary of group properties.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP for this request.
+- **`distinct_id?`** (`Number`) - The distinct ID of the user.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - A dictionary of group information.
+- **`person_properties?`** (`dict[str, Any]`) - A dictionary of person properties.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - A dictionary of group properties.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP for this request.
 - **`flag_keys_to_evaluate?`** (`list[str]`) - A list of specific flag keys to evaluate. If provided,         only these flags will be evaluated, improving performance.
 - **`device_id?`** (`str`) - The device ID for this request.
 
@@ -569,10 +581,10 @@ Get feature flags decision.
 ### Parameters
 
 - **`distinct_id`** (`Number`) - The distinct ID of the user.
-- **`groups?`** (`dict`) - A dictionary of group information.
-- **`person_properties`** (`any`) - A dictionary of person properties.
-- **`group_properties`** (`any`) - A dictionary of group properties.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP for this request.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - A dictionary of group information.
+- **`person_properties?`** (`dict[str, Any]`) - A dictionary of person properties.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - A dictionary of group properties.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP for this request.
 - **`flag_keys_to_evaluate?`** (`list[str]`) - A list of specific flag keys to evaluate. If provided,         only these flags will be evaluated, improving performance.
 - **`device_id?`** (`str`) - The device ID for this request.
 
@@ -630,9 +642,13 @@ posthog.load_feature_flags()
 
 Force a flush from the internal queue to the server. Do not use directly, call `shutdown()` instead.
 
+### Parameters
+
+- **`timeout_seconds?`** (`float`) - Maximum seconds to wait for the queue to flush.         Defaults to 10 seconds. Pass ``None`` to wait indefinitely.
+
 ### Returns
 
-- `None`
+- `any`
 
 ### Examples
 
@@ -651,14 +667,14 @@ Get a FeatureFlagResult object which contains the flag result and payload for a 
 
 ### Parameters
 
-- **`key?`** (`any`) - The feature flag key.
-- **`distinct_id?`** (`any`) - The distinct ID of the user.
-- **`groups`** (`any`) - A dictionary of group information.
-- **`person_properties`** (`any`) - A dictionary of person properties.
-- **`group_properties`** (`any`) - A dictionary of group properties.
+- **`key?`** (`str`) - The feature flag key.
+- **`distinct_id?`** (`Number`) - The distinct ID of the user.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - A dictionary of group information.
+- **`person_properties?`** (`dict[str, Any]`) - A dictionary of person properties.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - A dictionary of group properties.
 - **`only_evaluate_locally`** (`bool`) - Whether to only evaluate locally.
 - **`send_feature_flag_events`** (`bool`) - Whether to send feature flag events.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP for this request.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP for this request.
 - **`device_id?`** (`str`) - The device ID for this request.
 
 ### Returns
@@ -685,7 +701,7 @@ End the consumer thread once the queue is empty. Do not use directly, call `shut
 
 ### Returns
 
-- `None`
+- `any`
 
 ### Examples
 
@@ -703,7 +719,7 @@ Flush all messages and cleanly shutdown the client. Call this before the process
 
 ### Returns
 
-- `None`
+- `any`
 
 ### Examples
 
@@ -715,6 +731,34 @@ posthog.shutdown()
 
 ### Contexts methods
 
+#### get_tags()
+
+**Release Tag:** public
+
+Get all tags from the current context.  Returns:     Dict of all tags in the current context.
+
+### Returns
+
+- `dict[str, Any]`
+
+---
+
+#### identify_context()
+
+**Release Tag:** public
+
+Identify the current context with a distinct ID.
+
+### Parameters
+
+- **`distinct_id?`** (`str`) - The distinct ID to associate with the current context and its children.
+
+### Returns
+
+- `any`
+
+---
+
 #### new_context()
 
 **Release Tag:** public
@@ -724,7 +768,7 @@ Create a new context for managing shared state. Learn more about [contexts](/doc
 ### Parameters
 
 - **`fresh`** (`bool`) - Whether to create a fresh context that doesn't inherit from parent.
-- **`capture_exceptions`** (`bool`) - Whether to automatically capture exceptions in this context.
+- **`capture_exceptions?`** (`bool`) - Whether to automatically capture exceptions in this context. If omitted, defaults to this client's exception autocapture setting.
 
 ### Returns
 
@@ -733,10 +777,76 @@ Create a new context for managing shared state. Learn more about [contexts](/doc
 ### Examples
 
 ```python
-with posthog.new_context():
-    identify_context('<distinct_id>')
-    posthog.capture('event_name')
+with client.new_context():
+    client.identify_context('<distinct_id>')
+    client.capture('event_name')
 ```
+
+---
+
+#### scoped()
+
+**Release Tag:** public
+
+Decorator that creates a new context for the wrapped function using this client.
+
+### Parameters
+
+- **`fresh`** (`bool`) - Whether to create a fresh context that doesn't inherit from parent.
+- **`capture_exceptions?`** (`bool`) - Whether to automatically capture exceptions in this context. If omitted, defaults to this client's exception autocapture setting.
+
+### Returns
+
+- `None`
+
+---
+
+#### set_context_device_id()
+
+**Release Tag:** public
+
+Set the device ID for the current context.
+
+### Parameters
+
+- **`device_id?`** (`str`) - The device ID to associate with the current context and its children.
+
+### Returns
+
+- `any`
+
+---
+
+#### set_context_session()
+
+**Release Tag:** public
+
+Set the session ID for the current context.
+
+### Parameters
+
+- **`session_id?`** (`str`) - The session ID to associate with the current context and its children.
+
+### Returns
+
+- `any`
+
+---
+
+#### tag()
+
+**Release Tag:** public
+
+Add a tag to the current context.
+
+### Parameters
+
+- **`name?`** (`str`) - The tag key.
+- **`value?`** (`Any`) - The tag value.
+
+### Returns
+
+- `any`
 
 ---
 
@@ -758,15 +868,15 @@ To marry up whatever a user does before they sign up or log in with what they do
 
 ### Parameters
 
-- **`previous_id?`** (`any`) - The unique ID of the user before
-- **`distinct_id?`** (`any`) - The current unique id
-- **`timestamp`** (`any`) - Optional timestamp for the event
-- **`uuid`** (`any`) - Optional UUID for the event
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP lookup
+- **`previous_id?`** (`str`) - The unique ID of the user before
+- **`distinct_id?`** (`str`) - The current unique id
+- **`timestamp?`** (`datetime`) - Optional timestamp for the event
+- **`uuid?`** (`str`) - Optional UUID for the event
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP lookup
 
 ### Returns
 
-- `None`
+- `Optional[str]`
 
 ### Examples
 
@@ -786,17 +896,17 @@ Set properties on a group.
 
 ### Parameters
 
-- **`group_type?`** (`any`) - Type of your group
-- **`group_key?`** (`any`) - Unique identifier of the group
-- **`properties`** (`any`) - Properties to set on the group
-- **`timestamp`** (`any`) - Optional timestamp for the event
-- **`uuid`** (`any`) - Optional UUID for the event
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP lookup
-- **`distinct_id`** (`any`) - Optional distinct ID of the user performing the action
+- **`group_type?`** (`str`) - Type of your group
+- **`group_key?`** (`str`) - Unique identifier of the group
+- **`properties?`** (`dict[str, Any]`) - Properties to set on the group
+- **`timestamp?`** (`datetime`) - Optional timestamp for the event
+- **`uuid?`** (`str`) - Optional UUID for the event
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP lookup
+- **`distinct_id`** (`Number`) - Optional distinct ID of the user performing the action
 
 ### Returns
 
-- `None`
+- `Optional[str]`
 
 ### Examples
 
@@ -977,7 +1087,7 @@ Capture exception is idempotent - if it is called twice with the same exception 
 
 ### Returns
 
-- `None`
+- `Optional[str]`
 
 ### Examples
 
@@ -1002,14 +1112,14 @@ Evaluate all feature flags for a user in a single call and return a :class:`Feat
 
 ### Parameters
 
-- **`distinct_id`** (`any`) - The user's distinct ID. If ``None``, falls back to the context         distinct_id. If still unresolvable, returns an empty snapshot.
-- **`groups`** (`any`) - Mapping of group type to group key.
-- **`person_properties`** (`any`) - Person properties to use for evaluation.
-- **`group_properties`** (`any`) - Group properties keyed by group type.
+- **`distinct_id`** (`Number`) - The user's distinct ID. If ``None``, falls back to the context         distinct_id. If still unresolvable, returns an empty snapshot.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - Mapping of group type to group key.
+- **`person_properties?`** (`dict[str, Any]`) - Person properties to use for evaluation.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - Group properties keyed by group type.
 - **`only_evaluate_locally`** (`bool`) - If ``True``, never fall back to remote evaluation.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP lookup.
-- **`flag_keys`** (`any`) - Optional list of flag keys. When provided, only these flags are         evaluated — the underlying ``/flags`` request asks the server for just         this subset, which makes the response smaller and the request cheaper.         Use this when you only need a handful of flags out of many.
-- **`device_id`** (`any`) - Optional device ID override. If not provided, falls back to the         context device_id (which may be set via tracing headers). Used by         experience-continuity flags to match users across distinct_id changes.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP lookup.
+- **`flag_keys?`** (`list[str]`) - Optional list of flag keys. When provided, only these flags are         evaluated — the underlying ``/flags`` request asks the server for just         this subset, which makes the response smaller and the request cheaper.         Use this when you only need a handful of flags out of many.
+- **`device_id?`** (`str`) - Optional device ID override. If not provided, falls back to the         context device_id (which may be set via tracing headers). Used by         experience-continuity flags to match users across distinct_id changes.
 
 ### Returns
 
@@ -1039,19 +1149,19 @@ You can call `posthog.load_feature_flags()` before to make sure you're not doing
 
 ### Parameters
 
-- **`key?`** (`any`) - The feature flag key
-- **`distinct_id?`** (`any`) - The user's distinct ID
-- **`groups`** (`any`) - Groups mapping
-- **`person_properties`** (`any`) - Person properties
-- **`group_properties`** (`any`) - Group properties
+- **`key?`** (`str`) - The feature flag key
+- **`distinct_id?`** (`Number`) - The user's distinct ID
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - Groups mapping
+- **`person_properties?`** (`dict[str, Any]`) - Person properties
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - Group properties
 - **`only_evaluate_locally`** (`bool`) - Whether to evaluate only locally
 - **`send_feature_flag_events`** (`bool`) - Whether to send feature flag events
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP lookup
-- **`device_id`** (`any`) - Optional device ID override for experience-continuity flags
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP lookup
+- **`device_id?`** (`str`) - Optional device ID override for experience-continuity flags
 
 ### Returns
 
-- `None`
+- `Optional[bool]`
 
 ### Examples
 
@@ -1100,18 +1210,18 @@ Flags are key-value pairs where the key is the flag key and the value is the fla
 
 ### Parameters
 
-- **`distinct_id?`** (`any`) - The user's distinct ID
-- **`groups`** (`any`) - Groups mapping
-- **`person_properties`** (`any`) - Person properties
-- **`group_properties`** (`any`) - Group properties
+- **`distinct_id?`** (`Number`) - The user's distinct ID
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - Groups mapping
+- **`person_properties?`** (`dict[str, Any]`) - Person properties
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - Group properties
 - **`only_evaluate_locally`** (`bool`) - Whether to evaluate only locally
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP lookup
-- **`device_id`** (`any`) - Optional device ID override for experience-continuity flags
-- **`flag_keys_to_evaluate`** (`any`) - Optional list of flag keys to evaluate (evaluates all if None)
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP lookup
+- **`device_id?`** (`str`) - Optional device ID override for experience-continuity flags
+- **`flag_keys_to_evaluate?`** (`list[str]`) - Optional list of flag keys to evaluate (evaluates all if None)
 
 ### Returns
 
-- `Optional[dict[str, FeatureFlag]]`
+- `Optional[dict[str, Union[bool, str]]]`
 
 ### Examples
 
@@ -1131,14 +1241,14 @@ Get all feature flag values and payloads for a user.
 
 ### Parameters
 
-- **`distinct_id?`** (`any`) - The user's distinct ID.
-- **`groups`** (`any`) - Mapping of group type to group key.
-- **`person_properties`** (`any`) - Person properties to use for evaluation.
-- **`group_properties`** (`any`) - Group properties keyed by group type.
+- **`distinct_id?`** (`Number`) - The user's distinct ID.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - Mapping of group type to group key.
+- **`person_properties?`** (`dict[str, Any]`) - Person properties to use for evaluation.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - Group properties keyed by group type.
 - **`only_evaluate_locally`** (`bool`) - Whether to evaluate only locally.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP lookup.
-- **`device_id`** (`any`) - Optional device ID override for experience-continuity flags.
-- **`flag_keys_to_evaluate`** (`any`) - Optional list of flag keys to evaluate. Evaluates         all flags when omitted.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP lookup.
+- **`device_id?`** (`str`) - Optional device ID override for experience-continuity flags.
+- **`flag_keys_to_evaluate?`** (`list[str]`) - Optional list of flag keys to evaluate. Evaluates         all flags when omitted.
 
 ### Returns
 
@@ -1158,19 +1268,19 @@ Get feature flag variant for users. Used with experiments.
 
 ### Parameters
 
-- **`key?`** (`any`) - The feature flag key
-- **`distinct_id?`** (`any`) - The user's distinct ID
-- **`groups`** (`any`) - Groups mapping from group type to group key
-- **`person_properties`** (`any`) - Person properties
-- **`group_properties`** (`any`) - Group properties in format { group_type_name: { group_properties } }
+- **`key?`** (`str`) - The feature flag key
+- **`distinct_id?`** (`Number`) - The user's distinct ID
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - Groups mapping from group type to group key
+- **`person_properties?`** (`dict[str, Any]`) - Person properties
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - Group properties in format { group_type_name: { group_properties } }
 - **`only_evaluate_locally`** (`bool`) - Whether to evaluate only locally
 - **`send_feature_flag_events`** (`bool`) - Whether to send feature flag events
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP lookup
-- **`device_id`** (`any`) - Optional device ID override for experience-continuity flags
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP lookup
+- **`device_id?`** (`str`) - Optional device ID override for experience-continuity flags
 
 ### Returns
 
-- `Optional[FeatureFlag]`
+- `Union[bool, str, any]`
 
 ### Examples
 
@@ -1192,20 +1302,20 @@ Get the payload associated with a feature flag value.  Deprecated for new code. 
 
 ### Parameters
 
-- **`key?`** (`any`) - The feature flag key.
-- **`distinct_id?`** (`any`) - The user's distinct ID.
-- **`match_value`** (`any`) - Optional flag value to use when selecting a payload.
-- **`groups`** (`any`) - Mapping of group type to group key.
-- **`person_properties`** (`any`) - Person properties to use for evaluation.
-- **`group_properties`** (`any`) - Group properties keyed by group type.
+- **`key?`** (`str`) - The feature flag key.
+- **`distinct_id?`** (`Number`) - The user's distinct ID.
+- **`match_value`** (`bool`) - Optional flag value to use when selecting a payload.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - Mapping of group type to group key.
+- **`person_properties?`** (`dict[str, Any]`) - Person properties to use for evaluation.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - Group properties keyed by group type.
 - **`only_evaluate_locally`** (`bool`) - Whether to evaluate only locally.
 - **`send_feature_flag_events`** (`bool`) - Whether to send a $feature_flag_called event.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP lookup.
-- **`device_id`** (`any`) - Optional device ID override for experience-continuity flags.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP lookup.
+- **`device_id?`** (`str`) - Optional device ID override for experience-continuity flags.
 
 ### Returns
 
-- `Optional[str]`
+- `Optional[object]`
 
 ---
 
@@ -1236,9 +1346,13 @@ load_feature_flags()
 
 Tell the client to flush all queued events.
 
+### Parameters
+
+- **`timeout_seconds?`** (`float`) - Maximum seconds to wait for the queue to flush.         Defaults to 10 seconds. Pass ``None`` to wait indefinitely.
+
 ### Returns
 
-- `None`
+- `any`
 
 ### Examples
 
@@ -1257,7 +1371,7 @@ Block program until the client clears the queue. Used during program shutdown. Y
 
 ### Returns
 
-- `None`
+- `any`
 
 ### Examples
 
@@ -1276,7 +1390,7 @@ Flush all messages and cleanly shutdown the client.
 
 ### Returns
 
-- `None`
+- `any`
 
 ### Examples
 
@@ -1297,19 +1411,19 @@ Get a FeatureFlagResult object which contains the flag result and payload.  This
 
 ### Parameters
 
-- **`key?`** (`any`) - The feature flag key.
-- **`distinct_id?`** (`any`) - The user's distinct ID.
-- **`groups`** (`any`) - Mapping of group type to group key.
-- **`person_properties`** (`any`) - Person properties to use for evaluation.
-- **`group_properties`** (`any`) - Group properties keyed by group type.
+- **`key?`** (`str`) - The feature flag key.
+- **`distinct_id?`** (`Number`) - The user's distinct ID.
+- **`groups?`** (`Mapping[str, Union[str, int]]`) - Mapping of group type to group key.
+- **`person_properties?`** (`dict[str, Any]`) - Person properties to use for evaluation.
+- **`group_properties?`** (`dict[str, dict[str, Any]]`) - Group properties keyed by group type.
 - **`only_evaluate_locally`** (`bool`) - Whether to evaluate only locally.
 - **`send_feature_flag_events`** (`bool`) - Whether to send a $feature_flag_called event.
-- **`disable_geoip`** (`any`) - Whether to disable GeoIP lookup.
-- **`device_id`** (`any`) - Optional device ID override for experience-continuity flags.
+- **`disable_geoip?`** (`bool`) - Whether to disable GeoIP lookup.
+- **`device_id?`** (`str`) - Optional device ID override for experience-continuity flags.
 
 ### Returns
 
-- `None`
+- `Optional[FeatureFlagResult]`
 
 ---
 
@@ -1321,7 +1435,23 @@ Get the payload for a remote config feature flag.
 
 ### Parameters
 
-- **`key?`** (`any`) - The key of the feature flag
+- **`key?`** (`str`) - The key of the feature flag
+
+### Returns
+
+- `None`
+
+---
+
+#### set_code_variables_mask_url_credentials_context()
+
+**Release Tag:** public
+
+Whether to scrub credentials embedded in URLs/DSNs (e.g. user:pass@host) from captured code variables for the current context.
+
+### Parameters
+
+- **`enabled?`** (`bool`)
 
 ### Returns
 
@@ -1352,7 +1482,7 @@ Create a new context scope that will be active for the duration of the with bloc
 ### Parameters
 
 - **`fresh`** (`bool`) - Whether to start with a fresh context (default: False)
-- **`capture_exceptions`** (`bool`) - Whether to capture exceptions raised within the context (default: True)
+- **`capture_exceptions?`** (`bool`) - Whether to capture exceptions raised within the context. If omitted, defaults to the relevant client's exception autocapture setting.
 - **`client?`** (`Client`) - Optional Posthog client instance to use for this context (default: None)
 
 ### Returns
@@ -1379,7 +1509,7 @@ Decorator that creates a new context for the function.
 ### Parameters
 
 - **`fresh`** (`bool`) - Whether to start with a fresh context (default: False)
-- **`capture_exceptions`** (`bool`) - Whether to capture and track exceptions with posthog error tracking (default: True)
+- **`capture_exceptions?`** (`bool`) - Whether to capture and track exceptions with posthog error tracking. If omitted, defaults to the global exception autocapture setting.
 
 ### Returns
 
@@ -1413,6 +1543,22 @@ Override code-variable capture for exceptions in the current context.
 
 ---
 
+#### set_code_variables_detect_secrets_context()
+
+**Release Tag:** public
+
+Whether to apply entropy-based secret detection as a last-resort redaction of high-entropy values (API keys, tokens, strong passwords) in captured code variables for the current context.
+
+### Parameters
+
+- **`enabled?`** (`bool`)
+
+### Returns
+
+- `None`
+
+---
+
 #### set_code_variables_ignore_patterns_context()
 
 **Release Tag:** public
@@ -1421,7 +1567,7 @@ Override code-variable ignore patterns for exceptions in the current context.
 
 ### Parameters
 
-- **`ignore_patterns?`** (`list`) - Variable-name patterns that should be omitted entirely         when code variables are captured.
+- **`ignore_patterns?`** (`list[str]`) - Variable-name patterns that should be omitted entirely         when code variables are captured.
 
 ### Returns
 
@@ -1437,7 +1583,7 @@ Override code-variable mask patterns for exceptions in the current context.
 
 ### Parameters
 
-- **`mask_patterns?`** (`list`) - Variable-name patterns whose values should be replaced         with ``***`` when code variables are captured.
+- **`mask_patterns?`** (`list[str]`) - Variable-name patterns whose values should be replaced         with ``***`` when code variables are captured.
 
 ### Returns
 
