@@ -1,5 +1,9 @@
 # SvelteKit error tracking installation - Docs
 
+Copy page
+
+# SvelteKit error tracking installation - Docs
+
 1.  1
 
     ## Install the package
@@ -50,7 +54,7 @@
           '<ph_project_token>',
           {
             api_host: 'https://us.i.posthog.com',
-            defaults: '2026-01-30'
+            defaults: '2026-05-30'
           }
         )
       }

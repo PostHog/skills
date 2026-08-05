@@ -1,10 +1,14 @@
 # Manual capture AI Observability installation - Docs
 
+Copy page
+
+# Manual capture AI Observability installation - Docs
+
 1.  1
 
     ## Capture LLM events manually
 
-    If you're using a different server-side SDK or prefer to use the API, you can manually capture the data by calling the `capture` method or using the [capture API](/docs/api/capture.md).
+    If you use a different server-side SDK, or prefer to use the API, capture the data manually. Call the `capture` method, or use the [capture API](/docs/api/capture.md).
 
     ## API
 
@@ -284,7 +288,8 @@
     | $ai_input_token_price | (Optional) Price per input token (used to calculate $ai_input_cost_usd) |
     | $ai_output_token_price | (Optional) Price per output token (used to calculate $ai_output_cost_usd) |
     | $ai_cache_read_token_price | (Optional) Price per cached token read |
-    | $ai_cache_write_token_price | (Optional) Price per cached token write |
+    | $ai_cache_write_token_price | (Optional) Price per cached token write. For custom Anthropic pricing, this applies to both cache TTLs unless $ai_cache_write_1h_token_price is set. |
+    | $ai_cache_write_1h_token_price | (Optional) Price per token written to Anthropic's 1-hour cache. Takes precedence over $ai_cache_write_token_price for 1-hour writes. |
     | $ai_request_price | (Optional) Price per request |
     | $ai_request_count | (Optional) Number of requests (defaults to 1 if $ai_request_price is set) |
     | $ai_web_search_price | (Optional) Price per web search |
@@ -295,7 +300,9 @@
     | Property | Description |
     | --- | --- |
     | $ai_cache_read_input_tokens | (Optional) Number of tokens read from cache |
-    | $ai_cache_creation_input_tokens | (Optional) Number of tokens written to cache (Anthropic-specific) |
+    | $ai_cache_creation_input_tokens | (Optional) Number of tokens written to cache (Anthropic-specific)When both TTL-specific counts are present, PostHog uses them instead of this aggregate. The aggregate should equal their sum; if either count is missing, PostHog uses the aggregate. |
+    | $ai_cache_creation_5m_input_tokens | (Optional) Number of tokens written to Anthropic's 5-minute cache |
+    | $ai_cache_creation_1h_input_tokens | (Optional) Number of tokens written to Anthropic's 1-hour cache |
     | $ai_cache_reporting_exclusive | (Optional) Whether cache tokens are excluded from $ai_input_tokens. When true, cache tokens are separate from input tokens. When false, input tokens already include cache tokens. Defaults to true for Anthropic provider or Claude models, false otherwise. |
 
     ### Model parameters
@@ -317,7 +324,7 @@
     | Property | Description |
     | --- | --- |
     | $ai_trace_id | The trace ID (a UUID to group related AI events together)Must contain only letters, numbers, and special characters: -, _, ~, ., @, (, ), !, ', :, \|Example: d9222e05-8708-41b8-98ea-d4a21849e761 |
-    | $ai_session_id | (Optional) Groups related traces together. Use this to organize traces by whatever grouping makes sense for your application (user sessions, workflows, conversations, or other logical boundaries).Example: session-abc-123, conv-user-456 |
+    | $ai_session_id | (Optional) Groups related traces together. Use this to organize traces by whatever grouping makes sense for your application (user sessions, workflows, conversations, or other logical boundaries).Must contain only letters, numbers, and special characters: -, _, ~, ., @, (, ), !, ', :, \|Example: session-abc-123, conv-user-456 |
     | $ai_latency | (Optional) The latency of the trace in seconds |
     | $ai_span_name | (Optional) The name of the traceExample: chat_completion, rag_pipeline |
     | $ai_is_error | (Optional) Boolean to indicate if the trace encountered an error |
