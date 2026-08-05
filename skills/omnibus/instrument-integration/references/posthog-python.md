@@ -1,6 +1,6 @@
 # PostHog Python SDK
 
-**SDK Version:** 7.17.0
+**SDK Version:** 7.20.1
 
 Integrate PostHog into any python application.
 
@@ -17,7 +17,7 @@ Integrate PostHog into any python application.
 
 ## PostHog
 
-This is the SDK reference for the PostHog Python SDK. You can learn more about example usage in the [Python SDK documentation](/docs/libraries/python). You can also follow [Flask](/docs/libraries/flask) and [Django](/docs/libraries/django) guides to integrate PostHog into your project.
+This is the SDK reference for the PostHog Python SDK. You can learn more about example usage in the [Python SDK documentation](/docs/libraries/python). You can also follow [Flask](/docs/libraries/flask) and [Django](/docs/libraries/django) guides to integrate PostHog into your project.  For long-running applications, create one client during application startup and reuse it for the lifetime of the process. This keeps background queues predictable and makes shutdown flushing straightforward. Multiple clients are still supported for intentional multi-project or multi-host setups.
 
 ### Initialization methods
 
@@ -62,6 +62,11 @@ Initialize a new PostHog client instance.
 - **`code_variables_mask_patterns`** (`any`) - Variable-name patterns to mask when         capturing code variables.
 - **`code_variables_ignore_patterns`** (`any`) - Variable-name patterns to omit when         capturing code variables.
 - **`in_app_modules`** (`UnionType[list[str], any]`) - Module/package prefixes treated as in-app frames in         captured exceptions.
+- **`enable_exception_autocapture_rate_limiting`** (`bool`) - Rate limit         autocaptured exceptions client-side with a token bucket per         exception type. Disabled by default.
+- **`exception_autocapture_bucket_size`** (`int`) - Maximum burst of autocaptured         exceptions allowed per exception type (token bucket size,         clamped to 0-100).
+- **`exception_autocapture_refill_rate`** (`int`) - Tokens restored per refill         interval for each exception type's bucket.
+- **`exception_autocapture_refill_interval_seconds`** (`int`) - Seconds between         token refills for autocaptured exception rate limiting.
+- **`_dedicated_ai_endpoint`** (`bool`)
 
 ### Returns
 
@@ -90,7 +95,7 @@ Create an alias between two distinct IDs.
 - **`previous_id?`** (`str`) - The previous distinct ID.
 - **`distinct_id?`** (`str`) - The new distinct ID to alias to.
 - **`timestamp`** (`any`) - The timestamp of the event.
-- **`uuid`** (`any`) - A unique identifier for the event.
+- **`uuid`** (`any`) - A unique identifier for the event. If provided, it must be a         valid UUID string or uuid.UUID instance; invalid values are         ignored and replaced with a newly generated UUID.
 - **`disable_geoip`** (`any`) - Whether to disable GeoIP for this event.
 
 ### Returns
@@ -117,7 +122,7 @@ Identify a group and set its properties.
 - **`group_key?`** (`str`) - The unique identifier for the group.
 - **`properties?`** (`dict[str, Any]`) - A dictionary of properties to set on the group.
 - **`timestamp`** (`datetime`) - The timestamp of the event.
-- **`uuid?`** (`str`) - A unique identifier for the event.
+- **`uuid`** (`str`) - A unique identifier for the event. If provided, it must be a         valid UUID string or uuid.UUID instance; invalid values are         ignored and replaced with a newly generated UUID.
 - **`disable_geoip?`** (`bool`) - Whether to disable GeoIP for this event.
 - **`distinct_id`** (`Number`) - The distinct ID of the user performing the action.
 
@@ -257,7 +262,7 @@ Capture an exception for error tracking.
 
 ### Returns
 
-- `None`
+- `Optional[str]`
 
 ### Examples
 
@@ -630,9 +635,13 @@ posthog.load_feature_flags()
 
 Force a flush from the internal queue to the server. Do not use directly, call `shutdown()` instead.
 
+### Parameters
+
+- **`timeout_seconds?`** (`float`) - Maximum seconds to wait for the queue to flush.         Defaults to 10 seconds. Pass ``None`` to wait indefinitely.
+
 ### Returns
 
-- `None`
+- `any`
 
 ### Examples
 
@@ -685,7 +694,7 @@ End the consumer thread once the queue is empty. Do not use directly, call `shut
 
 ### Returns
 
-- `None`
+- `any`
 
 ### Examples
 
@@ -703,7 +712,7 @@ Flush all messages and cleanly shutdown the client. Call this before the process
 
 ### Returns
 
-- `None`
+- `any`
 
 ### Examples
 
@@ -715,6 +724,34 @@ posthog.shutdown()
 
 ### Contexts methods
 
+#### get_tags()
+
+**Release Tag:** public
+
+Get all tags from the current context.  Returns:     Dict of all tags in the current context.
+
+### Returns
+
+- `dict[str, Any]`
+
+---
+
+#### identify_context()
+
+**Release Tag:** public
+
+Identify the current context with a distinct ID.
+
+### Parameters
+
+- **`distinct_id?`** (`str`) - The distinct ID to associate with the current context and its children.
+
+### Returns
+
+- `any`
+
+---
+
 #### new_context()
 
 **Release Tag:** public
@@ -724,7 +761,7 @@ Create a new context for managing shared state. Learn more about [contexts](/doc
 ### Parameters
 
 - **`fresh`** (`bool`) - Whether to create a fresh context that doesn't inherit from parent.
-- **`capture_exceptions`** (`bool`) - Whether to automatically capture exceptions in this context.
+- **`capture_exceptions?`** (`bool`) - Whether to automatically capture exceptions in this context. If omitted, defaults to this client's exception autocapture setting.
 
 ### Returns
 
@@ -733,10 +770,76 @@ Create a new context for managing shared state. Learn more about [contexts](/doc
 ### Examples
 
 ```python
-with posthog.new_context():
-    identify_context('<distinct_id>')
-    posthog.capture('event_name')
+with client.new_context():
+    client.identify_context('<distinct_id>')
+    client.capture('event_name')
 ```
+
+---
+
+#### scoped()
+
+**Release Tag:** public
+
+Decorator that creates a new context for the wrapped function using this client.
+
+### Parameters
+
+- **`fresh`** (`bool`) - Whether to create a fresh context that doesn't inherit from parent.
+- **`capture_exceptions?`** (`bool`) - Whether to automatically capture exceptions in this context. If omitted, defaults to this client's exception autocapture setting.
+
+### Returns
+
+- `None`
+
+---
+
+#### set_context_device_id()
+
+**Release Tag:** public
+
+Set the device ID for the current context.
+
+### Parameters
+
+- **`device_id?`** (`str`) - The device ID to associate with the current context and its children.
+
+### Returns
+
+- `any`
+
+---
+
+#### set_context_session()
+
+**Release Tag:** public
+
+Set the session ID for the current context.
+
+### Parameters
+
+- **`session_id?`** (`str`) - The session ID to associate with the current context and its children.
+
+### Returns
+
+- `any`
+
+---
+
+#### tag()
+
+**Release Tag:** public
+
+Add a tag to the current context.
+
+### Parameters
+
+- **`name?`** (`str`) - The tag key.
+- **`value?`** (`Any`) - The tag value.
+
+### Returns
+
+- `any`
 
 ---
 
@@ -977,7 +1080,7 @@ Capture exception is idempotent - if it is called twice with the same exception 
 
 ### Returns
 
-- `None`
+- `Optional[str]`
 
 ### Examples
 
@@ -1236,9 +1339,13 @@ load_feature_flags()
 
 Tell the client to flush all queued events.
 
+### Parameters
+
+- **`timeout_seconds?`** (`float`) - Maximum seconds to wait for the queue to flush.         Defaults to 10 seconds. Pass ``None`` to wait indefinitely.
+
 ### Returns
 
-- `None`
+- `any`
 
 ### Examples
 
@@ -1257,7 +1364,7 @@ Block program until the client clears the queue. Used during program shutdown. Y
 
 ### Returns
 
-- `None`
+- `any`
 
 ### Examples
 
@@ -1276,7 +1383,7 @@ Flush all messages and cleanly shutdown the client.
 
 ### Returns
 
-- `None`
+- `any`
 
 ### Examples
 
@@ -1352,7 +1459,7 @@ Create a new context scope that will be active for the duration of the with bloc
 ### Parameters
 
 - **`fresh`** (`bool`) - Whether to start with a fresh context (default: False)
-- **`capture_exceptions`** (`bool`) - Whether to capture exceptions raised within the context (default: True)
+- **`capture_exceptions?`** (`bool`) - Whether to capture exceptions raised within the context. If omitted, defaults to the relevant client's exception autocapture setting.
 - **`client?`** (`Client`) - Optional Posthog client instance to use for this context (default: None)
 
 ### Returns
@@ -1379,7 +1486,7 @@ Decorator that creates a new context for the function.
 ### Parameters
 
 - **`fresh`** (`bool`) - Whether to start with a fresh context (default: False)
-- **`capture_exceptions`** (`bool`) - Whether to capture and track exceptions with posthog error tracking (default: True)
+- **`capture_exceptions?`** (`bool`) - Whether to capture and track exceptions with posthog error tracking. If omitted, defaults to the global exception autocapture setting.
 
 ### Returns
 
