@@ -1,5 +1,9 @@
 # Angular error tracking installation - Docs
 
+Copy page
+
+# Angular error tracking installation - Docs
+
 1.  1
 
     ## Install the package
@@ -65,7 +69,7 @@
         this.ngZone.runOutsideAngular(() => {
           posthog.init(environment.posthogKey, {
             api_host: environment.posthogHost,
-            defaults: '2026-01-30',
+            defaults: '2026-05-30',
           });
         });
       }
@@ -113,7 +117,7 @@
     import posthog from 'posthog-js'
     posthog.init(environment.posthogKey, {
       api_host: environment.posthogHost,
-      defaults: '2025-11-30'
+      defaults: '2026-05-30'
     })
     bootstrapApplication(AppComponent, appConfig)
       .catch((err) => console.error(err));

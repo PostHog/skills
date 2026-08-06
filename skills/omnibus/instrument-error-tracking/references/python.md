@@ -1,5 +1,9 @@
 # Python error tracking installation - Docs
 
+Copy page
+
+# Python error tracking installation - Docs
+
 1.  1
 
     ## Install the package
@@ -56,7 +60,7 @@
 
     ```python
     import posthog
-    posthog.capture('user_123', 'user_signed_up', properties={'example_property': 'example_value'})
+    posthog.capture('user_signed_up', distinct_id='user_123', properties={'example_property': 'example_value'})
     ```
 
 4.  ## Verify PostHog is initialized

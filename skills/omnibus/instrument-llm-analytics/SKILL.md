@@ -35,7 +35,6 @@ STEP 2: Research instrumentation. (Skip if PostHog LLM tracing is already set up
 STEP 3: Install the PostHog SDK. (Skip if PostHog is already set up.)
   - Add the PostHog SDK and any required callback/integration packages.
   - Do not manually edit dependency files — use the package manager's install command.
-  - Always install packages as a background task. Don't await completion; proceed with other work immediately.
 
 STEP 4: Add LLM tracing.
   - Instrument LLM calls to capture input tokens, output tokens, model name, latency, and costs for every generation.
@@ -48,8 +47,8 @@ STEP 5: Link to users.
 
 STEP 6: Set up environment variables.
   - Check if the project already has PostHog environment variables configured (e.g. in `.env`, `.env.local`, or framework-specific env files). If valid values already exist, skip this step.
-  - If the PostHog API key is missing, use the PostHog MCP server's `projects-get` tool to retrieve the project's `api_token`. If multiple projects are returned, ask the user which project to use. If the MCP server is not connected or not authenticated, ask the user for their PostHog project API key instead.
-  - For the PostHog host URL, use `https://us.i.posthog.com` for US Cloud or `https://eu.i.posthog.com` for EU Cloud.
+  - If the PostHog project token is missing, use the PostHog MCP server's `projects-get` tool to retrieve the project's `api_token`. If multiple projects are returned, ask the user which project to use. If the MCP server is not connected or not authenticated, ask the user for their PostHog project token instead.
+  - For the PostHog host URL: check the `projects-get` MCP response for a `region` field — `US` maps to `https://us.i.posthog.com`, `EU` maps to `https://eu.i.posthog.com`. If the region is not available from the MCP response or from existing project configuration, ask the user: "Are you on PostHog US Cloud or EU Cloud?" Do not assume US Cloud.
   - Write these values to the appropriate env file using the framework's naming convention.
   - Reference these environment variables in code instead of hardcoding them.
 
@@ -57,7 +56,7 @@ STEP 6: Set up environment variables.
 
 - `references/openai.md` - Openai observability installation - docs
 - `references/azure-openai.md` - Azure openai observability installation - docs
-- `references/README.md` - PostHog.ai
+- `references/README.md` - PostHog.ai for .net
 - `references/anthropic.md` - Anthropic ai observability installation - docs
 - `references/google.md` - Google ai observability installation - docs
 - `references/cohere.md` - Cohere ai observability installation - docs
@@ -93,6 +92,7 @@ STEP 6: Set up environment variables.
 - `references/basics.md` - Ai observability basics - docs
 - `references/traces.md` - Traces - docs
 - `references/calculating-costs.md` - Calculating llm costs - docs
+- `references/COMMANDMENTS.md` - Framework-specific rules the integration must follow
 
 Each provider reference contains installation instructions, SDK setup, and code examples specific to that provider or framework. Find the reference that matches the user's stack.
 
