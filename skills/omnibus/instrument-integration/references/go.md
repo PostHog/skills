@@ -1,5 +1,9 @@
 # Go - Docs
 
+Copy page
+
+# Go - Docs
+
 This library uses an internal queue to make calls fast and non-blocking. It also batches requests and flushes asynchronously, making it perfect to use in any part of your web app or other server-side application that needs performance.
 
 ## Installation
@@ -159,19 +163,7 @@ We strongly recommend reading our docs on [alias](/docs/data/identify.md#alias-a
 
 Use request context to apply a distinct ID, session ID, and common request properties to capture and exception events inside a `net/http` request. This is useful when connecting frontend activity to backend events, session replay, error tracking, and feature flag evaluation.
 
-If you're using PostHog on your frontend, enable tracing headers for your backend domain:
-
-JavaScript
-
-PostHog AI
-
-```javascript
-posthog.init('<ph_project_token>', {
-    __add_tracing_headers: ['your-backend-domain.com']
-})
-```
-
-Then wrap your handler with `NewRequestContextMiddleware` and use the context-aware helpers:
+If you're using [PostHog JS](/docs/libraries/js.md) on the frontend, configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your Go backend hostname so browser requests include the session and distinct ID headers. Then wrap your handler with `NewRequestContextMiddleware` and use the context-aware helpers:
 
 Go
 
@@ -444,12 +436,13 @@ Go
 PostHog AI
 
 ```go
+// import "time"
 client, _ := posthog.NewWithConfig(
     os.Getenv("<ph_project_token>"),
     posthog.Config{
         PersonalApiKey:            "your personal API key", // Optional, but much more performant. If this token is not supplied, then fetching feature flag values will be slower.
         Endpoint:                  "https://us.i.posthog.com",
-        FeatureFlagRequestTimeout: 3, // Time in seconds. Defaults to 3.
+        FeatureFlagRequestTimeout: 3 * time.Second, // Defaults to 3 seconds.
     },
 )
 ```

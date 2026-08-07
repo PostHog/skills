@@ -1,5 +1,9 @@
 # Elixir - Docs
 
+Copy page
+
+# Elixir - Docs
+
 This library provides an Elixir HTTP client for PostHog. [See the repository](https://github.com/posthog/posthog-elixir) for more information.
 
 ## Installation
@@ -36,7 +40,7 @@ config :posthog,
 
 You can see all the available configuration options in the [PostHog.Config](https://hexdocs.pm/posthog/PostHog.Config.html) module.
 
-Optionally, you might want to enable the [Plug integration](https://hexdocs.pm/posthog/PostHog.Integrations.Plug.html) to automatically capture events from your Plug-based applications including Phoenix.
+Optionally, you might want to enable the [Plug integration](https://hexdocs.pm/posthog/PostHog.Integrations.Plug.html) to attach request metadata and tracing context in Plug-based applications including Phoenix. You still need to capture events explicitly with `PostHog.capture/2` or `PostHog.capture/3`.
 
 #### Development/Test mode
 
@@ -139,6 +143,41 @@ PostHog.capture("$groupidentify", %{
 })
 ```
 
+## Request context
+
+For Phoenix or Plug apps, add `PostHog.Integrations.Plug` before your router to attach request metadata and PostHog tracing headers to events captured during the request.
+
+lib/my\_app\_web/endpoint.ex
+
+PostHog AI
+
+```elixir
+plug PostHog.Integrations.Plug
+plug MyAppWeb.Router
+```
+
+For plain Plug routers, add it before `:match` and `:dispatch`:
+
+Elixir
+
+PostHog AI
+
+```elixir
+defmodule MyRouter do
+  use Plug.Router
+  plug PostHog.Integrations.Plug
+  plug :match
+  plug :dispatch
+  # ... routes
+end
+```
+
+The plug adds request metadata such as `$current_url`, `$host`, `$pathname`, `$request_method`, `$user_agent`, and `$ip`. It also reads `X-PostHog-Distinct-Id` and `X-PostHog-Session-Id` as analytics context so backend events and errors can be linked to frontend users and sessions.
+
+If you're using [PostHog JS](/docs/libraries/js.md) on the frontend, configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your Phoenix or Plug backend hostname so browser requests include these headers.
+
+Tracing headers are client-controlled analytics context, not authentication or authorization. Pass an authenticated `distinct_id` explicitly for security-sensitive server-side decisions.
+
 ## Feature flags
 
 PostHog's [feature flags](/docs/feature-flags.md) enable you to safely deploy and roll back new features as well as target specific users and groups with them.
@@ -219,7 +258,7 @@ PostHog AI
 
 ```elixir
 {:ok, snapshot} = PostHog.FeatureFlags.evaluate_flags("distinct_id_of_your_user")
-# Attach only flags accessed with enabled?/2, get_flag/2, or get_flag_payload/2 before this call
+# Attach only flags accessed with enabled?/2 or get_flag/2 before this call
 PostHog.FeatureFlags.Evaluations.enabled?(snapshot, "flag-key")
 PostHog.FeatureFlags.set_in_context(
   PostHog.FeatureFlags.Evaluations.only_accessed(snapshot)
@@ -230,7 +269,7 @@ PostHog.FeatureFlags.set_in_context(
 )
 ```
 
-`only_accessed/1` is order-dependent. If you call it before accessing any flags with `enabled?/2`, `get_flag/2`, or `get_flag_payload/2`, no feature flag properties are attached.
+`only_accessed/1` is order-dependent. If you call it before accessing any flags with `enabled?/2` or `get_flag/2`, no feature flag properties are attached.
 
 #### Method 2: Include the `$feature/feature_flag_name` property manually
 
