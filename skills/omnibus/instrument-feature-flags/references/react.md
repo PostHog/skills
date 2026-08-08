@@ -1,5 +1,9 @@
 # React Feature Flags installation - Docs
 
+Copy page
+
+# React Feature Flags installation - Docs
+
 1.  1
 
     ## Install the package
@@ -65,7 +69,7 @@
     import { PostHogProvider } from '@posthog/react'
     const options = {
       api_host: import.meta.env.VITE_POSTHOG_HOST,
-      defaults: '2026-01-30',
+      defaults: '2026-05-30',
     } as const
     createRoot(document.getElementById('root')).render(
       <StrictMode>
