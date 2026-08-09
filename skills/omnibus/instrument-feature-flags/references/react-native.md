@@ -1,5 +1,9 @@
 # React Native Feature Flags installation - Docs
 
+Copy page
+
+# React Native Feature Flags installation - Docs
+
 1.  1
 
     ## Install the package
@@ -105,7 +109,7 @@
         if (isMyFlagEnabled) {
             // Do something differently for this user
             // Optional: fetch the payload
-            const matchedFlagPayload = posthog.getFeatureFlagPayload('flag-key')
+            const matchedFlagPayload = posthog.getFeatureFlagResult('flag-key')?.payload
         }
         return <View>...</View>
     }
@@ -127,7 +131,7 @@
         if (enabledVariant === 'variant-key') { // replace 'variant-key' with the key of your variant
             // Do something differently for this user
             // Optional: fetch the payload
-            const matchedFlagPayload = posthog.getFeatureFlagPayload('flag-key')
+            const matchedFlagPayload = posthog.getFeatureFlagResult('flag-key')?.payload
         }
         return <View>...</View>
     }

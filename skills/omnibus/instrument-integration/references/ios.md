@@ -1,5 +1,9 @@
 # iOS - Docs
 
+Copy page
+
+# iOS - Docs
+
 The PostHog iOS SDK is a library that you can use to track events, identify users, record session replays, evaluate feature flags, run experiments, build surveys, and more.
 
 This page shows you how to install the SDK and get started with it. If you've already installed the SDK, you can skip ahead to learn about [using the features](/docs/libraries/ios/usage.md) and [configuring the SDK](/docs/libraries/ios/configuration.md).
@@ -15,7 +19,7 @@ Podfile
 PostHog AI
 
 ```ruby
-pod "PostHog", "~> 3.58.0"
+pod "PostHog", "~> 3.59.3"
 ```
 
 ### Swift Package Manager
@@ -30,7 +34,7 @@ PostHog AI
 
 ```swift
 dependencies: [
-  .package(url: "https://github.com/PostHog/posthog-ios.git", from: "3.58.0")
+  .package(url: "https://github.com/PostHog/posthog-ios.git", from: "3.59.3")
 ],
 ```
 
@@ -105,6 +109,10 @@ struct YourGreatApp: App {
 ## Identifying users
 
 > **Identifying users is required.** Call `posthog.identify('your-user-id')` after login to link events to a known user. This is what connects frontend event captures, [session replays](/docs/session-replay.md), [LLM traces](/docs/ai-engineering.md), and [error tracking](/docs/error-tracking.md) to the same person — and lets backend events link back too.
+>
+> Use a stable ID from your auth system when possible, not an email or display name. Send those as person properties instead. If your app has no other stable key, email works as a fallback if they are unique. Never a shared literal like `"anonymous"` or `"user"`, which pools many people onto one person and corrupts their data. When no ID is available at all, skip the identify and retain the anonymous distinct ID that's automatically assigned.
+>
+> Call `posthog.reset()` on logout, so the next person to use the browser doesn't inherit the last one's identity.
 >
 > See our guide on [identifying users](/docs/getting-started/identify-users.md) for how to set this up.
 
