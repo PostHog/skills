@@ -1,5 +1,9 @@
 # Node.js logs installation - Docs
 
+Copy page
+
+# Node.js logs installation - Docs
+
 1.  1
 
     ## Install OpenTelemetry packages
@@ -11,7 +15,7 @@
     PostHog AI
 
     ```bash
-    npm install @opentelemetry/sdk-node @opentelemetry/exporter-logs-otlp-http @opentelemetry/api-logs @opentelemetry/resources
+    npm install @opentelemetry/sdk-node @opentelemetry/exporter-logs-otlp-http @opentelemetry/api-logs @opentelemetry/resources @opentelemetry/sdk-logs
     ```
 
 2.  2
