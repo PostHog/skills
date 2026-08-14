@@ -165,4 +165,4 @@ $CSM_IMPERSONATE_HOME/                                   # default ~/impersonate
 
 ## Maintainer
 
-Sebastian Muriel — ping in `#project-customer-analytics` with feedback, gaps, or PRs.
+Sebastian Muriel — ping in `#team-customer-success` with feedback, gaps, or PRs.
