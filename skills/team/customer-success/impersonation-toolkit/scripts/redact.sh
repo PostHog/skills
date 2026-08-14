@@ -12,24 +12,39 @@ set -euo pipefail
 
 # perl is the portable choice for PCRE-like alternation and lookbehind.
 # It ships on macOS by default and every Linux distro we care about.
+#
+# Each rule names the shape it is redacting. There is deliberately no
+# "long-string-in-alphabet" catch-all — that pattern ate legitimate identifiers
+# (long flag keys, PascalCase exception classes, kebab-case slugs) and the
+# debug log's whole value is preserving those exact strings so a human can
+# grep them. When a new token shape shows up in the wild, add a named rule.
 exec perl -pe '
-  # JWT: three base64url segments separated by dots, header starts with eyJ.
-  s{\beyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\b}{<REDACTED-JWT>}g;
+  # JWT: three base64-or-base64url segments separated by dots, header starts
+  # with eyJ. Standard base64 (`+`, `/`) is included so we handle non-strict
+  # encoders as well as RFC 7515 base64url.
+  s{\beyJ[A-Za-z0-9+/=_-]{5,}\.[A-Za-z0-9+/=_-]{5,}\.[A-Za-z0-9+/=_-]{5,}\b}{<REDACTED-JWT>}g;
 
   # Bearer tokens — hex, base64, or base64url tail.
   s{\bBearer\s+[A-Za-z0-9+/=_.\-]{8,}}{Bearer <REDACTED-TOKEN>}gi;
 
-  # PostHog token prefixes we know about. No length floor — the prefix alone
-  # is enough signal that whatever follows is secret material.
+  # PostHog token prefixes. No length floor — the prefix alone is enough
+  # signal that whatever follows is secret material.
   s{\b(phc_|phx_|phs_|sTOK_)[A-Za-z0-9_\-]+}{$1<REDACTED-TOKEN>}g;
 
   # Cookie / Set-Cookie header values.
   s{(?i)(cookie:\s*)([^\r\n]+)}{$1<REDACTED-COOKIE>}g;
   s{(?i)(set-cookie:\s*)([^\r\n]+)}{$1<REDACTED-COOKIE>}g;
 
-  # Catch-all for token-shaped blobs (24+ chars from the base64url + padding
-  # alphabet). Lower than 32 so short OAuth codes are still caught. Anchored
-  # on word boundaries so it does not eat ordinary long identifiers embedded
-  # in words. Applies after the specific rules above so those wins.
-  s{\b[A-Za-z0-9+/=_-]{24,}\b}{<REDACTED-TOKEN>}g;
+  # Framed secret rule — a keyword like "token", "code", "authorization"
+  # followed by a token-shaped value. Anchored on the keyword so it names
+  # what it is protecting; leaves free-standing identifiers alone.
+  # Handles JSON (`"access_token":"..."`), query-string (`code=...`), and
+  # plain (`token abc123`) framings.
+  s{
+    ((?i:access_token|refresh_token|authorization|api_key|secret|token|code))  # keyword
+    (["\x27]?)                                                                  # optional closing quote after keyword (JSON)
+    (\s*[:=]\s*|\s+)                                                            # separator (colon, equals, or whitespace)
+    (["\x27]?)                                                                  # optional opening quote before value
+    ([A-Za-z0-9+/=_.\-]{8,})                                                    # token-shaped value
+  }{$1$2$3$4<REDACTED-TOKEN>}gx;
 '

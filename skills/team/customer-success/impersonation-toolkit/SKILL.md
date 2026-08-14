@@ -56,7 +56,10 @@ How to fix: [concrete next step — e.g. "Inside Claude Code, run /mcp → posth
 Then also append the same refusal as a JSONL entry to `$CSM_IMPERSONATE_REFUSAL_LOG` (env var set by the wrapper — defaults to `~/.local/state/impersonate-audit/refusals.log`). Substitute your own values for every `<...>` placeholder below; do not copy the placeholders verbatim. Every free-text field is piped through the deterministic redactor at `$CSM_IMPERSONATE_REDACT` before it reaches `jq`, so token-shaped strings can't survive to disk even if you mis-classify them:
 
 ```bash
-redact() { printf '%s' "$1" | "$CSM_IMPERSONATE_REDACT"; }
+redact() {
+  [[ -n "${CSM_IMPERSONATE_REDACT:-}" && -x "$CSM_IMPERSONATE_REDACT" ]] || { echo "redactor unavailable — skipping field" >&2; return 1; }
+  printf '%s' "$1" | "$CSM_IMPERSONATE_REDACT"
+}
 
 jq -nc \
   --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
@@ -77,7 +80,21 @@ Every free-text field in the refusal — `tried`, `went_wrong`, `why_blocks`, `h
 
 If `$CSM_IMPERSONATE_REFUSAL_LOG` is unset (skill invoked outside the wrapper), skip the log-write step — do not fall back to a default path. Still emit the refusal in chat and to the audit file.
 
-Then write the same refusal (in the human-readable format above, not JSON) to `$CSM_IMPERSONATE_AUDIT_FILE` — create the file or append. Include a `Session: <id>` footer line so the audit file joins back to the debug log without needing the terminal banner.
+Then write the same refusal (in the human-readable format above, not JSON) to `$CSM_IMPERSONATE_AUDIT_FILE` — create the file or append. **Build each of the four content lines through `redact()` before writing, exactly like the JSONL block.** The audit file is a durable, human-readable artifact — often committed to a notes repo or shared with the customer — and must not carry token material that the JSONL sibling was careful to strip. Include a `Session: <id>` footer line so the audit file joins back to the debug log without needing the terminal banner.
+
+```bash
+cat >> "$CSM_IMPERSONATE_AUDIT_FILE" <<EOF
+
+:no_entry: Cannot complete this audit
+
+What I tried: $(redact "<one line of what you tried>")
+What went wrong: $(redact "<one line of what went wrong>")
+Why this blocks the audit: $(redact "<one line of why this blocks the audit>")
+How to fix: $(redact "<one line of the concrete fix>")
+
+Session: $CSM_IMPERSONATE_SESSION_ID
+EOF
+```
 
 The log-write step is not optional when the env var is set. A refusal without a log entry is invisible to future debugging.
 
@@ -88,15 +105,18 @@ Alongside the structured refusal, append every raw MCP error you can see to `$CS
 Write one JSONL entry per raw error observation. The `session_id` field must match the one you wrote to the refusal log so the two are joinable. Every free-text field goes through the redactor before it reaches `jq`:
 
 ```bash
-redact() { printf '%s' "$1" | "$CSM_IMPERSONATE_REDACT"; }
+redact() {
+  [[ -n "${CSM_IMPERSONATE_REDACT:-}" && -x "$CSM_IMPERSONATE_REDACT" ]] || { echo "redactor unavailable — skipping field" >&2; return 1; }
+  printf '%s' "$1" | "$CSM_IMPERSONATE_REDACT"
+}
 
 jq -nc \
   --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg session_id "$CSM_IMPERSONATE_SESSION_ID" \
   --arg account "$CSM_IMPERSONATE_ACCOUNT" \
-  --arg event "<event type — e.g. mcp_error, probe, tool_call_error>" \
-  --arg tool "<tool name — e.g. experiment-list>" \
-  --arg status "<HTTP status or transport class — e.g. 401, timeout, tool_not_found>" \
+  --arg event "$(redact "<event type — e.g. mcp_error, probe, tool_call_error>")" \
+  --arg tool "$(redact "<tool name — e.g. experiment-list>")" \
+  --arg status "$(redact "<HTTP status or transport class — e.g. 401, timeout, tool_not_found>")" \
   --arg error_class "$(redact "<short label — e.g. AuthError, ProjectNotFound>")" \
   --arg raw "$(redact "<verbatim server error string, capped at ~2000 chars>")" \
   '{ts:$ts, session_id:$session_id, account:$account, event:$event, tool:$tool, status:$status, error_class:$error_class, raw:$raw}' \
@@ -111,7 +131,9 @@ Redaction is done by piping through `$CSM_IMPERSONATE_REDACT` — a deterministi
 - `phc_...`, `phx_...`, `phs_...`, `sTOK_...` and any known PostHog token prefix — keeps the prefix so you know the *shape* of what leaked, redacts the secret tail.
 - JWTs (`eyJ<header>.<payload>.<signature>`) — one-shot redacted to `<REDACTED-JWT>`.
 - Cookie / Set-Cookie header values.
-- Any 24+ character run from the base64url alphabet — catch-all for OAuth codes, session IDs, unrecognized token shapes.
+- Framed secrets — a keyword like `token`, `code`, `access_token`, `refresh_token`, `authorization`, `secret`, `api_key` followed by `:` / `=` / whitespace and a token-shaped value. The rule anchors on the keyword so it names what it protects and leaves free-standing identifiers (flag keys, class names, slugs) alone.
+
+Note: there is deliberately no pure length+charset catch-all. That pattern ate legitimate identifiers and the debug log's value depends on preserving them so a human can grep. When a new token shape shows up in the wild, add a named rule for it.
 
 Additional rules for the `raw` field content itself:
 
