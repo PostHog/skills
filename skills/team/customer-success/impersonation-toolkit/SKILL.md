@@ -57,7 +57,12 @@ Then also append the same refusal as a JSONL entry to `$CSM_IMPERSONATE_REFUSAL_
 
 ```bash
 redact() {
-  [[ -n "${CSM_IMPERSONATE_REDACT:-}" && -x "$CSM_IMPERSONATE_REDACT" ]] || { echo "redactor unavailable — skipping field" >&2; return 1; }
+  # If the redactor is missing, the caller falls through to an empty
+  # string (bash swallows the non-zero exit inside "$(...)"). The stderr
+  # note surfaces the reason and no secret can leak — safer than a raw
+  # write. Prefer running under the wrapper where the env var is always
+  # set to a real script.
+  [[ -n "${CSM_IMPERSONATE_REDACT:-}" && -x "$CSM_IMPERSONATE_REDACT" ]] || { echo "redactor unavailable — field will be empty" >&2; return 1; }
   printf '%s' "$1" | "$CSM_IMPERSONATE_REDACT"
 }
 
@@ -106,7 +111,12 @@ Write one JSONL entry per raw error observation. The `session_id` field must mat
 
 ```bash
 redact() {
-  [[ -n "${CSM_IMPERSONATE_REDACT:-}" && -x "$CSM_IMPERSONATE_REDACT" ]] || { echo "redactor unavailable — skipping field" >&2; return 1; }
+  # If the redactor is missing, the caller falls through to an empty
+  # string (bash swallows the non-zero exit inside "$(...)"). The stderr
+  # note surfaces the reason and no secret can leak — safer than a raw
+  # write. Prefer running under the wrapper where the env var is always
+  # set to a real script.
+  [[ -n "${CSM_IMPERSONATE_REDACT:-}" && -x "$CSM_IMPERSONATE_REDACT" ]] || { echo "redactor unavailable — field will be empty" >&2; return 1; }
   printf '%s' "$1" | "$CSM_IMPERSONATE_REDACT"
 }
 

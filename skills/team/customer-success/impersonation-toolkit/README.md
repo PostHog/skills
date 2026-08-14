@@ -189,7 +189,7 @@ Reason codes: `wrong_project`, `empty_project`, `mcp_disconnected`, `mcp_auth_ex
 
 Redaction is done by `scripts/redact.sh` — a small Perl script the wrapper points the skill at via `$CSM_IMPERSONATE_REDACT`. It runs outside the LLM, so a prompt-injected MCP error body can't talk the skill into skipping it. Every free-text field in either log — plus the human-readable refusal in the audit `.md` file — is piped through the script before write.
 
-Patterns covered: `Bearer` tokens, PostHog `phc_/phx_/phs_/sTOK_` prefixes, JWTs (`eyJ<hdr>.<pld>.<sig>`), cookie / set-cookie header values, and framed secrets (a keyword like `token`, `code`, `authorization`, `secret`, `api_key` followed by `:` / `=` / whitespace and a token-shaped value). Each rule names the shape it redacts; there's no length-based catch-all because that pattern ate legitimate identifiers. When a new token shape shows up, add a named rule for it and regen `scripts/redact-test.sh` with a case.
+Patterns covered: `Bearer` tokens, PostHog `phc_/phx_/phs_/sTOK_` prefixes, JWTs (`eyJ<hdr>.<pld>.<sig>`), cookie / set-cookie header values, and framed secrets (a keyword like `token`, `code`, `authorization`, `secret`, `api_key` followed by `:` / `=` / whitespace and a token-shaped value). Each rule names the shape it redacts; there's no length-based catch-all because that pattern ate legitimate identifiers. When a new token shape shows up, add a named rule to `scripts/redact.sh` and add a matching case to `scripts/redact-test.sh` so the pattern is regression-tested.
 
 ## Caveats
 

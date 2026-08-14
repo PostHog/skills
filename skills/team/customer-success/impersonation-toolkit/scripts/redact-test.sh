@@ -61,6 +61,16 @@ run "plain English stays"             'the impersonation session lapsed and swit
 run "regular filename stays"          'writing to refusals-log-file.json'                       'writing to refusals-log-file.json'
 run "empty input"                     ''                                                        ''
 
+# --- compound-key false positives (the keyword must be a word start) ---
+run "compound error_code stays"       'error_code: resource_not_found_here'                     'error_code: resource_not_found_here'
+run "compound reason_code stays"      'reason_code=INVALID_TOKEN_HERE'                          'reason_code=INVALID_TOKEN_HERE'
+run "compound status_code stays"      'status_code=tool_not_found_ever'                         'status_code=tool_not_found_ever'
+run "json code with diagnostic stays" '{"error":{"code":"resource_not_found"}}'                 '{"error":{"code":"resource_not_found"}}'
+run "code= diagnostic string stays"   'code: PROJECT_NOT_FOUND'                                 'code: PROJECT_NOT_FOUND'
+
+# --- but a compound key with a digit-bearing token value STILL redacts if the keyword itself is real ---
+run "token= real value still redacts" 'token=abc123def456ghi789'                                'token=<REDACTED-TOKEN>'
+
 echo
 echo "  ${pass} passed, ${fail} failed"
 
