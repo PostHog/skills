@@ -431,6 +431,34 @@ export CSM_IMPERSONATE_ACCOUNT_DIR="$ACCOUNT_DIR"
 export CSM_IMPERSONATE_AUDIT_FILE="$AUDIT_FILE"
 export CSM_CUSTOMER_CONTEXT_DIR
 
+# Session ID lets you correlate refusal-log entries with the raw-error debug
+# log — `jq 'select(.session_id == "...")'` across both files.
+if command -v uuidgen >/dev/null 2>&1; then
+  CSM_IMPERSONATE_SESSION_ID="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+else
+  CSM_IMPERSONATE_SESSION_ID="$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
+fi
+export CSM_IMPERSONATE_SESSION_ID
+
+# Cross-session refusal log. The skill appends one JSONL entry when it can't
+# complete an audit — grep / jq across it to see what's failing over time.
+CSM_IMPERSONATE_REFUSAL_LOG="${CSM_IMPERSONATE_REFUSAL_LOG:-${XDG_STATE_HOME:-$HOME/.local/state}/impersonate-audit/refusals.log}"
+mkdir -p "$(dirname "$CSM_IMPERSONATE_REFUSAL_LOG")"
+export CSM_IMPERSONATE_REFUSAL_LOG
+
+# Raw-error debug log. Verbose companion to refusals.log — the skill appends
+# raw MCP tool responses, HTTP status, and error class here. Cross-reference
+# via session_id.
+CSM_IMPERSONATE_DEBUG_LOG="${CSM_IMPERSONATE_DEBUG_LOG:-${XDG_STATE_HOME:-$HOME/.local/state}/impersonate-audit/debug.log}"
+mkdir -p "$(dirname "$CSM_IMPERSONATE_DEBUG_LOG")"
+export CSM_IMPERSONATE_DEBUG_LOG
+
+# Deterministic redactor. Free-text fields written to either log are piped
+# through this before write, so token-shaped strings can't survive to disk
+# even if the skill mis-classifies them. Ships with the plugin.
+CSM_IMPERSONATE_REDACT="${CSM_IMPERSONATE_REDACT:-$SCRIPT_DIR/redact.sh}"
+export CSM_IMPERSONATE_REDACT
+
 cd "$CSM_IMPERSONATE_HOME"
 
 cat <<EOF
@@ -441,6 +469,10 @@ cat <<EOF
   Folder:      $ACCOUNT_SLUG/  (notes, exports, scratch files)
   Audit:       $ACCOUNT_SLUG/$(basename "$AUDIT_FILE")
   Perms:       $SETTINGS_FILE
+  Session:     $CSM_IMPERSONATE_SESSION_ID
+  Refusals:    $CSM_IMPERSONATE_REFUSAL_LOG
+  Debug log:   $CSM_IMPERSONATE_DEBUG_LOG
+  Redactor:    $CSM_IMPERSONATE_REDACT
 EOF
 
 if [[ -n "$CSM_CUSTOMER_CONTEXT_DIR" ]]; then

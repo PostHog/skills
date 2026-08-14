@@ -142,7 +142,8 @@ impersonation-toolkit/
 ├── README.md                         # This file
 ├── scripts/
 │   ├── impersonate-audit.sh          # Wrapper invoked by the ~/bin/impersonate-audit shim
-│   └── impersonate-audit-shim.sh     # The shim itself — copy it to ~/bin/impersonate-audit
+│   ├── impersonate-audit-shim.sh     # The shim itself — copy it to ~/bin/impersonate-audit
+│   └── redact.sh                     # Deterministic token redactor for the two logs
 └── assets/
     └── settings.local.json           # Permissions template, merged into the shared settings file
 ```
@@ -150,11 +151,45 @@ impersonation-toolkit/
 And what it creates on your machine:
 
 ```
-${XDG_CONFIG_HOME:-~/.config}/impersonate-audit/config   # your two optional knobs
+${XDG_CONFIG_HOME:-~/.config}/impersonate-audit/config      # your two optional knobs
+${XDG_STATE_HOME:-~/.local/state}/impersonate-audit/
+├── refusals.log                                         # one JSONL entry per refused audit
+└── debug.log                                            # raw MCP errors, joinable to refusals.log by session_id
 $CSM_IMPERSONATE_HOME/                                   # default ~/impersonate, where Claude runs
 ├── .claude/settings.local.json                          # shared permissions
 └── <account-slug>/<YYYY-MM-DD>.md                       # one audit per account per day
 ```
+
+## Debugging failed audits
+
+When the skill can't complete an audit — wrong MCP project, disconnected MCP, missing experiment, empty data — it refuses explicitly instead of falling back to producing prompts for you to paste elsewhere. Two logs get you the full picture:
+
+- **`refusals.log`** — one JSONL entry per refused audit. Structured summary: account, timestamp, reason_code, what was tried, how to fix. This is the log to scan first.
+- **`debug.log`** — verbose companion. Raw MCP error responses, tool names, HTTP statuses, and error classes. Token-shaped strings are redacted before write. Cross-reference via `session_id` (also printed in the launch banner).
+
+Both live under `${XDG_STATE_HOME:-~/.local/state}/impersonate-audit/`. Neither rotates automatically; move old files aside when they get big.
+
+```bash
+# most recent refusals
+jq -c . ~/.local/state/impersonate-audit/refusals.log | tail
+
+# refusals for one account
+jq -c 'select(.account == "acme-inc")' ~/.local/state/impersonate-audit/refusals.log
+
+# count by reason
+jq -r .reason_code ~/.local/state/impersonate-audit/refusals.log | sort | uniq -c | sort -rn
+
+# pull the full raw-error trail for the most recent auth-expired refusal
+SID="$(jq -r 'select(.reason_code == "mcp_auth_expired") | .session_id' \
+       ~/.local/state/impersonate-audit/refusals.log | tail -1)"
+jq -c "select(.session_id == \"$SID\")" ~/.local/state/impersonate-audit/debug.log
+```
+
+Reason codes: `wrong_project`, `empty_project`, `mcp_disconnected`, `mcp_auth_expired`, `switch_project_failed`, `experiment_not_found`, `tool_call_error`, `other`. See `SKILL.md` for the exact discriminator on each. (A query that returns *zero rows* is an audit finding, not a refusal — Step 3 of the playbook diagnoses that.)
+
+Redaction is done by `scripts/redact.sh` — a small Perl script the wrapper points the skill at via `$CSM_IMPERSONATE_REDACT`. It runs outside the LLM, so a prompt-injected MCP error body can't talk the skill into skipping it. Every free-text field in either log — plus the human-readable refusal in the audit `.md` file — is piped through the script before write.
+
+Patterns covered: `Bearer` tokens, PostHog `phc_/phx_/phs_/sTOK_` prefixes, JWTs (`eyJ<hdr>.<pld>.<sig>`), cookie / set-cookie header values, and framed secrets (a keyword like `token`, `code`, `authorization`, `secret`, `api_key` followed by `:` / `=` / whitespace and a token-shaped value). Each rule names the shape it redacts; there's no length-based catch-all because that pattern ate legitimate identifiers. When a new token shape shows up, add a named rule to `scripts/redact.sh` and add a matching case to `scripts/redact-test.sh` so the pattern is regression-tested.
 
 ## Caveats
 

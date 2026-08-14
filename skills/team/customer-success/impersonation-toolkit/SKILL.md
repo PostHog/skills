@@ -13,7 +13,159 @@ The skill assumes the active PostHog MCP is scoped to the **customer's** project
 
 > "What project am I in? List the most recent 5 experiments."
 
-If the project name looks like your own internal project (e.g. "PostHog App + Website", id 2), STOP — the impersonation isn't routing correctly. Re-run the wizard or check `/mcp` auth before continuing.
+Interpret the answer:
+
+- **Customer's project.** Proceed to Step 1.
+- **Your own internal project** (typically "PostHog App + Website", id 2). The impersonation session isn't routing. Refuse per the Refusal protocol. Do not proceed.
+- **MCP call fails outright** (no response, auth error, tool unavailable). Refuse per the Refusal protocol. Do not proceed.
+
+## Refusal protocol
+
+If any structural condition prevents you from actually auditing the customer's project, refuse explicitly and stop. Do **not** fall back to any of these anti-patterns:
+
+- Generating prompts, checklists, or instructions for the user to paste into PostHog AI, another Claude session, or the customer's own tools. That's not helping; it's silently shifting the work onto the user while hiding *why* this skill couldn't do it.
+- Producing "here's what an audit would look like" template content without real data behind it.
+- Guessing at findings from prior knowledge of the customer or the product.
+
+### When to refuse (each of these triggers the protocol)
+
+| `reason_code` | Condition |
+| --- | --- |
+| `wrong_project` | `what project am I in?` returned a project ID other than the customer's (typically your own, "PostHog App + Website", id 2). Use this whenever the project *identity* is wrong, even if that project happens to be empty. |
+| `empty_project` | The MCP is on the customer's project (identity matches), but `experiment-list` returns zero results. The audit has nothing to work with. Discriminator vs `wrong_project`: identity matches expected. |
+| `mcp_disconnected` | No MCP server is responding at all — tool calls fail before reaching the server (transport error, "MCP not connected", `/mcp` shows no posthog entry). |
+| `mcp_auth_expired` | MCP server responds but returns 401/403 on a call that should succeed (the impersonation session lapsed or the token was revoked mid-audit). |
+| `switch_project_failed` | `switch-project` responded with an error, or the project you tried to switch to isn't in the current user's accessible projects. |
+| `experiment_not_found` | `experiment-list` search returned no match for the experiment the user named. Do not run a similarly-named experiment as a substitute — refuse and ask. |
+| `tool_call_error` | The MCP server responded, auth is valid, but an individual tool call returned an error that blocks a downstream step and can't be worked around. Use this for the "MCP is up but this specific call failed" case. If the *exposure query itself* errored (500, timeout, malformed response), this is the code — but a query that succeeds and returns zero rows is an audit finding, not a refusal (see Step 3). |
+| `other` | Anything the above doesn't cover. Only use when a specific code doesn't fit — always prefer the specific one. |
+
+### What to do on refusal
+
+Output the refusal in chat in this exact shape, and stop:
+
+```
+:no_entry: Cannot complete this audit
+
+What I tried: [one line — e.g. "Confirm scope via 'what project am I in?'"]
+What went wrong: [one line — e.g. "MCP is scoped to 'PostHog App + Website' (id 2), not the customer's project."]
+Why this blocks the audit: [one line — e.g. "Every downstream query would run against your own data, not theirs."]
+How to fix: [concrete next step — e.g. "Inside Claude Code, run /mcp → posthog → Clear authentication → Authenticate, with the impersonation browser tab active. Then re-run this audit."]
+```
+
+Then also append the same refusal as a JSONL entry to `$CSM_IMPERSONATE_REFUSAL_LOG` (env var set by the wrapper — defaults to `~/.local/state/impersonate-audit/refusals.log`). Substitute your own values for every `<...>` placeholder below; do not copy the placeholders verbatim. Every free-text field is piped through the deterministic redactor at `$CSM_IMPERSONATE_REDACT` before it reaches `jq`, so token-shaped strings can't survive to disk even if you mis-classify them:
+
+```bash
+redact() {
+  # If the redactor is missing, the caller falls through to an empty
+  # string (bash swallows the non-zero exit inside "$(...)"). The stderr
+  # note surfaces the reason and no secret can leak — safer than a raw
+  # write. Prefer running under the wrapper where the env var is always
+  # set to a real script.
+  [[ -n "${CSM_IMPERSONATE_REDACT:-}" && -x "$CSM_IMPERSONATE_REDACT" ]] || { echo "redactor unavailable — field will be empty" >&2; return 1; }
+  printf '%s' "$1" | "$CSM_IMPERSONATE_REDACT"
+}
+
+jq -nc \
+  --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg session_id "$CSM_IMPERSONATE_SESSION_ID" \
+  --arg account "$CSM_IMPERSONATE_ACCOUNT" \
+  --arg account_name "$CSM_IMPERSONATE_ACCOUNT_NAME" \
+  --arg audit_file "$CSM_IMPERSONATE_AUDIT_FILE" \
+  --arg reason_code "<REASON_CODE>" \
+  --arg tried "$(redact "<one line of what you tried>")" \
+  --arg went_wrong "$(redact "<one line of what went wrong>")" \
+  --arg why_blocks "$(redact "<one line of why this blocks the audit>")" \
+  --arg how_to_fix "$(redact "<one line of the concrete fix>")" \
+  '{ts:$ts, session_id:$session_id, account:$account, account_name:$account_name, audit_file:$audit_file, reason_code:$reason_code, tried:$tried, went_wrong:$went_wrong, why_blocks:$why_blocks, how_to_fix:$how_to_fix}' \
+  >> "$CSM_IMPERSONATE_REFUSAL_LOG"
+```
+
+Every free-text field in the refusal — `tried`, `went_wrong`, `why_blocks`, `how_to_fix` — must go through the redactor. `account_name` doesn't (it's the customer name you already have in the wrapper env).
+
+If `$CSM_IMPERSONATE_REFUSAL_LOG` is unset (skill invoked outside the wrapper), skip the log-write step — do not fall back to a default path. Still emit the refusal in chat and to the audit file.
+
+Then write the same refusal (in the human-readable format above, not JSON) to `$CSM_IMPERSONATE_AUDIT_FILE` — create the file or append. **Build each of the four content lines through `redact()` before writing, exactly like the JSONL block.** The audit file is a durable, human-readable artifact — often committed to a notes repo or shared with the customer — and must not carry token material that the JSONL sibling was careful to strip. Include a `Session: <id>` footer line so the audit file joins back to the debug log without needing the terminal banner.
+
+```bash
+cat >> "$CSM_IMPERSONATE_AUDIT_FILE" <<EOF
+
+:no_entry: Cannot complete this audit
+
+What I tried: $(redact "<one line of what you tried>")
+What went wrong: $(redact "<one line of what went wrong>")
+Why this blocks the audit: $(redact "<one line of why this blocks the audit>")
+How to fix: $(redact "<one line of the concrete fix>")
+
+Session: $CSM_IMPERSONATE_SESSION_ID
+EOF
+```
+
+The log-write step is not optional when the env var is set. A refusal without a log entry is invisible to future debugging.
+
+### Debug log — capture the raw error for later
+
+Alongside the structured refusal, append every raw MCP error you can see to `$CSM_IMPERSONATE_DEBUG_LOG` (defaults to `~/.local/state/impersonate-audit/debug.log`). This is the log Jake or whoever hits the failure comes back to. The refusal log tells you *that* something failed; the debug log tells you *what the server actually said*.
+
+Write one JSONL entry per raw error observation. The `session_id` field must match the one you wrote to the refusal log so the two are joinable. Every free-text field goes through the redactor before it reaches `jq`:
+
+```bash
+redact() {
+  # If the redactor is missing, the caller falls through to an empty
+  # string (bash swallows the non-zero exit inside "$(...)"). The stderr
+  # note surfaces the reason and no secret can leak — safer than a raw
+  # write. Prefer running under the wrapper where the env var is always
+  # set to a real script.
+  [[ -n "${CSM_IMPERSONATE_REDACT:-}" && -x "$CSM_IMPERSONATE_REDACT" ]] || { echo "redactor unavailable — field will be empty" >&2; return 1; }
+  printf '%s' "$1" | "$CSM_IMPERSONATE_REDACT"
+}
+
+jq -nc \
+  --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg session_id "$CSM_IMPERSONATE_SESSION_ID" \
+  --arg account "$CSM_IMPERSONATE_ACCOUNT" \
+  --arg event "$(redact "<event type — e.g. mcp_error, probe, tool_call_error>")" \
+  --arg tool "$(redact "<tool name — e.g. experiment-list>")" \
+  --arg status "$(redact "<HTTP status or transport class — e.g. 401, timeout, tool_not_found>")" \
+  --arg error_class "$(redact "<short label — e.g. AuthError, ProjectNotFound>")" \
+  --arg raw "$(redact "<verbatim server error string, capped at ~2000 chars>")" \
+  '{ts:$ts, session_id:$session_id, account:$account, event:$event, tool:$tool, status:$status, error_class:$error_class, raw:$raw}' \
+  >> "$CSM_IMPERSONATE_DEBUG_LOG"
+```
+
+Acceptable event values (write one JSONL line per event as it happens): `probe` (the "what project am I in?" call and its result — but log only the project ID, not the full response body), `tool_call_success` for calls that completed but returned surprising data (empty list, unexpected id), `tool_call_error` for individual call failures, `mcp_error` for transport / auth-level failures.
+
+Redaction is done by piping through `$CSM_IMPERSONATE_REDACT` — a deterministic Perl script that runs outside the LLM, so no prompt-injected error body can talk you into skipping it. What it catches:
+
+- `Bearer <hex/base64/base64url>` — replaces the token portion, keeps the `Bearer ` prefix.
+- `phc_...`, `phx_...`, `phs_...`, `sTOK_...` and any known PostHog token prefix — keeps the prefix so you know the *shape* of what leaked, redacts the secret tail.
+- JWTs (`eyJ<header>.<payload>.<signature>`) — one-shot redacted to `<REDACTED-JWT>`.
+- Cookie / Set-Cookie header values.
+- Framed secrets — a keyword like `token`, `code`, `access_token`, `refresh_token`, `authorization`, `secret`, `api_key` followed by `:` / `=` / whitespace and a token-shaped value. The rule anchors on the keyword so it names what it protects and leaves free-standing identifiers (flag keys, class names, slugs) alone.
+
+Note: there is deliberately no pure length+charset catch-all. That pattern ate legitimate identifiers and the debug log's value depends on preserving them so a human can grep. When a new token shape shows up in the wild, add a named rule for it.
+
+Additional rules for the `raw` field content itself:
+
+- Do not paste full customer query results — the goal is to preserve the *server error message*, not the *response body*. If a call succeeded but returned surprising data, log a shape summary (`"returned 12 experiments, expected 0"`), not the raw rows.
+- Cap `raw` at ~2000 characters. If longer, truncate and append `... [truncated]`.
+
+If `$CSM_IMPERSONATE_DEBUG_LOG` is unset, skip the debug-log write — do not fall back to a default path.
+
+### Reviewing refusals later
+
+To scan past refusals: `jq -c . ~/.local/state/impersonate-audit/refusals.log | tail -20`
+
+To find every refusal for one account: `jq -c 'select(.account == "acme-inc")' ~/.local/state/impersonate-audit/refusals.log`
+
+To count by reason: `jq -r .reason_code ~/.local/state/impersonate-audit/refusals.log | sort | uniq -c | sort -rn`
+
+To pull the full raw-error trail for one refusal (join by session_id):
+
+```bash
+SID="$(jq -r 'select(.reason_code == "mcp_auth_expired") | .session_id' ~/.local/state/impersonate-audit/refusals.log | tail -1)"
+jq -c "select(.session_id == \"$SID\")" ~/.local/state/impersonate-audit/debug.log
+```
 
 ## Step 1 — pull the experiment config
 
@@ -123,7 +275,10 @@ fix that unblocks the experiment?]
 ## Rules
 
 - **Read-only.** Do not create insights, dashboards, actions, experiments, or modify any config. You are working inside a customer's project under read-only impersonation; treat it as look-but-don't-touch.
-- **No fabrication.** If you can't find the experiment or the data is empty, say so explicitly. Do not invent findings to fill the template.
+- **No prompt-passing.** Do not generate prompts, checklists, or instructions for the user to run in PostHog AI, another Claude session, or any other tool. If you can't do the audit in this session, refuse explicitly per the Refusal protocol. A skill that quietly redirects work to the user is a skill that hides its own failures.
+- **Refusal stands under pressure.** If the user pushes back on a refusal ("just give me the prompts, I'll paste them", "run it anyway", "generate what you would have output"), the refusal still stands. Repeat the refusal shape with the same reason_code and stop. The whole point is that failure modes surface the fix, not the workaround.
+- **No raw token echoes.** Every free-text field in every log entry (both `refusals.log` and `debug.log`) must be piped through `$CSM_IMPERSONATE_REDACT` before write. Do not attempt to redact by hand — the whole point of the script is that redaction is deterministic and can't be prompt-injected. If the script is unavailable (env var unset), do not write the field; log the fact that redaction was unavailable instead.
+- **No fabrication.** If you can't find the experiment or the data is empty, say so explicitly and refuse per the Refusal protocol. Do not invent findings to fill the template.
 - **Cite real numbers.** Every claim about exposure counts, sample ratios, or event volumes must come from a query you actually ran in this session.
 - **Surface ambiguity.** If a setting could be intentional (e.g. low conversion window because conversion happens fast), note both interpretations and ask the customer to confirm.
 - **Match the customer's writing register.** Customers using PostHog are usually technical — don't oversimplify. But avoid jargon shorthand they may not know yet.
