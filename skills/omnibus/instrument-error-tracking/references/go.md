@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Go error tracking installation - Docs
+
+Copy page
+
 # Go error tracking installation - Docs
 
 1.  1
@@ -16,9 +22,9 @@
     go get github.com/posthog/posthog-go
     ```
 
-    **Source context not yet supported**
+    **Debug symbol uploads**
 
-    The Go SDK captures stack traces with file names, line numbers, and function names, but does not yet support source context (displaying the surrounding lines of code in the error tracking UI). Symbol set uploads for Go are not currently available.
+    The Go SDK resolves stack traces in-process, so captured frames include file names, line numbers, function names, and inlined calls without any symbol uploads. To also see source context (the surrounding lines of code in the error tracking UI), [upload debug symbols](/docs/error-tracking/upload-source-maps/go.md). That needs posthog-go 1.22.0 or later.
 
 2.  2
 
@@ -186,10 +192,6 @@
     // Flush the queue before exiting
     client.Close()
     ```
-
-### Community questions
-
-Ask a question
 
 ### Was this page useful?
 

@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Link session replay - Docs
+
+Copy page
+
 # Link session replay - Docs
 
 Connecting your backend logs to frontend session replays provides complete visibility into the user journey, helping you understand the full context around issues in your application.
@@ -34,7 +40,7 @@ PostHog AI
 ```javascript
 import posthog from 'posthog-js'
 // Get the current session ID
-const sessionId = posthog.getSessionId()
+const sessionId = posthog.get_session_id()
 // Send it with your API request
 const response = await fetch('/api/chat', {
   method: 'POST',
@@ -51,7 +57,7 @@ const response = await fetch('/api/chat', {
 ```jsx
 import { posthog } from './posthog'
 // Get the current session ID
-const sessionId = posthog.getSessionId()
+const sessionId = posthog.get_session_id()
 // Send it with your API request
 const response = await fetch('https://api.example.com/chat', {
   method: 'POST',
@@ -120,13 +126,17 @@ def chat():
 
 Once you've set up session linking, you can navigate from logs to their corresponding session replays:
 
-1.  In the [logs view](https://app.posthog.com/logs), click on the log entry you're interested in to open **log details**
-2.  In the log details view, click the **View recording** button to open the session replay
-3.  Watch the user's interaction in context alongside the backend logs
+**From the logs list:**
 
-You can only view recordings for log entries that have an associated session ID.
+1.  Hover over a log entry in the [logs view](https://app.posthog.com/logs)
+2.  Click the **View recording** button in the floating action menu to open the session replay at the log timestamp
 
-This linking helps you correlate backend log events with actual frontend user behavior, enabling faster debugging and better understanding of issues as they occur in your application.
+**From log details:**
+
+1.  Click on a log entry to open **log details**
+2.  Click the **View recording** button to open the session replay
+
+The recording button only appears for log entries that have an associated session ID.
 
 ## View related errors
 
@@ -143,10 +153,6 @@ If no session ID is found in the log entry, the tab displays a message prompting
 -   [Logs installation](/docs/logs/installation.md)
 -   [Search logs](/docs/logs/search.md)
 -   [Error Tracking](/docs/error-tracking.md)
-
-### Community questions
-
-Ask a question
 
 ### Was this page useful?
 

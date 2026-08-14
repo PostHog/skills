@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Node.js logs installation - Docs
+
+Copy page
+
 # Node.js logs installation - Docs
 
 1.  1
@@ -11,7 +17,7 @@
     PostHog AI
 
     ```bash
-    npm install @opentelemetry/sdk-node @opentelemetry/exporter-logs-otlp-http @opentelemetry/api-logs @opentelemetry/resources
+    npm install @opentelemetry/sdk-node @opentelemetry/exporter-logs-otlp-http @opentelemetry/api-logs @opentelemetry/resources @opentelemetry/sdk-logs
     ```
 
 2.  2
@@ -126,10 +132,6 @@
     | [Logging best practices](/docs/logs/best-practices.md) | Learn what to log, how to structure logs, and patterns that make logs useful in production |
 
     [Troubleshoot common issues](/docs/logs/troubleshooting.md)
-
-### Community questions
-
-Ask a question
 
 ### Was this page useful?
 
