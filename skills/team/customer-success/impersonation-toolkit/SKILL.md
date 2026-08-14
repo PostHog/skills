@@ -13,7 +13,116 @@ The skill assumes the active PostHog MCP is scoped to the **customer's** project
 
 > "What project am I in? List the most recent 5 experiments."
 
-If the project name looks like your own internal project (e.g. "PostHog App + Website", id 2), STOP — the impersonation isn't routing correctly. Re-run the wizard or check `/mcp` auth before continuing.
+Interpret the answer:
+
+- **Customer's project.** Proceed to Step 1.
+- **Your own internal project** (typically "PostHog App + Website", id 2). The impersonation session isn't routing. Refuse per the Refusal protocol. Do not proceed.
+- **MCP call fails outright** (no response, auth error, tool unavailable). Refuse per the Refusal protocol. Do not proceed.
+
+## Refusal protocol
+
+If any structural condition prevents you from actually auditing the customer's project, refuse explicitly and stop. Do **not** fall back to any of these anti-patterns:
+
+- Generating prompts, checklists, or instructions for the user to paste into PostHog AI, another Claude session, or the customer's own tools. That's not helping; it's silently shifting the work onto the user while hiding *why* this skill couldn't do it.
+- Producing "here's what an audit would look like" template content without real data behind it.
+- Guessing at findings from prior knowledge of the customer or the product.
+
+### When to refuse (each of these triggers the protocol)
+
+| `reason_code` | Condition |
+| --- | --- |
+| `wrong_project` | `what project am I in?` returned a project ID other than the customer's (typically your own, "PostHog App + Website", id 2). Use this whenever the project *identity* is wrong, even if that project happens to be empty. |
+| `empty_project` | The MCP is on the customer's project (identity matches), but `experiment-list` returns zero results. The audit has nothing to work with. Discriminator vs `wrong_project`: identity matches expected. |
+| `mcp_disconnected` | No MCP server is responding at all — tool calls fail before reaching the server (transport error, "MCP not connected", `/mcp` shows no posthog entry). |
+| `mcp_auth_expired` | MCP server responds but returns 401/403 on a call that should succeed (the impersonation session lapsed or the token was revoked mid-audit). |
+| `switch_project_failed` | `switch-project` responded with an error, or the project you tried to switch to isn't in the current user's accessible projects. |
+| `experiment_not_found` | `experiment-list` search returned no match for the experiment the user named. Do not run a similarly-named experiment as a substitute — refuse and ask. |
+| `no_exposure_data` | The experiment exists and the project identity is right, but `$feature_flag_called` returns zero rows since the experiment's start date. The audit has no evidence to work from. |
+| `tool_call_error` | The MCP server responded, auth is valid, but an individual tool call returned an error that blocks a downstream step and can't be worked around. Use this for the "MCP is up but this specific call failed" case. |
+| `other` | Anything the above doesn't cover. Only use when a specific code doesn't fit — always prefer the specific one. |
+
+### What to do on refusal
+
+Output the refusal in chat in this exact shape, and stop:
+
+```
+:no_entry: Cannot complete this audit
+
+What I tried: [one line — e.g. "Confirm scope via 'what project am I in?'"]
+What went wrong: [one line — e.g. "MCP is scoped to 'PostHog App + Website' (id 2), not the customer's project."]
+Why this blocks the audit: [one line — e.g. "Every downstream query would run against your own data, not theirs."]
+How to fix: [concrete next step — e.g. "Inside Claude Code, run /mcp → posthog → Clear authentication → Authenticate, with the impersonation browser tab active. Then re-run this audit."]
+```
+
+Then also append the same refusal as a JSONL entry to `$CSM_IMPERSONATE_REFUSAL_LOG` (env var set by the wrapper — defaults to `~/.local/state/impersonate-audit/refusals.log`). Substitute your own values for every `<...>` placeholder below; do not copy the placeholders verbatim. Use `jq` so free-text fields are safely JSON-escaped:
+
+```bash
+jq -nc \
+  --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg session_id "$CSM_IMPERSONATE_SESSION_ID" \
+  --arg account "$CSM_IMPERSONATE_ACCOUNT" \
+  --arg account_name "$CSM_IMPERSONATE_ACCOUNT_NAME" \
+  --arg audit_file "$CSM_IMPERSONATE_AUDIT_FILE" \
+  --arg reason_code "<REASON_CODE>" \
+  --arg tried "<one line of what you tried>" \
+  --arg went_wrong "<one line of what went wrong>" \
+  --arg why_blocks "<one line of why this blocks the audit>" \
+  --arg how_to_fix "<one line of the concrete fix>" \
+  '{ts:$ts, session_id:$session_id, account:$account, account_name:$account_name, audit_file:$audit_file, reason_code:$reason_code, tried:$tried, went_wrong:$went_wrong, why_blocks:$why_blocks, how_to_fix:$how_to_fix}' \
+  >> "$CSM_IMPERSONATE_REFUSAL_LOG"
+```
+
+If `$CSM_IMPERSONATE_REFUSAL_LOG` is unset (skill invoked outside the wrapper), skip the log-write step — do not fall back to a default path. Still emit the refusal in chat and to the audit file.
+
+Then write the same refusal (in the human-readable format above, not JSON) to `$CSM_IMPERSONATE_AUDIT_FILE` — create the file or append. So the audit folder itself carries the record.
+
+The log-write step is not optional when the env var is set. A refusal without a log entry is invisible to future debugging.
+
+### Debug log — capture the raw error for later
+
+Alongside the structured refusal, append every raw MCP error you can see to `$CSM_IMPERSONATE_DEBUG_LOG` (defaults to `~/.local/state/impersonate-audit/debug.log`). This is the log Jake or whoever hits the failure comes back to. The refusal log tells you *that* something failed; the debug log tells you *what the server actually said*.
+
+Write one JSONL entry per raw error observation. The `session_id` field must match the one you wrote to the refusal log so the two are joinable:
+
+```bash
+jq -nc \
+  --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg session_id "$CSM_IMPERSONATE_SESSION_ID" \
+  --arg account "$CSM_IMPERSONATE_ACCOUNT" \
+  --arg event "mcp_error" \
+  --arg tool "<tool name — e.g. experiment-list>" \
+  --arg status "<HTTP status or transport class — e.g. 401, timeout, tool_not_found>" \
+  --arg error_class "<short label — e.g. AuthError, ProjectNotFound, RateLimited>" \
+  --arg raw "<verbatim server error string, redacted per the rules below>" \
+  '{ts:$ts, session_id:$session_id, account:$account, event:$event, tool:$tool, status:$status, error_class:$error_class, raw:$raw}' \
+  >> "$CSM_IMPERSONATE_DEBUG_LOG"
+```
+
+Also acceptable events (write one line each as they happen): `probe` (the "what project am I in?" call and its result), `tool_call_success` for calls that completed but returned surprising data (empty list, unexpected id), and `tool_call_error` for individual call failures.
+
+Redaction rules for the `raw` field, applied before you write:
+
+- Replace anything of the shape `Bearer <hex>`, `Bearer <base64>`, `phc_[A-Za-z0-9_-]+`, `phx_[A-Za-z0-9_-]+`, or any 32+ character hex/base64 blob with `<REDACTED-TOKEN>`. When in doubt, redact.
+- Replace any Set-Cookie / session-id header value with `<REDACTED-COOKIE>`.
+- Do not include full customer query results in the raw field — the goal is to preserve the *server error message*, not the *response body*. If the server returned data instead of an error, log the error class and a short shape summary (`"returned 12 experiments, expected 0"`), not the raw rows.
+- Cap `raw` at ~2000 characters. If longer, truncate and append `... [truncated]`.
+
+If `$CSM_IMPERSONATE_DEBUG_LOG` is unset, skip the debug-log write — do not fall back to a default path.
+
+### Reviewing refusals later
+
+To scan past refusals: `jq -c . ~/.local/state/impersonate-audit/refusals.log | tail -20`
+
+To find every refusal for one account: `jq -c 'select(.account == "acme-inc")' ~/.local/state/impersonate-audit/refusals.log`
+
+To count by reason: `jq -r .reason_code ~/.local/state/impersonate-audit/refusals.log | sort | uniq -c | sort -rn`
+
+To pull the full raw-error trail for one refusal (join by session_id):
+
+```bash
+SID="$(jq -r 'select(.reason_code == "mcp_auth_expired") | .session_id' ~/.local/state/impersonate-audit/refusals.log | tail -1)"
+jq -c "select(.session_id == \"$SID\")" ~/.local/state/impersonate-audit/debug.log
+```
 
 ## Step 1 — pull the experiment config
 
@@ -123,7 +232,10 @@ fix that unblocks the experiment?]
 ## Rules
 
 - **Read-only.** Do not create insights, dashboards, actions, experiments, or modify any config. You are working inside a customer's project under read-only impersonation; treat it as look-but-don't-touch.
-- **No fabrication.** If you can't find the experiment or the data is empty, say so explicitly. Do not invent findings to fill the template.
+- **No prompt-passing.** Do not generate prompts, checklists, or instructions for the user to run in PostHog AI, another Claude session, or any other tool. If you can't do the audit in this session, refuse explicitly per the Refusal protocol. A skill that quietly redirects work to the user is a skill that hides its own failures.
+- **Refusal stands under pressure.** If the user pushes back on a refusal ("just give me the prompts, I'll paste them", "run it anyway", "generate what you would have output"), the refusal still stands. Repeat the refusal shape with the same reason_code and stop. The whole point is that failure modes surface the fix, not the workaround.
+- **No raw token echoes.** When you paste MCP error output into the debug log, apply the redaction rules in the Debug log section. Never echo `Bearer ...`, `phc_...`, `phx_...`, session-cookie values, or long hex/base64 blobs verbatim, even inside the raw error field. If you're not sure whether something is sensitive, redact it.
+- **No fabrication.** If you can't find the experiment or the data is empty, say so explicitly and refuse per the Refusal protocol. Do not invent findings to fill the template.
 - **Cite real numbers.** Every claim about exposure counts, sample ratios, or event volumes must come from a query you actually ran in this session.
 - **Surface ambiguity.** If a setting could be intentional (e.g. low conversion window because conversion happens fast), note both interpretations and ask the customer to confirm.
 - **Match the customer's writing register.** Customers using PostHog are usually technical — don't oversimplify. But avoid jargon shorthand they may not know yet.
