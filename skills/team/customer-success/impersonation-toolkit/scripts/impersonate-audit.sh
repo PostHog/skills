@@ -447,11 +447,17 @@ mkdir -p "$(dirname "$CSM_IMPERSONATE_REFUSAL_LOG")"
 export CSM_IMPERSONATE_REFUSAL_LOG
 
 # Raw-error debug log. Verbose companion to refusals.log — the skill appends
-# raw MCP tool responses, HTTP status, and error class here (token-shaped
-# strings are redacted before write). Cross-reference via session_id.
+# raw MCP tool responses, HTTP status, and error class here. Cross-reference
+# via session_id.
 CSM_IMPERSONATE_DEBUG_LOG="${CSM_IMPERSONATE_DEBUG_LOG:-${XDG_STATE_HOME:-$HOME/.local/state}/impersonate-audit/debug.log}"
 mkdir -p "$(dirname "$CSM_IMPERSONATE_DEBUG_LOG")"
 export CSM_IMPERSONATE_DEBUG_LOG
+
+# Deterministic redactor. Free-text fields written to either log are piped
+# through this before write, so token-shaped strings can't survive to disk
+# even if the skill mis-classifies them. Ships with the plugin.
+CSM_IMPERSONATE_REDACT="${CSM_IMPERSONATE_REDACT:-$SCRIPT_DIR/redact.sh}"
+export CSM_IMPERSONATE_REDACT
 
 cd "$CSM_IMPERSONATE_HOME"
 
@@ -466,6 +472,7 @@ cat <<EOF
   Session:     $CSM_IMPERSONATE_SESSION_ID
   Refusals:    $CSM_IMPERSONATE_REFUSAL_LOG
   Debug log:   $CSM_IMPERSONATE_DEBUG_LOG
+  Redactor:    $CSM_IMPERSONATE_REDACT
 EOF
 
 if [[ -n "$CSM_CUSTOMER_CONTEXT_DIR" ]]; then

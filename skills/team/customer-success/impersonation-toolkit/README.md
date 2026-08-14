@@ -142,7 +142,8 @@ impersonation-toolkit/
 ├── README.md                         # This file
 ├── scripts/
 │   ├── impersonate-audit.sh          # Wrapper invoked by the ~/bin/impersonate-audit shim
-│   └── impersonate-audit-shim.sh     # The shim itself — copy it to ~/bin/impersonate-audit
+│   ├── impersonate-audit-shim.sh     # The shim itself — copy it to ~/bin/impersonate-audit
+│   └── redact.sh                     # Deterministic token redactor for the two logs
 └── assets/
     └── settings.local.json           # Permissions template, merged into the shared settings file
 ```
@@ -184,7 +185,9 @@ SID="$(jq -r 'select(.reason_code == "mcp_auth_expired") | .session_id' \
 jq -c "select(.session_id == \"$SID\")" ~/.local/state/impersonate-audit/debug.log
 ```
 
-Reason codes: `wrong_project`, `empty_project`, `mcp_disconnected`, `mcp_auth_expired`, `switch_project_failed`, `experiment_not_found`, `no_exposure_data`, `tool_call_error`, `other`. See `SKILL.md` for the exact discriminator on each.
+Reason codes: `wrong_project`, `empty_project`, `mcp_disconnected`, `mcp_auth_expired`, `switch_project_failed`, `experiment_not_found`, `tool_call_error`, `other`. See `SKILL.md` for the exact discriminator on each. (A query that returns *zero rows* is an audit finding, not a refusal — Step 3 of the playbook diagnoses that.)
+
+Redaction is done by `scripts/redact.sh` — a small Perl script the wrapper points the skill at via `$CSM_IMPERSONATE_REDACT`. It runs outside the LLM, so a prompt-injected MCP error body can't talk the skill into skipping it. Every free-text field in either log is piped through the script before write. Patterns covered: `Bearer` tokens, PostHog `phc_/phx_/phs_/sTOK_` prefixes, JWTs, cookie/set-cookie header values, and any 24+ char base64url blob (catch-all for OAuth codes and unknown token shapes).
 
 ## Caveats
 

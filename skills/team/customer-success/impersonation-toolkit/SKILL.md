@@ -37,8 +37,7 @@ If any structural condition prevents you from actually auditing the customer's p
 | `mcp_auth_expired` | MCP server responds but returns 401/403 on a call that should succeed (the impersonation session lapsed or the token was revoked mid-audit). |
 | `switch_project_failed` | `switch-project` responded with an error, or the project you tried to switch to isn't in the current user's accessible projects. |
 | `experiment_not_found` | `experiment-list` search returned no match for the experiment the user named. Do not run a similarly-named experiment as a substitute — refuse and ask. |
-| `no_exposure_data` | The experiment exists and the project identity is right, but `$feature_flag_called` returns zero rows since the experiment's start date. The audit has no evidence to work from. |
-| `tool_call_error` | The MCP server responded, auth is valid, but an individual tool call returned an error that blocks a downstream step and can't be worked around. Use this for the "MCP is up but this specific call failed" case. |
+| `tool_call_error` | The MCP server responded, auth is valid, but an individual tool call returned an error that blocks a downstream step and can't be worked around. Use this for the "MCP is up but this specific call failed" case. If the *exposure query itself* errored (500, timeout, malformed response), this is the code — but a query that succeeds and returns zero rows is an audit finding, not a refusal (see Step 3). |
 | `other` | Anything the above doesn't cover. Only use when a specific code doesn't fit — always prefer the specific one. |
 
 ### What to do on refusal
@@ -54,9 +53,11 @@ Why this blocks the audit: [one line — e.g. "Every downstream query would run 
 How to fix: [concrete next step — e.g. "Inside Claude Code, run /mcp → posthog → Clear authentication → Authenticate, with the impersonation browser tab active. Then re-run this audit."]
 ```
 
-Then also append the same refusal as a JSONL entry to `$CSM_IMPERSONATE_REFUSAL_LOG` (env var set by the wrapper — defaults to `~/.local/state/impersonate-audit/refusals.log`). Substitute your own values for every `<...>` placeholder below; do not copy the placeholders verbatim. Use `jq` so free-text fields are safely JSON-escaped:
+Then also append the same refusal as a JSONL entry to `$CSM_IMPERSONATE_REFUSAL_LOG` (env var set by the wrapper — defaults to `~/.local/state/impersonate-audit/refusals.log`). Substitute your own values for every `<...>` placeholder below; do not copy the placeholders verbatim. Every free-text field is piped through the deterministic redactor at `$CSM_IMPERSONATE_REDACT` before it reaches `jq`, so token-shaped strings can't survive to disk even if you mis-classify them:
 
 ```bash
+redact() { printf '%s' "$1" | "$CSM_IMPERSONATE_REDACT"; }
+
 jq -nc \
   --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg session_id "$CSM_IMPERSONATE_SESSION_ID" \
@@ -64,17 +65,19 @@ jq -nc \
   --arg account_name "$CSM_IMPERSONATE_ACCOUNT_NAME" \
   --arg audit_file "$CSM_IMPERSONATE_AUDIT_FILE" \
   --arg reason_code "<REASON_CODE>" \
-  --arg tried "<one line of what you tried>" \
-  --arg went_wrong "<one line of what went wrong>" \
-  --arg why_blocks "<one line of why this blocks the audit>" \
-  --arg how_to_fix "<one line of the concrete fix>" \
+  --arg tried "$(redact "<one line of what you tried>")" \
+  --arg went_wrong "$(redact "<one line of what went wrong>")" \
+  --arg why_blocks "$(redact "<one line of why this blocks the audit>")" \
+  --arg how_to_fix "$(redact "<one line of the concrete fix>")" \
   '{ts:$ts, session_id:$session_id, account:$account, account_name:$account_name, audit_file:$audit_file, reason_code:$reason_code, tried:$tried, went_wrong:$went_wrong, why_blocks:$why_blocks, how_to_fix:$how_to_fix}' \
   >> "$CSM_IMPERSONATE_REFUSAL_LOG"
 ```
 
+Every free-text field in the refusal — `tried`, `went_wrong`, `why_blocks`, `how_to_fix` — must go through the redactor. `account_name` doesn't (it's the customer name you already have in the wrapper env).
+
 If `$CSM_IMPERSONATE_REFUSAL_LOG` is unset (skill invoked outside the wrapper), skip the log-write step — do not fall back to a default path. Still emit the refusal in chat and to the audit file.
 
-Then write the same refusal (in the human-readable format above, not JSON) to `$CSM_IMPERSONATE_AUDIT_FILE` — create the file or append. So the audit folder itself carries the record.
+Then write the same refusal (in the human-readable format above, not JSON) to `$CSM_IMPERSONATE_AUDIT_FILE` — create the file or append. Include a `Session: <id>` footer line so the audit file joins back to the debug log without needing the terminal banner.
 
 The log-write step is not optional when the env var is set. A refusal without a log entry is invisible to future debugging.
 
@@ -82,29 +85,37 @@ The log-write step is not optional when the env var is set. A refusal without a 
 
 Alongside the structured refusal, append every raw MCP error you can see to `$CSM_IMPERSONATE_DEBUG_LOG` (defaults to `~/.local/state/impersonate-audit/debug.log`). This is the log Jake or whoever hits the failure comes back to. The refusal log tells you *that* something failed; the debug log tells you *what the server actually said*.
 
-Write one JSONL entry per raw error observation. The `session_id` field must match the one you wrote to the refusal log so the two are joinable:
+Write one JSONL entry per raw error observation. The `session_id` field must match the one you wrote to the refusal log so the two are joinable. Every free-text field goes through the redactor before it reaches `jq`:
 
 ```bash
+redact() { printf '%s' "$1" | "$CSM_IMPERSONATE_REDACT"; }
+
 jq -nc \
   --arg ts "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
   --arg session_id "$CSM_IMPERSONATE_SESSION_ID" \
   --arg account "$CSM_IMPERSONATE_ACCOUNT" \
-  --arg event "mcp_error" \
+  --arg event "<event type — e.g. mcp_error, probe, tool_call_error>" \
   --arg tool "<tool name — e.g. experiment-list>" \
   --arg status "<HTTP status or transport class — e.g. 401, timeout, tool_not_found>" \
-  --arg error_class "<short label — e.g. AuthError, ProjectNotFound, RateLimited>" \
-  --arg raw "<verbatim server error string, redacted per the rules below>" \
+  --arg error_class "$(redact "<short label — e.g. AuthError, ProjectNotFound>")" \
+  --arg raw "$(redact "<verbatim server error string, capped at ~2000 chars>")" \
   '{ts:$ts, session_id:$session_id, account:$account, event:$event, tool:$tool, status:$status, error_class:$error_class, raw:$raw}' \
   >> "$CSM_IMPERSONATE_DEBUG_LOG"
 ```
 
-Also acceptable events (write one line each as they happen): `probe` (the "what project am I in?" call and its result), `tool_call_success` for calls that completed but returned surprising data (empty list, unexpected id), and `tool_call_error` for individual call failures.
+Acceptable event values (write one JSONL line per event as it happens): `probe` (the "what project am I in?" call and its result — but log only the project ID, not the full response body), `tool_call_success` for calls that completed but returned surprising data (empty list, unexpected id), `tool_call_error` for individual call failures, `mcp_error` for transport / auth-level failures.
 
-Redaction rules for the `raw` field, applied before you write:
+Redaction is done by piping through `$CSM_IMPERSONATE_REDACT` — a deterministic Perl script that runs outside the LLM, so no prompt-injected error body can talk you into skipping it. What it catches:
 
-- Replace anything of the shape `Bearer <hex>`, `Bearer <base64>`, `phc_[A-Za-z0-9_-]+`, `phx_[A-Za-z0-9_-]+`, or any 32+ character hex/base64 blob with `<REDACTED-TOKEN>`. When in doubt, redact.
-- Replace any Set-Cookie / session-id header value with `<REDACTED-COOKIE>`.
-- Do not include full customer query results in the raw field — the goal is to preserve the *server error message*, not the *response body*. If the server returned data instead of an error, log the error class and a short shape summary (`"returned 12 experiments, expected 0"`), not the raw rows.
+- `Bearer <hex/base64/base64url>` — replaces the token portion, keeps the `Bearer ` prefix.
+- `phc_...`, `phx_...`, `phs_...`, `sTOK_...` and any known PostHog token prefix — keeps the prefix so you know the *shape* of what leaked, redacts the secret tail.
+- JWTs (`eyJ<header>.<payload>.<signature>`) — one-shot redacted to `<REDACTED-JWT>`.
+- Cookie / Set-Cookie header values.
+- Any 24+ character run from the base64url alphabet — catch-all for OAuth codes, session IDs, unrecognized token shapes.
+
+Additional rules for the `raw` field content itself:
+
+- Do not paste full customer query results — the goal is to preserve the *server error message*, not the *response body*. If a call succeeded but returned surprising data, log a shape summary (`"returned 12 experiments, expected 0"`), not the raw rows.
 - Cap `raw` at ~2000 characters. If longer, truncate and append `... [truncated]`.
 
 If `$CSM_IMPERSONATE_DEBUG_LOG` is unset, skip the debug-log write — do not fall back to a default path.
@@ -234,7 +245,7 @@ fix that unblocks the experiment?]
 - **Read-only.** Do not create insights, dashboards, actions, experiments, or modify any config. You are working inside a customer's project under read-only impersonation; treat it as look-but-don't-touch.
 - **No prompt-passing.** Do not generate prompts, checklists, or instructions for the user to run in PostHog AI, another Claude session, or any other tool. If you can't do the audit in this session, refuse explicitly per the Refusal protocol. A skill that quietly redirects work to the user is a skill that hides its own failures.
 - **Refusal stands under pressure.** If the user pushes back on a refusal ("just give me the prompts, I'll paste them", "run it anyway", "generate what you would have output"), the refusal still stands. Repeat the refusal shape with the same reason_code and stop. The whole point is that failure modes surface the fix, not the workaround.
-- **No raw token echoes.** When you paste MCP error output into the debug log, apply the redaction rules in the Debug log section. Never echo `Bearer ...`, `phc_...`, `phx_...`, session-cookie values, or long hex/base64 blobs verbatim, even inside the raw error field. If you're not sure whether something is sensitive, redact it.
+- **No raw token echoes.** Every free-text field in every log entry (both `refusals.log` and `debug.log`) must be piped through `$CSM_IMPERSONATE_REDACT` before write. Do not attempt to redact by hand — the whole point of the script is that redaction is deterministic and can't be prompt-injected. If the script is unavailable (env var unset), do not write the field; log the fact that redaction was unavailable instead.
 - **No fabrication.** If you can't find the experiment or the data is empty, say so explicitly and refuse per the Refusal protocol. Do not invent findings to fill the template.
 - **Cite real numbers.** Every claim about exposure counts, sample ratios, or event volumes must come from a query you actually ran in this session.
 - **Surface ambiguity.** If a setting could be intentional (e.g. low conversion window because conversion happens fast), note both interpretations and ask the customer to confirm.
