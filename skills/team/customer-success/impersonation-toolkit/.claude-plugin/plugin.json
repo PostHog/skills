@@ -1,7 +1,7 @@
 {
   "name": "impersonation-toolkit",
-  "description": "Run safer impersonation-scoped audits against a customer's PostHog project via Claude Code + the PostHog MCP plugin. Read-only by default; prompts before any mutative MCP call. Includes a shell wrapper for setting up impersonation folders and a permissions template that scopes each session.",
-  "version": "1.0.1",
+  "description": "Run impersonation-scoped audits against a customer's PostHog project via Claude Code + the PostHog MCP plugin. Audits are read-only, enforced server-side by PostHog's read-only impersonation. Includes a shell wrapper that sets up a per-account audit folder and a shared permissions template that pre-approves read tools.",
+  "version": "1.1.0",
   "author": { "name": "PostHog" },
   "keywords": ["posthog", "impersonation", "audit", "customer-success", "experiments"]
 }

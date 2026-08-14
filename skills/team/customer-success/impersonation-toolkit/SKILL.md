@@ -122,7 +122,7 @@ fix that unblocks the experiment?]
 
 ## Rules
 
-- **Read-only.** Do not create insights, dashboards, actions, experiments, or modify any config. You are impersonating the customer's user — any writes land in their actual project.
+- **Read-only.** Do not create insights, dashboards, actions, experiments, or modify any config. You are working inside a customer's project under read-only impersonation; treat it as look-but-don't-touch.
 - **No fabrication.** If you can't find the experiment or the data is empty, say so explicitly. Do not invent findings to fill the template.
 - **Cite real numbers.** Every claim about exposure counts, sample ratios, or event volumes must come from a query you actually ran in this session.
 - **Surface ambiguity.** If a setting could be intentional (e.g. low conversion window because conversion happens fast), note both interpretations and ask the customer to confirm.
