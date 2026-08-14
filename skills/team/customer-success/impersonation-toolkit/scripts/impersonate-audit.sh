@@ -469,8 +469,14 @@ STEP 2: Re-authenticate the posthog plugin in Claude Code
     (audit output lands in $ACCOUNT_SLUG/)
   - Inside Claude Code, type:  /mcp
   - Find 'posthog' → "Clear authentication" → then "Authenticate"
-  - A browser tab opens; it'll pick up your active impersonation session
-    and bind a fresh token. Takes ~10 seconds.
+  - A browser tab opens with the PostHog OAuth consent screen. Pick:
+      · Scope:        read-only  (an audit reads; it never writes)
+      · Organization: the customer's org
+      · Project:      the customer's project
+    Your Django impersonation session already scopes the token read-only
+    regardless of what you click here — the point is to avoid building
+    muscle memory of granting write scopes while impersonating.
+  - Takes ~10 seconds.
   - Sanity check: ask Claude "what project am I in?" — you should see
     the customer's project, NOT 'PostHog App + Website' (id 2). If you
     see project 2, the impersonation didn't carry — repeat /mcp re-auth

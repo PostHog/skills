@@ -98,13 +98,16 @@ It renames folders to their slug form, drops the `audit-` prefix from audit file
 
 ## Security model
 
-An audit run through this toolkit is read-only, and that is enforced by PostHog, server-side, not by anything in this repo.
+Audits are read-only, enforced server-side by PostHog. The OAuth token minted from a read-only impersonation session has every write scope stripped before issue, and the API rejects mutating requests made with it. The toolkit mints no credentials of its own and can grant itself nothing.
 
-The session uses the OAuth token minted from your read-only impersonation session. PostHog strips every write scope from that token before issuing it, and rejects any mutating request made with it. An audit can read a customer's project; it cannot change one. This toolkit mints no credentials of its own and can grant itself nothing.
+## Permissions file — what it does
 
-## Permissions file
+Purely operational: a PostHog audit calls dozens of read tools, and without an allowlist each one stops for approval. `assets/settings.local.json` pre-approves the read tools so a run goes start to finish, and leaves everything else to prompt normally.
 
-Separate concern, and purely convenience: a PostHog account audit calls dozens of read tools, and without an allowlist each one stops for approval. `assets/settings.local.json` pre-approves the read tools so an audit runs start to finish, and leaves everything else to prompt normally.
+The template also keeps an `ask` list for mutation-shaped tool names (`*-create`, `*-update`, `*-delete`, `execute-sql`). Not a safety layer — the server rejects writes with a read-only token regardless — but two useful side-effects:
+
+- **Awareness.** A prompt during a read-only audit is a signal worth noticing, even though the request would fail.
+- **Documentation of intent.** The list tells a new CSM which tools are treated as sensitive by convention.
 
 It is merged into a single `.claude/settings.local.json` at the root of your impersonation tree. Claude launches at that root, so one file covers every account. Account folders are where output lands, not separate workspaces:
 
