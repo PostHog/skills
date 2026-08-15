@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Django - Docs
+
+Copy page
+
 # Django - Docs
 
 PostHog makes it easy to get data about traffic and usage of your Django app. Integrating PostHog enables analytics, custom events capture, feature flags, error tracking, and more.
@@ -8,17 +14,17 @@ This guide walks you through integrating PostHog into your Django app using the 
 
 Install PostHog for Django in seconds with our wizard by running this prompt with [LLM coding agents](/blog/envoy-wizard-llm-agent.md) like Cursor and Bolt, or by running it in your terminal.
 
-`npx @posthog/wizard@latest`
+`npx @posthog/wizard`
 
 [Learn more](/wizard.md)
 
 Or, to integrate manually, continue with the rest of this guide.
 
+> These docs cover version `7.x` of the Python SDK, which requires Python 3.10 or higher. On Python 3.9? See [supported versions](#supported-versions).
+
 ## Installation
 
 To start, run `pip install posthog` to install PostHog’s Python SDK.
-
-> **Note:** Version `7.x` of the PostHog Python SDK requires Python 3.10 or higher.
 
 Then, configure PostHog in your app config so it's initialized when Django starts:
 
@@ -73,9 +79,25 @@ Events captured without a context or explicit `distinct_id` are sent as [anonymo
 
 ## Identifying users
 
-> **Identifying users is required.** Backend events need a `distinct_id` that matches the ID your frontend uses when calling `posthog.identify()`. Without this, backend events are orphaned — they can't be linked to frontend event captures, [session replays](/docs/session-replay.md), [LLM traces](/docs/ai-engineering.md), or [error tracking](/docs/error-tracking.md).
+> **Identifying users is required.** Backend events need a `distinct_id` to associate events with the correct user.
 >
-> See our guide on [identifying users](/docs/getting-started/identify-users.md) for how to set this up.
+> In Python, you can do this through a context. All event captures in the same context will be tagged automatically with the correct `distinct_id`. Typically, you would set a fresh context and identify at the top of each route.
+>
+> Python
+>
+> PostHog AI
+>
+> ```python
+> from posthog import new_context, identify_context, capture
+> @app.get("/foo")
+> def foo(current_user: User = Depends(get_current_user)):
+>     with new_context(): # Set context at the top of a route
+>         identify_context(current_user.id)
+>         capture("foo_viewed")
+>     return {"status": "ok"}
+> ```
+>
+> When possible, write a small piece of **middleware** that resolves your authenticated user, wrap a context around the request, and identifies it. Every `capture()` downstream is then attributed *automatically*. The SDK's Django middleware does this automatically and you can replicate it when using the plain Python SDK.
 
 ## Django contexts middleware
 
@@ -114,17 +136,28 @@ The session and distinct ID headers are sanitized before use. Empty values are i
 
 All events captured during the request (including exceptions) include these properties and are associated with the extracted session and distinct ID.
 
-If you are using PostHog on your frontend, the JavaScript Web SDK will add the session and distinct ID headers automatically if you enable tracing headers.
+### Login and signup views
 
-JavaScript
+The middleware reads `request.user` once, before your view runs. On a login or signup request the visitor is still anonymous at that point, so the request's context has no distinct ID. Calling `login()` inside the view doesn't change that. Everything captured during that request stays anonymous, including the login event itself.
+
+Identify the context from inside the request once you know who the user is. Django's auth signals are the natural place:
+
+Python
 
 PostHog AI
 
-```javascript
-posthog.init('<ph_project_token>', {
-    __add_tracing_headers: ['your-backend-domain.com']
-})
+```python
+from django.contrib.auth.signals import user_logged_in
+from django.dispatch import receiver
+from posthog import identify_context
+@receiver(user_logged_in)
+def identify_posthog_user(sender, request, user, **kwargs):
+    identify_context(str(user.pk))
 ```
+
+Every capture later in that request is then attributed to the user who just logged in. Requests made after login don't need this. The middleware sees the authenticated user from the start.
+
+If you're using [PostHog JavaScript Web](/docs/libraries/js.md) on the frontend, configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your Django backend hostname so browser requests include the session and distinct ID headers.
 
 ### Exception capture
 
@@ -250,9 +283,13 @@ Alternatively, the following tutorials can help you get started:
 -   [Setting up Django analytics, feature flags, and more](/tutorials/django-analytics.md)
 -   [How to set up A/B tests in Django](/tutorials/django-ab-tests.md)
 
-### Community questions
+## Supported versions
 
-Ask a question
+These docs cover version `7.x` of the PostHog Python SDK, which requires Python 3.10 or higher. Python 3.9 is no longer supported on `7.x.x` and higher — pin to the 6.x line with `pip install 'posthog<7'`, where `6.9.3` is the final release.
+
+Everything on this page works the same way on `6.9.3`. Event capture, the context API (`new_context`, `identify_context`, `set_context_session`), and `PosthogContextMiddleware` are identical on `6.9.3` and `7.0.0` — `7.0.0` only dropped Python 3.9 and bumped the optional LLM provider SDKs. That includes the middleware identifying the request context from the `X-POSTHOG-DISTINCT-ID` header and falling back to the authenticated user, which behaves the same across both lines.
+
+Later `7.x` releases add what the 6.x line does not receive, such as the Celery integration, tracing header sanitization, and `set_context_device_id`. They also changed the middleware's own captured properties: `7.x` sends the request IP as `$ip`, where `6.9.3` sends it as `$ip_address`, and `7.x` additionally captures `$request_path`, `$raw_user_agent`, and the authenticated user's `email`.
 
 ### Was this page useful?
 
