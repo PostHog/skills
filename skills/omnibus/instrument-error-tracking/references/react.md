@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# React error tracking installation - Docs
+
+Copy page
+
 # React error tracking installation - Docs
 
 1.  1
@@ -65,7 +71,7 @@
     import { PostHogProvider } from '@posthog/react'
     const options = {
       api_host: import.meta.env.VITE_POSTHOG_HOST,
-      defaults: '2026-01-30',
+      defaults: '2026-05-30',
     } as const
     createRoot(document.getElementById('root')).render(
       <StrictMode>
@@ -213,10 +219,6 @@
      Let's continue to the next section.
 
      [Upload source maps](/docs/error-tracking/upload-source-maps/react.md)
-
-### Community questions
-
-Ask a question
 
 ### Was this page useful?
 
