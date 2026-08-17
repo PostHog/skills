@@ -50,6 +50,31 @@ It also takes a domain, an account name, or a Vitally account ID.
 
 Optional sources set to `none` in `config.md` are skipped without erroring, and the run tells you which ones it skipped. That is designed behavior, not a broken run.
 
+## Install
+
+Two ways, and either is fine. Restart Claude Code afterwards.
+
+**From the plugin marketplace.** Run the update line even if you added the marketplace a while ago: an older cached manifest will not list this skill, and the install then fails as though the skill does not exist.
+
+```
+/plugin marketplace add PostHog/skills
+/plugin marketplace update PostHog-skills
+/plugin install posthog-customer-deep-dive@PostHog-skills
+```
+
+The marketplace is registered as `PostHog-skills`, capitals included.
+
+**Or copy the folder.** The doubled `skills/skills` is right, since the repo has a `skills/` directory inside it.
+
+```bash
+git clone https://github.com/PostHog/skills.git
+cp -r skills/skills/team/onboarding/posthog-customer-deep-dive ~/.claude/skills/
+```
+
+Pick one. Doing both leaves two copies of the skill competing to fire.
+
+Installing gets you the files; it does not get you the credentials. Work through Setup below before the first real run, or let the first run walk you through it.
+
 ## Setup, from a fresh Mac to a working run
 
 Two things are required (the PostHog MCP and the Vitally MCP) plus their keys; everything else is optional and the skill skips what is set to `none` in `config.md`. Work top to bottom; each block ends with a check that proves it works. Vendor pages move, so if a URL or a command here is wrong, the vendor's own docs win.
@@ -221,7 +246,7 @@ Claude Code inherits a claude.ai Slack connector, or install the plugin: `/plugi
 
 ### 8. First run
 
-Copy the folder to `~/.claude/skills/posthog-customer-deep-dive/`, restart Claude Code, run the skill on any account. Setup in `SKILL.md` probes the tool list and the env, shows what it found, asks only for the two values it cannot detect (calendar id, booking link), and writes `config.md`. A run with every optional source at `none` is valid; the run names what it skipped.
+With the skill installed and the keys in place, run it on any account. Setup in `SKILL.md` probes the tool list and the env, shows what it found, asks only for the two values it cannot detect (calendar id, booking link), and writes `config.md`. A run with every optional source at `none` is valid; the run names what it skipped.
 
 **The skill never impersonates and never assumes you will.** It works with the tools above and names what they cannot reach, so a gap comes back as "not readable, here is the question to ask" rather than a blocked run. A handful of reads sit outside it: their replay and heatmap tables and the unqueried-events join on US (all three read fine on EU), and Actions and property definitions on EU. If you want any of those before a call, get them yourself with the [impersonation toolkit](https://github.com/PostHog/skills/tree/main/skills/team/customer-success/impersonation-toolkit).
 
