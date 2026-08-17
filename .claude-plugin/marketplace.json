@@ -4,7 +4,7 @@
     "name": "PostHog"
   },
   "metadata": {
-    "description": "PostHog skills for Claude Code — analytics, feature flags, error tracking, and more"
+    "description": "PostHog skills for Claude Code \u2014 analytics, feature flags, error tracking, and more"
   },
   "plugins": [
     {
@@ -59,6 +59,18 @@
         "sales",
         "leads",
         "outbound"
+      ]
+    },
+    {
+      "name": "posthog-customer-deep-dive",
+      "source": "./skills/team/onboarding/posthog-customer-deep-dive",
+      "description": "Research a PostHog customer account, then draft an outreach email, a reply, or a full call-prep brief with a notebook prompt",
+      "keywords": [
+        "posthog",
+        "onboarding",
+        "customer-success",
+        "account-research",
+        "call-prep"
       ]
     }
   ]
