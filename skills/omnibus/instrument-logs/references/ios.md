@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# iOS Logs installation - Docs
+
+Copy page
+
 # iOS Logs installation - Docs
 
 The PostHog iOS SDK has built-in support for capturing structured Logs from iOS, macOS, tvOS, watchOS, and visionOS apps. The SDK handles OTLP encoding, batching, on-disk persistence across app restarts, and lifecycle integration. You just call `PostHogSDK.shared.captureLog(...)` or `PostHogSDK.shared.logger?.{trace,debug,info,warn,error,fatal}(...)`.
@@ -23,7 +29,7 @@ The PostHog iOS SDK has built-in support for capturing structured Logs from iOS,
     PostHog AI
 
     ```ruby
-    pod "PostHog", "~> 3.58.0"
+    pod "PostHog", "~> 3.59.3"
     ```
 
     ### Swift Package Manager
@@ -38,7 +44,7 @@ The PostHog iOS SDK has built-in support for capturing structured Logs from iOS,
 
     ```swift
     dependencies: [
-      .package(url: "https://github.com/PostHog/posthog-ios.git", from: "3.58.0")
+      .package(url: "https://github.com/PostHog/posthog-ios.git", from: "3.59.3")
     ],
     ```
 
@@ -290,10 +296,6 @@ The PostHog iOS SDK has built-in support for capturing structured Logs from iOS,
     | [Logging best practices](/docs/logs/best-practices.md) | Learn what to log, how to structure logs, and patterns that make logs useful in production |
 
     [Troubleshoot common issues](/docs/logs/troubleshooting.md)
-
-### Community questions
-
-Ask a question
 
 ### Was this page useful?
 
