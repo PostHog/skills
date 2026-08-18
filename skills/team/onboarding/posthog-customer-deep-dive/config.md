@@ -28,6 +28,7 @@ Defaults hold unless changed; only the first two are personal.
 | Timezone | `<SET THIS>` | detect from the system |
 | Email sign-off | `Cheers,` | default |
 | Email sign-off (billing and payment threads) | `Thank you,` | default |
+| Post-onboarding survey (graduation CTA) | `https://us.posthog.com/external_surveys/019c523d-0d90-0000-65ba-4b976e24c83e` | ask before any graduation or wrap-up draft |
 
 ## Optional context sources
 
