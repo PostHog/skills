@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Python Feature Flags installation - Docs
+
+Copy page
+
 # Python Feature Flags installation - Docs
 
 1.  1
@@ -56,7 +62,7 @@
 
     ```python
     import posthog
-    posthog.capture('user_123', 'user_signed_up', properties={'example_property': 'example_value'})
+    posthog.capture('user_signed_up', distinct_id='user_123', properties={'example_property': 'example_value'})
     ```
 
 4.  4
@@ -181,10 +187,6 @@
     | [Framework-specific guides](/docs/feature-flags/tutorials.md#framework-guides) | Setup guides for React Native, Next.js, Flutter, and other frameworks |
     | [How to do a phased rollout](/tutorials/phased-rollout.md) | Gradually roll out features to minimize risk |
     | [More tutorials](/docs/feature-flags/tutorials.md) | Other real-world examples and use cases |
-
-### Community questions
-
-Ask a question
 
 ### Was this page useful?
 
