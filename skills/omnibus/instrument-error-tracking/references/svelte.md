@@ -1,4 +1,10 @@
-# SvelteKit error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# SvelteKit Error Tracking installation - Docs
+
+Copy page
+
+# SvelteKit Error Tracking installation - Docs
 
 1.  1
 
@@ -50,7 +56,7 @@
           '<ph_project_token>',
           {
             api_host: 'https://us.i.posthog.com',
-            defaults: '2026-01-30'
+            defaults: '2026-05-30'
           }
         )
       }
@@ -209,10 +215,6 @@
     Let's continue to the next section.
 
     [Upload source maps](/docs/error-tracking/upload-source-maps/web.md)
-
-### Community questions
-
-Ask a question
 
 ### Was this page useful?
 
