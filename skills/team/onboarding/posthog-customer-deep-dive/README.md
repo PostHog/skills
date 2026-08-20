@@ -52,9 +52,15 @@ Optional sources set to `none` in `config.md` are skipped without erroring, and 
 
 ## Install
 
-Two ways, and either is fine. Restart Claude Code afterwards.
+This is a **Claude Code plugin**, published in the `PostHog/skills` GitHub repo. It is **not** in PostHog's in-app skills store, so `skill-list` over the PostHog MCP and the skill list at `us.posthog.com/project/2/skills` will both come back empty for it. Those are a different registry. A working PostHog MCP connection is what the skill queries through once it runs; it is not how you install it.
 
-**From the plugin marketplace.** Run the update line even if you added the marketplace a while ago: an older cached manifest will not list this skill, and the install then fails as though the skill does not exist.
+Pick **one** of the two routes below. Doing both leaves two copies competing to fire. Restart Claude Code when you are done either way.
+
+### Route A: the plugin marketplace (recommended)
+
+Every command exists in two forms. Inside a Claude Code session, type the slash form. In a plain terminal, type the `claude` form. They do the same thing, so use whichever you are already sitting in.
+
+In a Claude Code session:
 
 ```
 /plugin marketplace add PostHog/skills
@@ -62,18 +68,45 @@ Two ways, and either is fine. Restart Claude Code afterwards.
 /plugin install posthog-customer-deep-dive@PostHog-skills
 ```
 
-The marketplace is registered as `PostHog-skills`, capitals included.
+In a terminal:
 
-**Or copy the folder.** The doubled `skills/skills` is right, since the repo has a `skills/` directory inside it.
+```bash
+claude plugin marketplace add PostHog/skills
+claude plugin marketplace update PostHog-skills
+claude plugin install posthog-customer-deep-dive@PostHog-skills
+```
+
+Three things trip people up, all of them silent:
+
+1. **The marketplace name is `PostHog-skills`, capitals included.** `posthog-skills` does not resolve.
+2. **Run the `update` line even on a first install.** Install reads your local cached copy of the marketplace, not GitHub, so a stale cache serves an old version or reports the skill as missing entirely.
+3. **Restart Claude Code afterwards.** Nothing applies until you do.
+
+To update later, the same two lines plus a restart:
+
+```bash
+claude plugin marketplace update PostHog-skills
+claude plugin update posthog-customer-deep-dive@PostHog-skills
+```
+
+Updates are never automatic, and the skill tells you when you are behind: it compares its own version against the published one once a day and prints these commands if they differ.
+
+### Route B: copy the folder
+
+Works fine and needs no marketplace. The tradeoff is that updating means repeating it.
 
 ```bash
 git clone https://github.com/PostHog/skills.git
 cp -r skills/skills/team/onboarding/posthog-customer-deep-dive ~/.claude/skills/
 ```
 
-Pick one. Doing both leaves two copies of the skill competing to fire.
+The doubled `skills/skills` is correct: the repo is named `skills` and has a `skills/` directory inside it.
 
-Installing gets you the files; it does not get you the credentials. Work through Setup below before the first real run, or let the first run walk you through it.
+### After either route
+
+Installing gets you the files, not the credentials. Work through Setup below before the first real run, or just run the skill and let it walk you through what is missing.
+
+Your personal values (work calendar ID, timezone, meeting notes folder) go in `config.local.md`, which the skill creates for you on first run and which git ignores, so they can never reach a pull request. `config.md` beside it is the shared file: defaults, and the tool notes in its "Yours" column. Both are read every run and `config.local.md` wins where they overlap.
 
 ## Setup, from a fresh Mac to a working run
 
@@ -207,9 +240,13 @@ claude mcp add --scope user --transport stdio gong -- \
 
 The wrapper sources `~/.bash_env` so the keys reach the server; the redirect keeps shell noise out of the MCP JSON stream. Re-apply the one-line patch after any `git pull` that touches `src/gong.ts`. Check: `mcp__gong__search_calls` with your email in `participantEmails` and a two-week window lists your calls; `get_call_transcript` on one of them reports "showing 1-10000 of N", and paging by `offset` reaches N.
 
-### 4. Google Calendar and Gmail, via `gog`
+### 4. Work calendar (optional)
 
-The calendar read (booking-form answers in the event description) uses the `gog` CLI: https://github.com/steipete/gogcli (module now `github.com/openclaw/gogcli`; quickstart at https://gogcli.sh/quickstart.html).
+**Optional. Set it to `none` in `config.md` and the only thing you lose is the booking-form answers in a call-prep brief.** Everything else in the skill runs without it.
+
+The default needs no install: the **Google Calendar MCP** (the claude.ai Google Calendar connector, enabled from the Connectors page and inherited by Claude Code). Call `list_events` with `calendarId`, `startTime`/`endTime` and `orderBy: startTime`; the event `description` carries the Calendly answers verbatim. Do not reach for `search_events` — it takes no time window, which is what made a CLI look necessary here.
+
+The rest of this section is for `gog`, which reads Gmail as well and is worth setting up for that on its own merits. This skill does not need it: https://github.com/steipete/gogcli (module now `github.com/openclaw/gogcli`; quickstart at https://gogcli.sh/quickstart.html).
 
 ```bash
 brew install openclaw/tap/gogcli        # or: go install github.com/openclaw/gogcli/cmd/gog@latest
@@ -270,4 +307,15 @@ It leans on things that change without notice, so expect to fix it rather than t
 - **Product state is never recorded in this skill**, by design: prices, tiers, free allowances, SDK support and where a setting lives are searched live on every run. If you find one written down, that is a bug and deleting it is the fix.
 
 When a run reveals a fix, `SKILL.md` closes with how to fold it back in.
+
+**Bump `version` in `.claude-plugin/plugin.json` in every PR that changes a file here.** `claude plugin update` compares
+that string and nothing else, so an unbumped release is undeliverable: an installed copy reports "already at the latest
+version" and stays on the old commit forever. Verified on 2026-08-18 by installing 1.0.0, refreshing the marketplace to
+a newer `main`, and watching the update refuse. `scripts/version-check.sh` reads the same field to tell users they are
+behind, so it goes quiet too if the bump is skipped.
+
+Personal values live in `config.local.md`, which git ignores and the skill overlays on top of `config.md` when it is
+present. Keep `config.md` shareable: the defaults, and the tool knowledge in its "Yours" column. Never move a personal
+path or address into it, and never blank the "Yours" cells to publish, since each one records a mistake somebody
+already made.
 
