@@ -1,4 +1,10 @@
-# Go logs installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Go Logs installation - Docs
+
+Copy page
+
+# Go Logs installation - Docs
 
 1.  1
 
@@ -147,9 +153,9 @@
 
     [Troubleshoot common issues](/docs/logs/troubleshooting.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

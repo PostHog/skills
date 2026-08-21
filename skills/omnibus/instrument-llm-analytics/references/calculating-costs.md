@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Calculating LLM costs - Docs
+
+Copy page
+
 # Calculating LLM costs - Docs
 
 ## How are LLM costs calculated?
@@ -188,9 +194,9 @@ These properties are useful for debugging cost discrepancies or understanding wh
 
 You can find the code for this on [GitHub](https://github.com/PostHog/posthog/tree/master/plugin-server/src/ingestion/ai-costs).
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
