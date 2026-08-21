@@ -30,4 +30,5 @@ Check whether one of your own outbounds already answered the question; if it did
 
 - **Collision**: when the thread belongs to a teammate, confirm who sends before drafting; if the sender differs from the thread owner, reference the teammate's reply in third person without repeating it.
 - **Diagnostic questions** ("why is X the cost", "what is driving Y"): name every plausible cause and give each an explicit verdict, ruled in or ruled out with the reason, not only the one that fits. A cause dismissed in a clause ("not identify, your flag traffic is backend") is what makes the diagnosis trustworthy; a cause the reader is quietly wondering about, left unaddressed, reads as a gap. `levers.md` lists the candidate causes for the common cost questions.
+- **Post-onboarding survey**: the survey link in `config.md` is the graduation CTA only, used when onboarding is closing out. Keep it out of a first touch, a follow-up and a reply, and never send it alongside the booking link: it asks for feedback on work still running, and it makes a second CTA.
 - After the draft is ready, re-check it against every rule in `voice.md`.

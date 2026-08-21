@@ -29,7 +29,7 @@ WHERE toString(admin_emails) ILIKE '%@<domain>%' ORDER BY name LIMIT 30
 Run this first; it returns the team list and the region in one read, and every regional choice downstream depends on the answer.
 
 ```sql
-SELECT id AS team, name AS team_name, app_region, project_id, is_demo, created_at
+SELECT id AS team, name AS team_name, api_token, app_region, project_id, is_demo, created_at
 FROM all_posthog_team
 WHERE organization_id = '<ORG_ID>'
 ORDER BY team
@@ -38,9 +38,11 @@ LIMIT 100
 
 `all_posthog_team` is cross-region, so this works for a US and an EU org identically. **The key is `id`; there is no `team_id` column.** Alias it to `team`, per the conventions. `app_region` is lowercase (`us` / `eu`): compare it lowercase, and pass it to anything region-prefixed.
 
+**`api_token` is selected here because Round 1a batch 2 fans out one `site-scan` per team and each scan needs its own token.** It is also what settles the token-to-team mapping later without a second query: a scan finds a `phc_...` token in a bundle, and this result says which project it belongs to. Deriving that mapping from domain names instead is unreliable, because one team's token routinely serves several hosts and team names do not track products. If the column is missing on a region's view, fall back to `postgres.posthog_team` / `eu_postgres_posthog_team` for it, all-or-nothing per the region rule.
+
 Scope by `organization_id`, never by a bare team id (the collision rule in `SKILL.md`); an org's own `(org, team)` pairs are unique, so this query returns each of its teams once.
 
-Read the team names before picking a project: they carry the production / staging / demo / deprecated split in plain text. Confirm which one is production by volume from the org usage report's per-team `teams` map (`org-snapshot`).
+Read the team names before picking a project: they carry the production / staging / demo / deprecated split in plain text. **Treat the names as a hint and never as the answer**, because one team's token routinely serves several hosts and the names do not track products. Measured on a multi-brand account, 2026-08-19: one team was named after a single storefront and served only that storefront, while a blandly named team beside it carried the main store AND a second brand's point-of-sale AND a third white-label tenant, all behind one token. Confirm which is production by volume from the org usage report's per-team `teams` map, which **`change-point` owns and publishes to `<run scratchpad>/daily-by-team.md`** (`org-snapshot` in this file is the recipe it uses). Main does not run it separately; where the split matters before `change-point` returns, take volume per org from the Round 1a scope probe and defer the per-team split.
 
 ## discovery
 
