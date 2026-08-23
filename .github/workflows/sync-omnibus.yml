@@ -141,11 +141,39 @@ jobs:
           COMMIT_MESSAGE: ${{ steps.check.outputs.commit_message }}
           BASE_REF: ${{ steps.branch.outputs.base }}
           HEAD_REF: ${{ steps.branch.outputs.branch }}
+          REVIEWER: PostHog/team-self-driving
         run: |
           PR_URL=$(gh pr create \
             --base "$BASE_REF" \
             --head "$HEAD_REF" \
             --title "$COMMIT_MESSAGE" \
-            --body "Automated skill sync from PostHog release and context-mill." \
-            --reviewer "PostHog/team-posthog-ai")
+            --body "Automated skill sync from PostHog release and context-mill.")
+
+          # Requesting the review is deliberately a separate, non-fatal step. Passing
+          # --reviewer to `gh pr create` fails the whole command when the slug can't be
+          # resolved — but the PR is created first, so the run dies after creation and
+          # never reaches `gh pr merge`. A renamed team silently froze the sync that way,
+          # leaving the omnibus skills months stale behind a pile of unmerged PRs.
+          gh pr edit "$PR_URL" --add-reviewer "$REVIEWER" \
+            || echo "::warning::Could not request review from $REVIEWER — continuing to auto-merge"
+
           gh pr merge "$PR_URL" --auto --squash
+
+      # Each run opens its own timestamped branch, so anything that stops a sync PR from
+      # merging leaves it behind and the next run adds another. Every open sync PR carries
+      # the same full-catalog snapshot, so all but the newest are superseded — close them
+      # rather than let them accumulate.
+      - name: Close superseded sync PRs
+        if: steps.check.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          HEAD_REF: ${{ steps.branch.outputs.branch }}
+        run: |
+          gh pr list --state open --limit 200 --json number,headRefName \
+            --jq '.[] | select(.headRefName | startswith("chore/sync-omnibus-")) | "\(.number) \(.headRefName)"' \
+          | while read -r pr branch; do
+              if [ "$branch" != "$HEAD_REF" ]; then
+                echo "Closing superseded sync PR #$pr ($branch)"
+                gh pr close "$pr" --delete-branch --comment "Superseded by a newer omnibus sync." || true
+              fi
+            done
