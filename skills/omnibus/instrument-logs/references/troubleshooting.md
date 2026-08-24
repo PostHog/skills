@@ -1,10 +1,12 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Logs troubleshooting - Docs
+
+Copy page
+
 # Logs troubleshooting - Docs
 
 This page covers troubleshooting for Logs. For setup, see the [installation guide](/docs/logs/installation.md).
-
-## Have a question? Ask PostHog AI
-
-Ask PostHog AI
 
 ## Authentication errors
 
@@ -105,9 +107,9 @@ If you're still experiencing problems:
 3.  Check the network requests to see the actual HTTP status codes and error messages
 4.  Contact PostHog support with your specific error messages and configuration details
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Ruby - Docs
+
+Copy page
+
 # Ruby - Docs
 
 The `posthog-ruby` library provides tracking functionality on the server-side for applications built in Ruby.
@@ -750,9 +756,9 @@ posthog.clear
 
 This library is largely based on the `analytics-ruby` package.
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

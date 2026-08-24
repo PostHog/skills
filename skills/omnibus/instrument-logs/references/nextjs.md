@@ -1,4 +1,10 @@
-# Next.js logs installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Next.js Logs installation - Docs
+
+Copy page
+
+# Next.js Logs installation - Docs
 
 1.  1
 
@@ -32,9 +38,9 @@
 
     Required
 
-    > **Note:** For Next.js 15 and later, the instrumentation hook is enabled by default. You can skip this step if you're on Next.js 15+.
+    > **Note:** This step is only needed on Next.js 13.2–14.x. For Next.js 15 and later, `instrumentation.ts` is enabled by default and the `experimental.instrumentationHook` option is deprecated — remove it from your config if it's set.
 
-    Add the following to your `next.config.js` (or `next.config.mjs`) to enable the instrumentation hook:
+    On Next.js 14 and earlier, add the following to your `next.config.js` (or `next.config.mjs`) to enable the instrumentation hook:
 
     JavaScript
 
@@ -144,6 +150,17 @@
 
     > **Important:** Without calling `forceFlush()`, your logs may not be sent. Route Handlers complete execution before the OpenTelemetry batch processor has a chance to send logs to the collector. The `after()` function from `next/server` runs code after the response is sent, ensuring logs are flushed before the serverless function freezes.
 
+    > **Note:** `after()` is stable in Next.js 15.1+ (available as `unstable_after` in 15.0). On Next.js 14 and earlier, it doesn't exist — flush before returning instead:
+    >
+    > typescript
+    >
+    > PostHog AI
+    >
+    > ```typescript
+    > await loggerProvider.forceFlush()
+    > return Response.json({ success: true })
+    > ```
+
 6.  6
 
     ## Test your setup
@@ -175,9 +192,9 @@
 
     [Troubleshoot common issues](/docs/logs/troubleshooting.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

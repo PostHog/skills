@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Best practices for production-ready flags - Docs
+
+Copy page
+
 # Best practices for production-ready flags - Docs
 
 ## Checklist
@@ -222,9 +228,9 @@ Stale flags are the most common source of unnecessary cost. Beyond cleaning up f
 -   [Local evaluation](/docs/feature-flags/local-evaluation.md) – server-side evaluation for explicit input control
 -   [Bootstrapping](/docs/feature-flags/bootstrapping.md) – having flag values before the page renders
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
