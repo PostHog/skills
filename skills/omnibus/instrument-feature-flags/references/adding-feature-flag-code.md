@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Adding feature flag code - Docs
+
+Copy page
+
 # Adding feature flag code - Docs
 
 Once you've created your feature flag in PostHog, the next step is to add your code:
@@ -11,10 +17,11 @@ Web
 PostHog AI
 
 ```javascript
-if (posthog.isFeatureEnabled('flag-key') ) {
+const result = posthog.getFeatureFlagResult('flag-key')
+if (result?.enabled) {
     // Do something differently for this user
-    // Optional: fetch the payload
-    const matchedFlagPayload = posthog.getFeatureFlagPayload('flag-key')
+    // Optional: fetch the payload from the same evaluation result
+    const matchedFlagPayload = result?.payload
 }
 ```
 
@@ -25,10 +32,25 @@ Web
 PostHog AI
 
 ```javascript
-if (posthog.getFeatureFlag('flag-key')  == 'variant-key') { // replace 'variant-key' with the key of your variant
+const result = posthog.getFeatureFlagResult('flag-key')
+if (result?.variant == 'variant-key') { // replace 'variant-key' with the key of your variant
     // Do something differently for this user
-    // Optional: fetch the payload
-    const matchedFlagPayload = posthog.getFeatureFlagPayload('flag-key')
+    // Optional: fetch the payload from the same evaluation result
+    const matchedFlagPayload = result?.payload
+}
+```
+
+### Inspecting all feature flags
+
+You can inspect all currently loaded feature flags with `getAllFeatureFlags()`. It returns each flag's `key`, `enabled` state, `variant`, and `payload`, and does not send a `$feature_flag_called` event, so calling it won't affect your experiment results or flag usage analytics:
+
+Web
+
+PostHog AI
+
+```javascript
+for (const flag of posthog.getAllFeatureFlags()) {
+    console.log(flag.key, flag.enabled, flag.variant, flag.payload)
 }
 ```
 
@@ -76,7 +98,7 @@ PostHog AI
 ```javascript
 posthog.init('<ph_project_token>', {
   api_host: 'https://us.i.posthog.com',
-  defaults: '2026-01-30',
+  defaults: '2026-05-30',
   flag_keys: ['checkout-flow', 'new-dashboard'],
 })
 ```
@@ -177,7 +199,7 @@ PostHog AI
 ```javascript
 posthog.init('<ph_project_token>', {
   api_host: 'https://us.i.posthog.com',
-  defaults: '2026-01-30'
+  defaults: '2026-05-30',
   feature_flag_request_timeout_ms: 3000 // Time in milliseconds. Default is 3000 (3 seconds).
 })
 ```
@@ -231,7 +253,7 @@ PostHog provides several hooks to make it easy to use feature flags in your Reac
 
 | Hook | Description |
 | --- | --- |
-| useFeatureFlagEnabled | Returns a boolean indicating whether the feature flag is enabled. This sends a $feature_flag_called event. |
+| useFeatureFlagEnabled | Returns whether the feature flag is enabled. This sends a $feature_flag_called event. Without a default value, it returns boolean \\\| undefined while flags are loading or absent. Pass an optional default value to return that value instead and narrow the return type to boolean. |
 | useFeatureFlagVariantKey | Returns the variant key of the feature flag. This sends a $feature_flag_called event. |
 | useActiveFeatureFlags | Returns an array of active feature flags. This does not send a $feature_flag_called event. |
 | useFeatureFlagPayload | Returns the payload of the feature flag. This does not send a $feature_flag_called event. Always use this with useFeatureFlagEnabled or useFeatureFlagVariantKey. |
@@ -243,7 +265,7 @@ React
 PostHog AI
 
 ```jsx
-import { useFeatureFlagEnabled } from '@posthog/react'
+import { useFeatureFlagEnabled, useFeatureFlagPayload } from '@posthog/react'
 function App() {
   const showWelcomeMessage = useFeatureFlagEnabled('flag-key')
   const payload = useFeatureFlagPayload('flag-key')
@@ -266,6 +288,16 @@ function App() {
   );
 }
 export default App;
+```
+
+To avoid handling `undefined` while flags are loading, pass a default value as the second argument:
+
+React
+
+PostHog AI
+
+```jsx
+const showWelcomeMessage = useFeatureFlagEnabled('flag-key', false)
 ```
 
 #### Example 2: Using a multivariate feature flag
@@ -316,7 +348,7 @@ React
 PostHog AI
 
 ```jsx
-import { useFeatureFlagPayload } from '@posthog/react'
+import { useFeatureFlagEnabled, useFeatureFlagPayload } from '@posthog/react'
 function App() {
   const variant = useFeatureFlagEnabled('show-welcome-message')
   const payload = useFeatureFlagPayload('show-welcome-message')
@@ -409,7 +441,7 @@ PostHog AI
 ```javascript
 posthog.init('<ph_project_token>', {
   api_host: 'https://us.i.posthog.com',
-  defaults: '2026-01-30'
+  defaults: '2026-05-30',
   feature_flag_request_timeout_ms: 3000 // Time in milliseconds. Default is 3000 (3 seconds).
 }
 )
@@ -652,7 +684,7 @@ Simply include any of these properties in the `person_properties` parameter alon
 
 ### Request timeout
 
-You can configure the `feature_flag_request_timeout_ms` parameter when initializing your PostHog client to set a flag request timeout. This helps prevent your code from being blocked if PostHog's servers are too slow to respond. By default, this is set to 3 seconds.
+You can configure the `featureFlagsRequestTimeoutMs` parameter when initializing your PostHog client to set a flag request timeout. This helps prevent your code from being blocked if PostHog's servers are too slow to respond. By default, this is set to 3 seconds.
 
 JavaScript
 
@@ -660,8 +692,8 @@ PostHog AI
 
 ```javascript
 const client = new PostHog('<ph_project_token>', {
-    api_host: 'https://us.i.posthog.com',
-    feature_flag_request_timeout_ms: 3000, // Time in milliseconds. Defaults to 3000 (3 seconds).
+    host: 'https://us.i.posthog.com',
+    featureFlagsRequestTimeoutMs: 3000, // Time in milliseconds. Defaults to 3000 (3 seconds).
 })
 ```
 
@@ -1575,12 +1607,13 @@ Go
 PostHog AI
 
 ```go
+// import "time"
 client, _ := posthog.NewWithConfig(
     os.Getenv("<ph_project_token>"),
     posthog.Config{
         PersonalApiKey:            "your personal API key", // Optional, but much more performant. If this token is not supplied, then fetching feature flag values will be slower.
         Endpoint:                  "https://us.i.posthog.com",
-        FeatureFlagRequestTimeout: 3, // Time in seconds. Defaults to 3.
+        FeatureFlagRequestTimeout: 3 * time.Second, // Defaults to 3 seconds.
     },
 )
 ```
@@ -1647,8 +1680,22 @@ posthog.isFeatureEnabled('key-for-your-boolean-flag')
 posthog.getFeatureFlag('key-for-your-boolean-flag')
 // Multivariant feature flags are returned as a string
 posthog.getFeatureFlag('key-for-your-multivariate-flag')
-// Optional fetch the payload returns 'JsonType' or undefined if not loaded yet or if there was a problem loading
-posthog.getFeatureFlagPayload('key-for-your-multivariate-flag')
+// Optional: fetch the payload (returns 'JsonType' or undefined if not loaded yet or if there was a problem loading)
+posthog.getFeatureFlagResult('key-for-your-multivariate-flag')?.payload
+```
+
+### Inspecting all feature flags
+
+You can inspect all currently loaded feature flags with `getAllFeatureFlags()`. It returns each flag's `key`, `enabled` state, `variant`, and `payload`, and does not send a `$feature_flag_called` event, so calling it won't affect your experiment results or flag usage analytics:
+
+React Native
+
+PostHog AI
+
+```jsx
+for (const flag of posthog.getAllFeatureFlags()) {
+    console.log(flag.key, flag.enabled, flag.variant, flag.payload)
+}
 ```
 
 ### Ensuring flags are loaded before usage
@@ -1856,10 +1903,11 @@ PostHog AI
 
 ```kotlin
 import com.posthog.PostHog
-if (PostHog.isFeatureEnabled("flag-key")) {
+val result = PostHog.getFeatureFlagResult("flag-key")
+if (result?.enabled == true) {
     // Do something differently for this user
-    // Optional: fetch the payload
-    val matchedFlagPayload = PostHog.getFeatureFlagPayload("flag-key")
+    // Optional: fetch the payload from the same evaluation result
+    val matchedFlagPayload = result.payload
 }
 ```
 
@@ -1871,10 +1919,26 @@ PostHog AI
 
 ```kotlin
 import com.posthog.PostHog
-if (PostHog.getFeatureFlag("flag-key") == "variant-key") { // replace 'variant-key' with the key of your variant
+val result = PostHog.getFeatureFlagResult("flag-key")
+if (result?.variant == "variant-key") { // replace "variant-key" with the key of your variant
     // Do something differently for this user
-    // Optional: fetch the payload
-    val matchedFlagPayload = PostHog.getFeatureFlagPayload("flag-key")
+    // Optional: fetch the payload from the same evaluation result
+    val matchedFlagPayload = result.payload
+}
+```
+
+### Inspecting all feature flags
+
+You can inspect all currently loaded feature flags with `PostHog.getAllFeatureFlags()`. It returns each flag's `key`, `enabled` state, `variant`, and `payload`, and does not send a `$feature_flag_called` event, so calling it won't affect your experiment results or flag usage analytics:
+
+Kotlin
+
+PostHog AI
+
+```kotlin
+import com.posthog.PostHog
+PostHog.getAllFeatureFlags()?.forEach { flag ->
+    println("${flag.key} ${flag.enabled} ${flag.variant} ${flag.payload}")
 }
 ```
 
@@ -1902,7 +1966,7 @@ val config = PostHogAndroidConfig(apiKey = "<ph_project_token>").apply {
         }
     }
 }
-// And/Or manually the SDK is initialized
+// And/or after the SDK is initialized
 PostHog.reloadFeatureFlags {
     if (PostHog.isFeatureEnabled("flag-key")) {
         // do something
@@ -1923,6 +1987,20 @@ import com.posthog.PostHog
 PostHog.reloadFeatureFlags()
 ```
 
+### Tracking feature usage
+
+To track when someone sees or interacts with a feature, use `captureFeatureView` and `captureFeatureInteraction`.
+
+Kotlin
+
+PostHog AI
+
+```kotlin
+import com.posthog.PostHog
+PostHog.captureFeatureView("flag-key", flagVariant = "variant-key")
+PostHog.captureFeatureInteraction("flag-key", flagVariant = "variant-key")
+```
+
 ## iOS
 
 ### Boolean feature flags
@@ -1932,10 +2010,10 @@ Swift
 PostHog AI
 
 ```swift
-if (PostHogSDK.shared.isFeatureEnabled("flag-key")) {
+if let result = PostHogSDK.shared.getFeatureFlagResult("flag-key"), result.enabled {
     // Do something differently for this user
-    // Optional: fetch the payload
-    let matchedFlagPayload = PostHogSDK.shared.getFeatureFlagPayload("flag-key")
+    // Optional: fetch the payload from the same evaluation result
+    let matchedFlagPayload = result.payload
 }
 ```
 
@@ -1946,10 +2024,42 @@ Swift
 PostHog AI
 
 ```swift
-if (PostHogSDK.shared.getFeatureFlag("flag-key") as? String == "variant-key") { // replace "variant-key" with the key of your variant
+if let result = PostHogSDK.shared.getFeatureFlagResult("flag-key"), result.variant == "variant-key" { // replace "variant-key" with the key of your variant
     // Do something differently for this user
-    // Optional: fetch the payload
-    let matchedFlagPayload = PostHogSDK.shared.getFeatureFlagPayload("flag-key")
+    // Optional: fetch the payload from the same evaluation result
+    let matchedFlagPayload = result.payload
+}
+```
+
+### Typed payloads
+
+If your payload is a JSON object, you can decode it into a `Decodable` type:
+
+Swift
+
+PostHog AI
+
+```swift
+struct FlagPayload: Decodable {
+    let title: String
+}
+if let result = PostHogSDK.shared.getFeatureFlagResult("flag-key"),
+   let payload = result.payloadAs(FlagPayload.self) {
+    // Use payload.title
+}
+```
+
+### Inspecting all feature flags
+
+You can inspect all currently loaded feature flags with `getAllFeatureFlags()`. It returns each flag's `key`, `enabled` state, `variant`, and `payload`, and does not send a `$feature_flag_called` event, so calling it won't affect your experiment results or flag usage analytics:
+
+Swift
+
+PostHog AI
+
+```swift
+for flag in PostHogSDK.shared.getAllFeatureFlags() ?? [] {
+    print(flag.key, flag.enabled, flag.variant as Any, flag.payload as Any)
 }
 ```
 
@@ -2016,6 +2126,19 @@ PostHogSDK.shared.reloadFeatureFlags {
 }
 ```
 
+### Tracking feature usage
+
+To track when someone sees or interacts with a feature, use `captureFeatureView` and `captureFeatureInteraction`.
+
+Swift
+
+PostHog AI
+
+```swift
+PostHogSDK.shared.captureFeatureView(flag: "flag-key", flagVariant: "variant-key")
+PostHogSDK.shared.captureFeatureInteraction(flag: "flag-key", flagVariant: "variant-key")
+```
+
 ## Flutter
 
 ### Boolean feature flags
@@ -2025,10 +2148,11 @@ Dart
 PostHog AI
 
 ```dart
-if (await Posthog().isFeatureEnabled('flag-key')) {
+final result = await Posthog().getFeatureFlagResult('flag-key');
+if (result != null && result.enabled) {
   // Do something differently for this user
-  // Optional: fetch the payload
-  final matchedFlagPayload = await Posthog().getFeatureFlagPayload('flag-key');
+  // Optional: fetch the payload from the same evaluation result
+  final matchedFlagPayload = result.payload;
 }
 ```
 
@@ -2039,16 +2163,17 @@ Dart
 PostHog AI
 
 ```dart
-if (await Posthog().getFeatureFlag('flag-key') == 'variant-key') { // replace 'variant-key' with the key of your variant
+final result = await Posthog().getFeatureFlagResult('flag-key');
+if (result != null && result.variant == 'variant-key') { // replace 'variant-key' with the key of your variant
   // Do something differently for this user
-  // Optional: fetch the payload
-  final matchedFlagPayload = await Posthog().getFeatureFlagPayload('flag-key');
+  // Optional: fetch the payload from the same evaluation result
+  final matchedFlagPayload = result.payload;
 }
 ```
 
 ### Ensuring flags are loaded before usage
 
-> To use the `onFeatureFlags` callback, you must [set up the SDK manually](#installation) by disabling the `com.posthog.posthog.AUTO_INIT` mode.
+> To use the `onFeatureFlags` callback, you must [set up the SDK manually](#installation). On Android and iOS, disable `com.posthog.posthog.AUTO_INIT` first.
 
 Every time a user opens the app, we send a request in the background to fetch the feature flags that apply to that user. We store those flags in the storage.
 
@@ -2366,7 +2491,7 @@ if flags.is_enabled("flag-key") {
 }
 let mut event = Event::new("event_name", "distinct_id_of_your_user");
 event.with_flags(&flags);
-client.capture(event).await.unwrap();
+client.capture(event);
 ```
 
 By default, this attaches every flag in the snapshot using `$feature/<flag-key>` properties and `$active_feature_flags`.
@@ -2381,11 +2506,11 @@ PostHog AI
 // Attach only flags accessed with is_enabled() or get_flag() before this call
 let mut event = Event::new("event_name", "distinct_id_of_your_user");
 event.with_flags(&flags.only_accessed());
-client.capture(event).await.unwrap();
+client.capture(event);
 // Attach only specific flags
 let mut event = Event::new("event_name", "distinct_id_of_your_user");
 event.with_flags(&flags.only(&["checkout-flow", "new-dashboard"]));
-client.capture(event).await.unwrap();
+client.capture(event);
 ```
 
 `only_accessed()` is order-dependent. If you call it before accessing any flags with `is_enabled()` or `get_flag()`, no feature flag properties are attached.
@@ -2402,7 +2527,7 @@ PostHog AI
 use posthog_rs::Event;
 let mut event = Event::new("event_name", "distinct_id_of_your_user");
 event.insert_prop("$feature/feature-flag-key", "variant-key").unwrap();
-client.capture(event).await.unwrap();
+client.capture(event);
 ```
 
 ### Evaluating only specific flags
@@ -2529,7 +2654,7 @@ PostHog AI
 
 ```elixir
 {:ok, snapshot} = PostHog.FeatureFlags.evaluate_flags("distinct_id_of_your_user")
-# Attach only flags accessed with enabled?/2, get_flag/2, or get_flag_payload/2 before this call
+# Attach only flags accessed with enabled?/2 or get_flag/2 before this call
 PostHog.FeatureFlags.Evaluations.enabled?(snapshot, "flag-key")
 PostHog.FeatureFlags.set_in_context(
   PostHog.FeatureFlags.Evaluations.only_accessed(snapshot)
@@ -2540,7 +2665,7 @@ PostHog.FeatureFlags.set_in_context(
 )
 ```
 
-`only_accessed/1` is order-dependent. If you call it before accessing any flags with `enabled?/2`, `get_flag/2`, or `get_flag_payload/2`, no feature flag properties are attached.
+`only_accessed/1` is order-dependent. If you call it before accessing any flags with `enabled?/2` or `get_flag/2`, no feature flag properties are attached.
 
 #### Method 2: Include the `$feature/feature_flag_name` property manually
 
@@ -3300,7 +3425,7 @@ headers = {
 payload = {
     "api_key": "<ph_project_token>",
     "event": "your_event_name",
-    "distinct_id": "distinct_id_of_your_user,
+    "distinct_id": "distinct_id_of_your_user",
     "properties": {
       "$feature/feature-flag-key": "variant-key" # Replace feature-flag-key with your flag key. Replace 'variant-key' with the key of your variant
     }
@@ -3346,7 +3471,7 @@ headers = {
 payload = {
     "api_key": "<ph_project_token>",
     "event": "feature_flag_called",
-    "distinct_id": "distinct_id_of_your_user,
+    "distinct_id": "distinct_id_of_your_user",
     "properties": {
       "$feature_flag": "feature-flag-key",
       "$feature_flag_response": "variant-name"
@@ -3450,9 +3575,9 @@ The list of properties that this overrides:
 6.  `$geoip_postal_code`
 7.  `$geoip_time_zone`
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
