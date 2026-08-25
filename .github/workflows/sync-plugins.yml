@@ -1,0 +1,137 @@
+name: Sync plugins from context-mill release
+
+# Pull-based mirror of the context-mill marketplace plugins into
+# skills/posthog/**. context-mill's release uploads marketplace-plugins.zip
+# (the built plugin trees + push-manifest.json naming each destination) and
+# fires a repository_dispatch here; the cron is the self-healing fallback.
+#
+# Commits are created through the GitHub GraphQL API so they are signed by
+# GitHub (org ruleset requires signed commits, no bypass), and the diff is
+# split into size-capped batches: one createCommitOnBranch mutation with the
+# whole catch-up diff is exactly what 504'd context-mill's old push-based
+# mirror on every release.
+
+on:
+  repository_dispatch:
+    types: [sync-plugins]
+  schedule:
+    - cron: '30 12 * * *' # Daily, offset from sync-omnibus at 12:00 UTC
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'context-mill release tag to sync (empty = latest)'
+        required: false
+        default: ''
+
+jobs:
+  sync-plugins:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@f8d387b68d61c58ab83c6c016672934102569859 # v3.0.0
+        with:
+          app-id: ${{ secrets.GH_APP_SKILLS_RELEASER_APP_ID }}
+          private-key: ${{ secrets.GH_APP_SKILLS_RELEASER_PRIVATE_KEY }}
+
+      - name: Checkout repository
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+
+      - name: Download marketplace plugins from context-mill
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          # repository_dispatch carries the tag of the release that fired us;
+          # cron and a bare manual run sync whatever is latest.
+          TAG: ${{ github.event.client_payload.tag || github.event.inputs.tag || '' }}
+        run: |
+          if [ -n "$TAG" ]; then
+            gh release download "$TAG" --repo PostHog/context-mill \
+              --pattern 'marketplace-plugins.zip' --dir /tmp
+          else
+            gh release download --repo PostHog/context-mill \
+              --pattern 'marketplace-plugins.zip' --dir /tmp
+          fi
+          mkdir -p /tmp/cm-plugins
+          unzip -q -o /tmp/marketplace-plugins.zip -d /tmp/cm-plugins
+
+      - name: Sync plugin trees
+        run: |
+          MANIFEST="/tmp/cm-plugins/push-manifest.json"
+
+          # Lay each plugin into its manifest destination: clear (preserving a
+          # hand-written README.md) and copy — same semantics the old
+          # context-mill push used.
+          jq -c '.plugins[]' "$MANIFEST" | while read -r entry; do
+            NAME=$(echo "$entry" | jq -r '.name')
+            SOURCE="/tmp/cm-plugins/$(echo "$entry" | jq -r '.source')"
+            DEST="$(echo "$entry" | jq -r '.destination')"
+            echo "  Syncing $NAME -> $DEST"
+            if [ -d "$DEST" ]; then
+              find "$DEST" -mindepth 1 -not -name 'README.md' -not -name '.' -exec rm -rf {} + 2>/dev/null || true
+            fi
+            mkdir -p "$DEST"
+            cp -r "$SOURCE"/. "$DEST"/
+          done
+
+          # Reconcile orphans: a plugin dir under skills/posthog/ that the
+          # manifest no longer names was renamed or retired upstream.
+          jq -r '.plugins[].destination' "$MANIFEST" | sed 's|^skills/posthog/||' | sort > /tmp/manifest-dirs.txt
+          for d in skills/posthog/*/; do
+            [ -d "$d" ] || continue
+            name=$(basename "$d")
+            grep -qFx "$name" /tmp/manifest-dirs.txt || { echo "  Removing orphan $name"; rm -rf "$d"; }
+          done
+
+      - name: Check for changes
+        id: check
+        run: |
+          git add -A skills/posthog/
+          if git diff --cached --quiet; then
+            echo "No changes detected."
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          CM_TAG=$(unzip -p /tmp/marketplace-plugins.zip 'marketplace/.claude-plugin/marketplace.json' 2>/dev/null | jq -r '.plugins[0].version // empty' | sed 's/^/v/')
+          echo "commit_message=chore: sync plugins (context-mill@${CM_TAG:-latest})" >> "$GITHUB_OUTPUT"
+
+      - name: Create sync branch
+        if: steps.check.outputs.has_changes == 'true'
+        id: branch
+        # The branch points at the current main commit, so this plain push
+        # creates no new (unsigned) commits — the signed-commits ruleset only
+        # constrains commits, not refs.
+        run: |
+          BRANCH="chore/sync-plugins-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH"
+          git push origin "$BRANCH"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+      - name: Commit in signed batches
+        if: steps.check.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BRANCH: ${{ steps.branch.outputs.branch }}
+          COMMIT_MESSAGE: ${{ steps.check.outputs.commit_message }}
+        # createCommitOnBranch, batched. Each mutation carries at most
+        # MAX_FILES files / MAX_BYTES raw bytes (base64 inflates 4/3 on the
+        # wire); a 5-month catch-up is ~2500 files / 34 MB, which as a single
+        # mutation is a guaranteed 504. Batches chain via expectedHeadOid.
+        # On a transient GraphQL failure the batch halves and retries.
+        run: python3 .github/scripts/commit_in_batches.py
+
+      - name: Create PR with auto-merge
+        if: steps.check.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          COMMIT_MESSAGE: ${{ steps.check.outputs.commit_message }}
+          HEAD_REF: ${{ steps.branch.outputs.branch }}
+        run: |
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "$HEAD_REF" \
+            --title "$COMMIT_MESSAGE" \
+            --body "Automated plugin sync from the context-mill release.")
+          gh pr merge "$PR_URL" --auto --squash
