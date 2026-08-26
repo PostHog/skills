@@ -1,7 +1,7 @@
 # PostHog expo Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/expo
+Path: example-apps/expo
 
 ---
 
@@ -15,7 +15,7 @@ A React Native Expo app demonstrating PostHog product analytics integration with
 
 - **Product Analytics**: Full PostHog integration with event tracking
 - **Autocapture**: Touch events and screen tracking
-- **Error Tracking**: Manual exception capture with `$exception` events
+- **Error Tracking**: Manual exception capture with `captureException`
 - **User Authentication**: Demo login with PostHog user identification
 - **Session Persistence**: AsyncStorage for session management
 - **Modern React**: React 19 with React Compiler for automatic memoization
@@ -114,7 +114,7 @@ PostHog is configured in `src/config/posthog.ts` using environment variables fro
 ```typescript
 import Constants from 'expo-constants'
 
-const apiKey = Constants.expoConfig?.extra?.posthogProjectToken
+const projectToken = Constants.expoConfig?.extra?.posthogProjectToken
 ```
 
 ### Event Tracking
@@ -156,11 +156,7 @@ useEffect(() => {
 Manual exception capture:
 
 ```typescript
-posthog.capture('$exception', {
-  $exception_type: error.name,
-  $exception_message: error.message,
-  $exception_stack_trace_raw: error.stack,
-})
+posthog.captureException(error)
 ```
 
 ## Modern React Features
@@ -250,6 +246,7 @@ POSTHOG_HOST=https://us.i.posthog.com
 
 ```
 legacy-peer-deps=true
+min-release-age=7
 
 ```
 
@@ -595,7 +592,7 @@ export default function HomeScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.card}>
           <Text style={styles.title}>Welcome back, {user.username}!</Text>
-          <Text style={styles.text}>You are now logged in. Feel free to explore:</Text>
+          <Text style={styles.text}>You are logged in. Feel free to explore:</Text>
 
           <View style={styles.buttonGroup}>
             <TouchableOpacity
@@ -822,7 +819,7 @@ export default function ProfileScreen() {
   /**
    * Triggers a test error and captures it in PostHog
    *
-   * This demonstrates manual exception capture using the $exception event.
+   * This demonstrates manual exception capture via captureException.
    * In production, you would typically set up automatic exception capture
    * or use the before_send callback for customization.
    *
@@ -834,21 +831,8 @@ export default function ProfileScreen() {
     } catch (err) {
       const error = err as Error
 
-      // Capture exception in PostHog
       // @see https://posthog.com/docs/error-tracking
-      posthog.capture('$exception', {
-        $exception_list: [
-          {
-            type: error.name,
-            value: error.message,
-            stacktrace: {
-              type: 'raw',
-              frames: error.stack ?? '',
-            },
-          },
-        ],
-        $exception_source: 'react-native',
-        // Additional context
+      posthog.captureException(error, {
         username: user.username,
         screen: 'Profile',
       })
@@ -1013,13 +997,13 @@ import Constants from 'expo-constants'
 
 // Configuration loaded from app.config.js extras via expo-constants
 // Environment variables are read at build time in app.config.js
-const apiKey = Constants.expoConfig?.extra?.posthogProjectToken as string | undefined
+const projectToken = Constants.expoConfig?.extra?.posthogProjectToken as string | undefined
 const host = (Constants.expoConfig?.extra?.posthogHost as string) || 'https://us.i.posthog.com'
-const isPostHogConfigured = apiKey && apiKey !== 'phc_your_project_token_here'
+const isPostHogConfigured = projectToken && projectToken !== 'phc_your_project_token_here'
 
 if (__DEV__) {
   console.log('PostHog config:', {
-    apiKey: apiKey ? `SET` : 'NOT SET',
+    projectToken: projectToken ? `SET` : 'NOT SET',
     host,
     isConfigured: isPostHogConfigured,
   })
@@ -1044,11 +1028,11 @@ if (!isPostHogConfigured) {
  *
  * @see https://posthog.com/docs/libraries/react-native
  */
-export const posthog = new PostHog(apiKey || 'placeholder_key', {
+export const posthog = new PostHog(projectToken || 'placeholder_key', {
   // PostHog API host
   host,
 
-  // Disable PostHog if project token is not configured
+  // Enable PostHog only when a project token is configured
   disabled: !isPostHogConfigured,
 
   // Capture app lifecycle events:

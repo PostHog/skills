@@ -1,4 +1,10 @@
-# Ruby error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Ruby Error Tracking installation - Docs
+
+Copy page
+
+# Ruby Error Tracking installation - Docs
 
 1.  1
 
@@ -80,8 +86,8 @@
     rescue => e
       posthog.capture_exception(
         e,
-        distinct_id: 'user_distinct_id',
-        properties: {
+        'user_distinct_id',
+        {
           custom_property: 'custom_value'
         }
       )
@@ -94,7 +100,7 @@
     | --- | --- | --- |
     | exception | Exception | The exception object to capture (required) |
     | distinct_id | String | The distinct ID of the user (optional) |
-    | properties | Hash | Additional properties to attach to the exception event (optional) |
+    | additional_properties | Hash | Additional properties to attach to the exception event (optional) |
 
 5.  ## Verify error tracking
 
@@ -108,9 +114,9 @@
 
     [Check for exceptions in PostHog](https://app.posthog.com/activity/explore)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
