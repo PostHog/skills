@@ -1,4 +1,10 @@
-# Android error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Android Error Tracking installation - Docs
+
+Copy page
+
+# Android Error Tracking installation - Docs
 
 1.  1
 
@@ -152,9 +158,9 @@
 
     [Upload mapping files](/docs/error-tracking/upload-mappings/android.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
