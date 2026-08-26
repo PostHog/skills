@@ -1,7 +1,7 @@
 {
   "name": "posthog-feature-flags",
   "description": "Skills for implementing PostHog feature flags across frameworks",
-  "version": "1.9.4",
+  "version": "dev",
   "author": {
     "name": "PostHog"
   },
