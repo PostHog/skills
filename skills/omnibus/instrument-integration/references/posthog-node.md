@@ -1,6 +1,6 @@
-# PostHog Node.js SDK
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
 
-**SDK Version:** 5.36.2
+# PostHog Node.js SDK
 
 PostHog Node.js SDK allows you to capture events and send them to PostHog from your Node.js applications.
 
@@ -272,15 +272,15 @@ const client = new PostHogBackendClient(
 )
 ```
 
-#### With personal API key
+#### With a secret key (Personal API Key or Project Secret API Key) for local evaluation
 
 ```node
-// With personal API key
+// With a secret key (Personal API Key or Project Secret API Key) for local evaluation
 const client = new PostHogBackendClient(
   'your-api-key',
   {
     host: 'https://app.posthog.com',
-    personalApiKey: 'your-personal-api-key'
+    secretKey: 'your-secret-key'
   }
 )
 ```
@@ -523,7 +523,8 @@ Create or update a group and its properties.
 
 ### Parameters
 
-- **`{ groupType, groupKey, properties, distinctId, disableGeoip }`** (`GroupIdentifyMessage`)
+- **`{ groupType, groupKey, properties, distinctId, disableGeoip }`** (`any`)
+- **`input`** (`GroupIdentifyMessage`)
 
 ### Returns
 
@@ -563,6 +564,38 @@ client.groupIdentify({
 
 ---
 
+#### groupIdentifyImmediate()
+
+**Release Tag:** public
+
+Create or update a group and its properties immediately (synchronously).
+
+### Parameters
+
+- **`{ groupType, groupKey, properties, distinctId, disableGeoip, }`** (`any`)
+- **`input`** (`GroupIdentifyMessage`)
+
+### Returns
+
+- `Promise<void>`
+
+### Examples
+
+```node
+// Immediately create or update a company group
+await client.groupIdentifyImmediate({
+  groupType: 'company',
+  groupKey: 'acme-corp',
+  properties: {
+    name: 'Acme Corporation',
+    industry: 'Technology',
+    employee_count: 500
+  }
+})
+```
+
+---
+
 #### identify()
 
 **Release Tag:** public
@@ -571,7 +604,8 @@ Identify a user and set their properties.
 
 ### Parameters
 
-- **`{ distinctId, properties, disableGeoip }`** (`IdentifyMessage`)
+- **`{ distinctId, properties, disableGeoip }`** (`any`)
+- **`input`** (`IdentifyMessage`)
 
 ### Returns
 
@@ -617,7 +651,8 @@ Identify a user and set their properties immediately (synchronously).
 
 ### Parameters
 
-- **`{ distinctId, properties, disableGeoip }`** (`IdentifyMessage`)
+- **`{ distinctId, properties, disableGeoip }`** (`any`)
+- **`input`** (`IdentifyMessage`)
 
 ### Returns
 
@@ -633,6 +668,59 @@ await client.identifyImmediate({
     name: 'John Doe',
     email: 'john@example.com'
   }
+})
+```
+
+---
+
+#### setPersonProperties()
+
+**Release Tag:** public
+
+Set properties on a person profile.
+
+### Parameters
+
+- **`{ distinctId, properties, propertiesOnce }`** (`any`)
+- **`input`** (`SetPersonPropertiesMessage`)
+
+### Returns
+
+- `void`
+
+### Examples
+
+```node
+client.setPersonProperties({
+  distinctId: 'user_123',
+  properties: { plan: 'premium' },
+  propertiesOnce: { first_seen: '2026-06-15' }
+})
+```
+
+---
+
+#### unsetPersonProperties()
+
+**Release Tag:** public
+
+Remove properties from a person profile.
+
+### Parameters
+
+- **`{ distinctId, properties }`** (`any`)
+- **`input`** (`UnsetPersonPropertiesMessage`)
+
+### Returns
+
+- `void`
+
+### Examples
+
+```node
+client.unsetPersonProperties({
+  distinctId: 'user_123',
+  properties: ['plan', 'email']
 })
 ```
 
@@ -663,6 +751,57 @@ client.capture({
   event: 'button_clicked',
   properties: { button_color: 'red' }
 })
+```
+
+---
+
+#### captureAi()
+
+**Release Tag:** public
+
+Capture an AI event on the dedicated AI capture endpoint.
+Beta: the signature is stable; operational limits (per-event size cap, batching, endpoint) may change without notice. Delivery is async, and no redaction or truncation is applied to the payload.
+
+### Parameters
+
+- **`props`** (`EventMessage`) - The event properties
+
+### Returns
+
+**Union of:**
+- `string`
+- `undefined`
+
+### Examples
+
+```node
+// Generated example for captureAi
+posthog.captureAi();
+```
+
+---
+
+#### captureAiImmediate()
+
+**Release Tag:** public
+
+Capture an AI event on the dedicated AI capture endpoint, resolving after the send completes. Use in short-lived processes (serverless) where the runtime may freeze before a background flush runs.
+
+### Parameters
+
+- **`props`** (`EventMessage`) - The event properties
+
+### Returns
+
+**Union of:**
+- `Promise<string`
+- `undefined>`
+
+### Examples
+
+```node
+// Generated example for captureAiImmediate
+posthog.captureAiImmediate();
 ```
 
 ---
@@ -872,13 +1011,13 @@ await client.enable()
 
 Evaluate all feature flags for a user in a single call and return a  snapshot. Branch on `.isEnabled()` / `.getFlag()`, then pass the same snapshot to `capture()` via the `flags` option so the captured event carries the exact flag values the code branched on.
 Prefer this over repeated `isFeatureEnabled()` / `getFeatureFlag()` calls and over `capture({ sendFeatureFlags: true })` — it consolidates flag evaluation into a single `/flags` request per incoming request.
-**Local evaluation is transparent.** When the poller can resolve a flag from cached definitions, no network call is made and the snapshot's `$feature_flag_called` events are tagged `locally_evaluated: true`.
-**Trim the request.** Pass `flagKeys` to scope the underlying `/flags` request to a subset of flags — useful when you only need a few flags and want to reduce the response payload.
+**Local evaluation is transparent.** When the poller can resolve a flag from cached definitions, no network call is made and the snapshot's `$feature_flag_called` events are tagged `locally_evaluated: true`. A requested key missing from local definitions is included in a `/flags` fallback unless `onlyEvaluateLocally` is true. Locally resolved values remain authoritative when remote results are merged.
+**Trim the request.** Pass `flagKeys` to scope local evaluation, the underlying `/flags` request, and the returned snapshot to a subset of flags. Remote evaluation responses are not cached, so a key missing both locally and remotely costs one `/flags` request per `evaluateFlags()` call.
 **Trim the event payload.** Use `flags.only([...])` or `flags.onlyAccessed()` to filter which flags get attached to a captured event without re-fetching.
 
 ### Parameters
 
-- **`options?`** (`AllFlagsOptions`) - Optional configuration for flag evaluation. Supports the same fields as `getAllFlags()`, including `flagKeys` to scope the `/flags` request.
+- **`options?`** (`AllFlagsOptions`) - Optional configuration for flag evaluation. Supports the same fields as `getAllFlags()`. `flagKeys` scopes local evaluation, the `/flags` request, and the returned snapshot. `onlyEvaluateLocally` prevents fallback and leaves unresolved keys absent.
 
 ### Returns
 
@@ -1038,8 +1177,8 @@ Get the value of a feature flag for a specific user.
 - **`distinctId`** (`string`) - The user's distinct ID
 - **`options?`** (`{
         groups?: Record<string, string>;
-        personProperties?: Record<string, string>;
-        groupProperties?: Record<string, Record<string, string>>;
+        personProperties?: Properties;
+        groupProperties?: Record<string, Properties>;
         onlyEvaluateLocally?: boolean;
         sendFeatureFlagEvents?: boolean;
         disableGeoip?: boolean;
@@ -1102,8 +1241,8 @@ Get the payload for a feature flag.
 - **`matchValue?`** (`FeatureFlagValue`) - Optional match value to get payload for
 - **`options?`** (`{
         groups?: Record<string, string>;
-        personProperties?: Record<string, string>;
-        groupProperties?: Record<string, Record<string, string>>;
+        personProperties?: Properties;
+        groupProperties?: Record<string, Properties>;
         onlyEvaluateLocally?: boolean;
         sendFeatureFlagEvents?: boolean;
         disableGeoip?: boolean;
@@ -1229,8 +1368,8 @@ Check if a feature flag is enabled for a specific user.
 - **`distinctId`** (`string`) - The user's distinct ID
 - **`options?`** (`{
         groups?: Record<string, string>;
-        personProperties?: Record<string, string>;
-        groupProperties?: Record<string, Record<string, string>>;
+        personProperties?: Properties;
+        groupProperties?: Record<string, Properties>;
         onlyEvaluateLocally?: boolean;
         sendFeatureFlagEvents?: boolean;
         disableGeoip?: boolean;
