@@ -3,7 +3,7 @@ name: integration-javascript_node
 description: PostHog integration for server-side Node.js applications using posthog-node
 metadata:
   author: PostHog
-  version: 1.9.4
+  version: dev
 ---
 
 # PostHog integration for JavaScript Node
@@ -14,20 +14,21 @@ This skill helps you add PostHog analytics to JavaScript Node applications.
 
 Follow these steps in order to complete the integration:
 
-1. `basic-integration-1.0-begin.md` - PostHog Setup - Begin ← **Start here**
-2. `basic-integration-1.1-edit.md` - PostHog Setup - Edit
-3. `basic-integration-1.2-revise.md` - PostHog Setup - Revise
-4. `basic-integration-1.3-conclude.md` - PostHog Setup - Conclusion
+1. `references/1-begin.md` - PostHog Setup - Begin ← **Start here**
+2. `references/2-edit.md` - PostHog Setup - Edit
+3. `references/3-revise.md` - PostHog Setup - Revise
+4. `references/4-conclude.md` - PostHog Setup - Conclusion
 
 ## Reference files
 
+- `references/1-begin.md` - Start the event tracking setup process by analyzing the project and creating an event tracking plan
+- `references/2-edit.md` - Implement PostHog event tracking in the identified files, following best practices and the example project
+- `references/3-revise.md` - Review and fix any errors in the PostHog integration implementation
+- `references/4-conclude.md` - Review and fix any errors in the PostHog integration implementation
 - `references/node.md` - Node.js - docs
 - `references/posthog-node.md` - PostHog Node.js SDK
 - `references/identify-users.md` - Identify users - docs
-- `references/basic-integration-1.0-begin.md` - PostHog setup - begin
-- `references/basic-integration-1.1-edit.md` - PostHog setup - edit
-- `references/basic-integration-1.2-revise.md` - PostHog setup - revise
-- `references/basic-integration-1.3-conclude.md` - PostHog setup - conclusion
+- `references/COMMANDMENTS.md` - Framework-specific rules the integration must follow
 
 The example project shows the target implementation pattern. Consult the documentation for API details.
 
@@ -39,15 +40,17 @@ The example project shows the target implementation pattern. Consult the documen
 
 ## Framework guidelines
 
-- posthog-node is the Node.js server-side SDK package name – do NOT use posthog-js on the server
+- A missing PostHog configuration must never break the app — read keys optionally (never a required setting), guard init and capture behind their presence, and keep build and boot working with no PostHog environment set — but never silently: in development or debug builds fail loudly, using the language's idiomatic error, with the message "<VAR> variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once <VAR> is configured" (substituting the actual variable name); production stays a no-op
+- posthog-node is the Node.js server-side SDK package name; posthog-js is browser-only, so use posthog-node on the server instead
 - Include enableExceptionAutocapture: true in the PostHog constructor options
 - Add posthog.capture() calls in route handlers for meaningful user actions – every route that creates, updates, or deletes data should track an event with contextual properties
 - Add posthog.captureException(err, distinctId) in the application's error handler (e.g., Express error middleware, Fastify setErrorHandler, Koa app.on('error'))
-- In long-running servers, the SDK batches events automatically – do NOT set flushAt or flushInterval unless you have a specific reason to
-- For short-lived processes (scripts, CLIs, serverless), set flushAt to 1 and flushInterval to 0 to send events immediately
+- The SDK batches events and flushes asynchronously. await flush() or await shutdown() before letting that process exit. If unsure, set flushAt 1 and flushInterval 0.
+- `posthog.capture()` enqueues synchronously and returns; the batched HTTP send happens afterwards. Treat every per-request handler as short-lived even when the framework feels like a server: Next.js / Nuxt / SvelteKit / Remix route handlers, serverless and edge functions, and Lambda are torn down per invocation before the send runs. Create the client with flushAt 1 and flushInterval 0, then await the send before returning. Always use `await posthog.flush()` for a shared/singleton client, `await posthog.shutdown()` for a per-request client. Never skip the awaited flush or risk the enqueued event being silently dropped.
 - Reverse proxy is NOT needed for server-side Node.js – only client-side JavaScript needs a proxy to avoid ad blockers
 - Remember that source code is available in the node_modules directory
 - Check package.json for type checking or build scripts to validate changes
+- When identity comes from framework-bridged state (Inertia or SSR shared props, a serialized session), confirm the backend actually shares that field — add the share server-side if missing — before identifying from it
 
 ## Identifying users
 

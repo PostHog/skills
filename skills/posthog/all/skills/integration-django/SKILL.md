@@ -3,7 +3,7 @@ name: integration-django
 description: PostHog integration for Django applications
 metadata:
   author: PostHog
-  version: 1.9.4
+  version: dev
 ---
 
 # PostHog integration for Django
@@ -14,20 +14,21 @@ This skill helps you add PostHog analytics to Django applications.
 
 Follow these steps in order to complete the integration:
 
-1. `basic-integration-1.0-begin.md` - PostHog Setup - Begin ← **Start here**
-2. `basic-integration-1.1-edit.md` - PostHog Setup - Edit
-3. `basic-integration-1.2-revise.md` - PostHog Setup - Revise
-4. `basic-integration-1.3-conclude.md` - PostHog Setup - Conclusion
+1. `references/1-begin.md` - PostHog Setup - Begin ← **Start here**
+2. `references/2-edit.md` - PostHog Setup - Edit
+3. `references/3-revise.md` - PostHog Setup - Revise
+4. `references/4-conclude.md` - PostHog Setup - Conclusion
 
 ## Reference files
 
 - `references/EXAMPLE.md` - Django example project code
+- `references/1-begin.md` - Start the event tracking setup process by analyzing the project and creating an event tracking plan
+- `references/2-edit.md` - Implement PostHog event tracking in the identified files, following best practices and the example project
+- `references/3-revise.md` - Review and fix any errors in the PostHog integration implementation
+- `references/4-conclude.md` - Review and fix any errors in the PostHog integration implementation
 - `references/django.md` - Django - docs
 - `references/identify-users.md` - Identify users - docs
-- `references/basic-integration-1.0-begin.md` - PostHog setup - begin
-- `references/basic-integration-1.1-edit.md` - PostHog setup - edit
-- `references/basic-integration-1.2-revise.md` - PostHog setup - revise
-- `references/basic-integration-1.3-conclude.md` - PostHog setup - conclusion
+- `references/COMMANDMENTS.md` - Framework-specific rules the integration must follow
 
 The example project shows the target implementation pattern. Consult the documentation for API details.
 
@@ -39,10 +40,11 @@ The example project shows the target implementation pattern. Consult the documen
 
 ## Framework guidelines
 
-- Add 'posthog.integrations.django.PosthogContextMiddleware' to MIDDLEWARE it auto-extracts tracing headers and captures exceptions
+- A missing PostHog configuration must never break the app — read keys optionally (never a required setting), guard init and capture behind their presence, and keep build and boot working with no PostHog environment set — but never silently: in development or debug builds fail loudly, using the language's idiomatic error, with the message "<VAR> variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once <VAR> is configured" (substituting the actual variable name); production stays a no-op
+- Add 'posthog.integrations.django.PosthogContextMiddleware' to MIDDLEWARE, after AuthenticationMiddleware, it auto-extracts tracing headers and captures exceptions
 - Initialize PostHog in AppConfig.ready() with api_key and host from environment variables
-- Use the context API pattern with new_context(), identify_context(user_id), then capture()
-- For login/logout views, create a new context since user state changes during the request
+- The middleware identifies the request context from the X-POSTHOG-DISTINCT-ID header or the authenticated user's pk, so in a view where the user is already logged in a plain capture() is already attributed - do not wrap it in a context of its own
+- The middleware reads the user once, before the view runs, so a login request's context is identified as whoever the user was beforehand - nobody - and calling login() does not update it. A bare capture there is personless. Hook Django's user_logged_in signal and call identify_context(str(user.pk)) inside it: the signal runs inside the login request, so it fixes the ambient context and every later capture in that request is attributed. Logout views need no special handling, the user is still authenticated when the middleware runs - capture before calling logout()
 - Do NOT create custom middleware, distinct_id helpers, or conditional checks - the SDK handles these
 - Remember that source code is available in the venv/site-packages directory
 - posthog is the Python SDK package name
