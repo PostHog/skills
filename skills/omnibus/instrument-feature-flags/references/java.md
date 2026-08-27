@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Java Feature Flags installation - Docs
+
+Copy page
+
 # Java Feature Flags installation - Docs
 
 The best way to install the PostHog Java SDK is with a build system like Gradle or Maven. This ensures you can easily upgrade to the latest versions.
@@ -85,9 +91,9 @@ PostHogConfig config = PostHogConfig
           .build();
 ```
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
