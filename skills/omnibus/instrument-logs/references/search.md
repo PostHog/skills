@@ -1,8 +1,40 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
 # Search logs - Docs
 
-Filter logs from the filter bar at the top of the [logs page](https://app.posthog.com/logs). Pick a field, choose an operator, and enter a value. Add as many filters as you need — they're combined with AND.
+Copy page
 
-There are four kinds of fields you can filter on:
+# Search logs - Docs
+
+There are two ways to filter logs on the [logs page](https://app.posthog.com/logs): the **facet rail** on the left sidebar and the **filter bar** at the top.
+
+## Facet rail
+
+The facet rail is a sidebar on the left side of the logs viewer. It shows curated filters you can click to narrow results without typing in the filter bar.
+
+Two facets always appear:
+
+-   **Level** – filter by log severity (`trace`, `debug`, `info`, `warn`, `error`, `fatal`)
+-   **Service** – filter by `service.name`
+
+Additional facets appear automatically when your logs contain common OpenTelemetry resource attributes:
+
+| Facet | Resource attribute | Group |
+| --- | --- | --- |
+| Environment | deployment.environment.name | Standard |
+| Namespace | k8s.namespace.name | Kubernetes |
+| Deployment | k8s.deployment.name | Kubernetes |
+| Pod | k8s.pod.name | Kubernetes |
+| Node | k8s.node.name | Kubernetes |
+| Host | host.name | Infrastructure |
+
+These facets are presence-gated — they only show up when your logs actually contain the corresponding resource attribute. For example, the Kubernetes facets won't appear if your services don't emit Kubernetes metadata.
+
+## Filter bar
+
+The filter bar at the top of the logs page lets you build precise filters. Pick a field, choose an operator, and enter a value. Add as many filters as you need — they're combined with AND.
+
+There are four kinds of fields you can filter on in the filter bar:
 
 -   **Logs** – top-level log properties: `severity_level`, `trace_id`, and `span_id`
 -   **Message** – full-text search over the log body
@@ -48,6 +80,41 @@ To search log bodies, pick the **Message** field from the filter bar. Message su
 -   **Matches regex** `timeout|refused|reset` – matches logs mentioning any of those words (useful when you'd otherwise add multiple contains filters).
 -   **Doesn't contain** `healthcheck` – exclude noisy healthcheck lines while keeping everything else.
 
+## Filter from the facet rail
+
+The facet rail is a sidebar on the left of the logs page that displays available log fields grouped by category. Each facet group shows the available values for that field along with their counts, helping you explore your log data at a glance.
+
+Clicking a facet value cycles through three states:
+
+1.  **Unchecked** → **Included** – shows only logs matching that value.
+2.  **Included** → **Excluded** – hides logs matching that value.
+3.  **Excluded** → **Unchecked** – clears the filter.
+
+The **Level** facet and resource-attribute facets (like Environment and Namespace) support this tri-state cycle. You can include one severity level while excluding another in the same query — for example, include `error` to focus on errors while excluding `debug` to remove noise.
+
+### Search facets
+
+When the facet rail contains many fields, use the search input at the top to find the facet you need. Type a field name or group name and the rail filters to show only matching facets. Empty groups are hidden automatically.
+
+The facet search:
+
+-   Matches field titles and group names (case-insensitive)
+-   Persists in the URL so you can bookmark or share your filtered view
+-   Clears when you remove the search text
+
+## Pivot from patterns to matching logs
+
+The Patterns view mines your logs into recurring message templates. When you expand a pattern, click **View matching logs** to pivot to the Logs view filtered to lines matching that pattern.
+
+The pivot applies a message filter based on the pattern's template:
+
+-   **Regex filter** – when the pattern has a validated regex, it lands as a `matches regex` message filter. The regex is compiled from the template's structure and validated against the pattern's own examples before it ships.
+-   **Contains filter** – when the regex can't be validated (e.g. examples diverge from the template), the pivot falls back to a `contains` filter using the pattern's longest literal text.
+
+The applied filter appears in the filter bar as a visible, removable chip — it behaves like any filter you'd add manually. Your existing date range, service, and severity selections are preserved so the pivot stays inside your investigation context.
+
+When the pattern's sample is unambiguous (a single service or severity), the pivot also scopes by those values to narrow the scan.
+
 ## Tips
 
 -   **Stack filters to narrow down.** Every filter you add is ANDed together — combine a `service.name` filter with a Message contains to scope full-text search to one service.
@@ -55,9 +122,9 @@ To search log bodies, pick the **Message** field from the filter bar. Message su
 -   **Use regex for alternatives.** Instead of adding three contains filters, use one regex like `(timeout|refused|reset)`.
 -   **Structured logs make filtering more powerful.** Key-value context like `user_id`, `endpoint`, and `status_code` becomes an attribute you can filter on directly. See our [logging best practices](/docs/logs/best-practices.md) for patterns that make logs easier to query.
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
