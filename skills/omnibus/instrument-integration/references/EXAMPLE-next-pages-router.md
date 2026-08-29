@@ -1,7 +1,7 @@
 # PostHog next-pages-router Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/next-pages-router
+Path: example-apps/next-pages-router
 
 ---
 
@@ -468,7 +468,6 @@ export default async function handler(
     distinctId: username,
     event: 'server_login',
     properties: {
-      username: username,
       isNewUser: isNewUser,
       source: 'api'
     }
@@ -482,6 +481,9 @@ export default async function handler(
       createdAt: isNewUser ? new Date().toISOString() : undefined
     }
   });
+
+  // This handler is short-lived; flush so the enqueued events send before it returns
+  await posthog.flush();
 
   return res.status(200).json({ success: true, user });
 }
@@ -632,7 +634,7 @@ export default function Home() {
         {user ? (
           <div className="container">
             <h1>Welcome back, {user.username}!</h1>
-            <p>You are now logged in. Feel free to explore:</p>
+            <p>You are logged in. Feel free to explore:</p>
             <ul>
               <li>Consider the potential of burritos</li>
               <li>View your profile and statistics</li>
