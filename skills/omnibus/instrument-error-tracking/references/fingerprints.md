@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Fingerprints - Docs
+
+Copy page
+
 # Fingerprints - Docs
 
 Every captured exception is assigned a fingerprint. This fingerprint is used to group similar exceptions into issues. This page covers how fingerprints are generated, how they're used, and how you can override them when capturing exceptions.
@@ -47,10 +53,6 @@ You can find details about how issue grouping works in the [issues and exception
 Fingerprints can be manually set during exception capture. This is a very useful way to group exceptions that are not related to each other. You can find examples of how to do this in the [custom issue grouping](/docs/error-tracking/grouping-issues.md#option-2-client-side-fingerprint) section.
 
 You can also learn more about grouping issues using rules in the [grouping issues](/docs/error-tracking/grouping-issues.md) guide.
-
-### Community questions
-
-Ask a question
 
 ### Was this page useful?
 
