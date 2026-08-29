@@ -1,4 +1,10 @@
-# Ruby error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Ruby Error Tracking installation - Docs
+
+Copy page
+
+# Ruby Error Tracking installation - Docs
 
 1.  1
 
@@ -107,10 +113,6 @@
     ![Activity feed with events](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250729_ouxl_f788dd8cd2.png)![Activity feed with events](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250729_owae_7c3490822c.png)
 
     [Check for exceptions in PostHog](https://app.posthog.com/activity/explore)
-
-### Community questions
-
-Ask a question
 
 ### Was this page useful?
 
