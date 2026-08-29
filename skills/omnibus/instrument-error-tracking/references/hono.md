@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Hono error tracking installation - Docs
+
+Copy page
+
 # Hono error tracking installation - Docs
 
 1.  1
@@ -127,10 +133,6 @@
     Let's continue to the next section.
 
     [Upload source maps](/docs/error-tracking/upload-source-maps.md)
-
-### Community questions
-
-Ask a question
 
 ### Was this page useful?
 
