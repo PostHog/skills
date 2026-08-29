@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# PHP Error Tracking installation - Docs
+
+Copy page
+
 # PHP Error Tracking installation - Docs
 
 1.  1
@@ -212,10 +218,6 @@
         PostHog\PostHog::captureException($e, 'test_user');
     }
     ```
-
-### Community questions
-
-Ask a question
 
 ### Was this page useful?
 
