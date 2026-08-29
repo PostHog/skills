@@ -1,5 +1,9 @@
 # Elixir Feature Flags installation - Docs
 
+Copy page
+
+# Elixir Feature Flags installation - Docs
+
 > This library was built by the community but it's being maintained by the PostHog core team since v1.0.0. Thank you to [Nick Kezhaya](https://github.com/nkezhaya) for building it originally. Thank you to [Alex Martsinovich](https://github.com/martosaur) for contributing v2.0.0.
 
 The package can be installed by adding `posthog` to your list of dependencies in `mix.exs`:
@@ -32,7 +36,7 @@ config :posthog,
 
 You can see all the available configuration options in the [PostHog.Config](https://hexdocs.pm/posthog/PostHog.Config.html) module.
 
-Optionally, you might want to enable the [Plug integration](https://hexdocs.pm/posthog/PostHog.Integrations.Plug.html) to automatically capture events from your Plug-based applications including Phoenix.
+Optionally, you might want to enable the [Plug integration](https://hexdocs.pm/posthog/PostHog.Integrations.Plug.html) to attach request metadata and tracing context in Plug-based applications including Phoenix. You still need to capture events explicitly with `PostHog.capture/2` or `PostHog.capture/3`.
 
 #### Development/Test mode
 
