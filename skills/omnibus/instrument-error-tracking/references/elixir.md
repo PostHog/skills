@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Elixir Error Tracking installation - Docs
+
+Copy page
+
 # Elixir Error Tracking installation - Docs
 
 1.  1
@@ -120,7 +126,9 @@
     end
     ```
 
-    This automatically includes `$current_url`, `$host`, `$pathname`, and `$ip` on every error event that occurs during request processing.
+    This automatically includes `$current_url`, `$host`, `$pathname`, and `$ip` on every error event that occurs during request processing. It also reads `X-PostHog-Distinct-Id` and `X-PostHog-Session-Id` tracing headers, so errors can link back to frontend users and sessions when your client SDK sends those headers.
+
+    If you're using [PostHog JS](/docs/libraries/js.md) on the frontend, configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your Phoenix or Plug backend hostname. For more details, see the [Elixir request context docs](/docs/libraries/elixir.md#request-context).
 
 5.  5
 
@@ -298,10 +306,6 @@
       raise "Test exception from Phoenix"
     end
     ```
-
-### Community questions
-
-Ask a question
 
 ### Was this page useful?
 
