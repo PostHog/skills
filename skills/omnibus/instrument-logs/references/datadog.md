@@ -1,4 +1,10 @@
-# Datadog logs installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Datadog Logs installation - Docs
+
+Copy page
+
+# Datadog Logs installation - Docs
 
 If you're already using Datadog to collect logs, you can forward them to PostHog by configuring your existing Datadog log exporters (like the Datadog Agent) to send logs to PostHog's Datadog-compatible endpoint.
 
@@ -97,9 +103,9 @@ If you're already using Datadog to collect logs, you can forward them to PostHog
 
     [Troubleshoot common issues](/docs/logs/troubleshooting.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
