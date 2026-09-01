@@ -1,7 +1,7 @@
 # PostHog react-react-router-7-framework Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/react-react-router-7-framework
+Path: example-apps/react-react-router-7-framework
 
 ---
 
@@ -84,7 +84,7 @@ import { PostHogProvider } from '@posthog/react'
 posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN, {
   api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
   defaults: '2026-01-30',
-  __add_tracing_headers: [ window.location.host, 'localhost' ],
+  tracing_headers: [ window.location.hostname ],
 });
 
 <PostHogProvider client={posthog}>
@@ -105,7 +105,7 @@ posthog?.capture('user_logged_in', {
 });
 ```
 
-The session and distinct ID are automatically passed to the backend via the `X-POSTHOG-SESSION-ID` and `X-POSTHOG-DISTINCT-ID` headers because we set the `__add_tracing_headers` option in the PostHog initialization.
+The session and distinct ID are automatically passed to the backend via the `X-POSTHOG-SESSION-ID` and `X-POSTHOG-DISTINCT-ID` headers because we set the `tracing_headers` option in the PostHog initialization.
 
 **Important**: do not identify users on the server-side.
 
@@ -372,7 +372,7 @@ import { PostHogProvider } from '@posthog/react'
 posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN, {
   api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
   defaults: '2026-01-30',
-  __add_tracing_headers: [ window.location.host, 'localhost' ],
+  tracing_headers: [ window.location.hostname ],
 });
 
 
@@ -925,7 +925,7 @@ export default function Home() {
     return (
       <div className="container">
         <h1>Welcome back, {user.username}!</h1>
-        <p>You are now logged in. Feel free to explore:</p>
+        <p>You are logged in. Feel free to explore:</p>
         <ul>
           <li>Consider the potential of burritos</li>
           <li>View your profile and statistics</li>
