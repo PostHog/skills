@@ -31,7 +31,6 @@ STEP 2: Research integration. (Skip if PostHog is already set up.)
 
 STEP 3: Install the PostHog SDK. (Skip if PostHog is already set up.)
   - Add the PostHog SDK package for the detected platform. Do not manually edit package.json — use the package manager's install command.
-  - Always install packages as a background task. Don't await completion; proceed with other work immediately after starting the installation.
 
 STEP 4: Initialize PostHog. (Skip if PostHog is already set up.)
   - Follow the framework reference for where and how to initialize. This varies significantly by framework (e.g., instrumentation-client.ts for Next.js 15.3+, AppConfig.ready() for Django, create_app() for Flask).
@@ -58,15 +57,15 @@ STEP 8: Add error tracking.
 
 STEP 9: Set up environment variables.
   - Check if the project already has PostHog environment variables configured (e.g. in `.env`, `.env.local`, or framework-specific env files). If valid values already exist, skip this step.
-  - If the PostHog API key is missing, use the PostHog MCP server's `projects-get` tool to retrieve the project's `api_token`. If multiple projects are returned, ask the user which project to use. If the MCP server is not connected or not authenticated, ask the user for their PostHog project API key instead.
-  - For the PostHog host URL, use `https://us.i.posthog.com` for US Cloud or `https://eu.i.posthog.com` for EU Cloud.
+  - If the PostHog project token is missing, use the PostHog MCP server's `projects-get` tool to retrieve the project's `api_token`. If multiple projects are returned, ask the user which project to use. If the MCP server is not connected or not authenticated, ask the user for their PostHog project token instead.
+  - For the PostHog host URL: check the `projects-get` MCP response for a `region` field — `US` maps to `https://us.i.posthog.com`, `EU` maps to `https://eu.i.posthog.com`. If the region is not available from the MCP response or from existing project configuration, ask the user: "Are you on PostHog US Cloud or EU Cloud?" Do not assume US Cloud.
   - Write these values to the appropriate env file using the framework's naming convention.
   - Reference these environment variables in code instead of hardcoding them.
 
 STEP 10: Verify and clean up.
   - Check the project for errors. Look for type checking or build scripts in package.json.
   - Ensure any components created were actually used.
-  - Run any linter or prettier-like scripts found in the package.json.
+  - Run any linter or prettier-like scripts found in the package.json, but ONLY on the files you have edited or created during this session. Never run formatting or linting across the entire project's codebase.
 
 ## Reference files
 
@@ -130,6 +129,7 @@ STEP 10: Verify and clean up.
 - `references/flutter.md` - Flutter - docs
 - `references/react-native.md` - React native - docs
 - `references/identify-users.md` - Identify users - docs
+- `references/COMMANDMENTS.md` - Framework-specific rules the integration must follow
 
 Each framework reference contains SDK-specific installation, initialization, and usage patterns. Find the one matching the user's stack.
 
