@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# React Feature Flags installation - Docs
+
+Copy page
+
 # React Feature Flags installation - Docs
 
 1.  1
@@ -26,6 +32,12 @@
 
     ```bash
     pnpm add posthog-js @posthog/react
+    ```
+
+    ### bun
+
+    ```bash
+    bun add posthog-js @posthog/react
     ```
 
 2.  2
@@ -65,7 +77,7 @@
     import { PostHogProvider } from '@posthog/react'
     const options = {
       api_host: import.meta.env.VITE_POSTHOG_HOST,
-      defaults: '2026-01-30',
+      defaults: '2026-05-30',
     } as const
     createRoot(document.getElementById('root')).render(
       <StrictMode>
@@ -293,9 +305,9 @@
     | [How to do a phased rollout](/tutorials/phased-rollout.md) | Gradually roll out features to minimize risk |
     | [More tutorials](/docs/feature-flags/tutorials.md) | Other real-world examples and use cases |
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

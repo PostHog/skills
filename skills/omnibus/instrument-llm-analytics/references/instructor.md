@@ -1,4 +1,26 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
 # Instructor AI Observability installation - Docs
+
+Copy page
+
+# Instructor AI Observability installation - Docs
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_9608fcca70)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_dark_a92b0e022d)
+
+Let AI instrument your LLM calls for you
+
+Skip the manual setup — run this in your project and the wizard installs the SDK and wires up AI Observability for you.
+
+`npx @posthog/wizard ai-observability`
+
+[Learn more](/wizard.md)
+
+![PostHog Wizard hedgehog](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)Let AI instrument your LLM calls for you
 
 1.  1
 
@@ -8,7 +30,7 @@
 
     **Full working examples**
 
-    See the complete [Node.js](https://github.com/PostHog/posthog-js/tree/main/examples/example-ai-instructor) and [Python](https://github.com/PostHog/posthog-python/tree/master/examples/example-ai-instructor) examples on GitHub. If you're using the PostHog SDK wrapper instead of OpenTelemetry, see the [Node.js wrapper](https://github.com/PostHog/posthog-js/tree/e08ff1be/examples/example-ai-instructor) and [Python wrapper](https://github.com/PostHog/posthog-python/tree/7223c52/examples/example-ai-instructor) examples.
+    See the complete [Node.js](https://github.com/PostHog/posthog-js/tree/main/examples/example-ai-instructor) and [Python](https://github.com/PostHog/posthog-python/tree/master/examples/example-ai-instructor) examples on GitHub. If you use the PostHog SDK wrapper instead of OpenTelemetry: see the [Node.js wrapper](https://github.com/PostHog/posthog-js/tree/e08ff1be/examples/example-ai-instructor) and [Python wrapper](https://github.com/PostHog/posthog-python/tree/7223c52/examples/example-ai-instructor) examples instead.
 
     Install the OpenTelemetry SDK, the OpenAI instrumentation, and Instructor.
 
@@ -75,7 +97,7 @@
       }),
       spanProcessors: [
         new PostHogSpanProcessor({
-          apiKey: '<ph_project_token>',
+          projectToken: '<ph_project_token>',
           host: 'https://us.i.posthog.com',
         }),
       ],
@@ -149,7 +171,75 @@
     | $ai_total_cost_usd | The total cost in USD (input + output) |
     | [[...]](/docs/ai-observability/generations.md#event-properties) | See [full list](/docs/ai-observability/generations.md#event-properties) of properties |
 
-4.  ## Verify traces and generations
+4.  4
+
+    ## Group traces into sessions
+
+    Optional
+
+    PostHog groups traces into a session when they share an `$ai_session_id`. Set it if your product has multi-turn conversations, so the Sessions tab can reconstruct them. Workloads that finish in a single trace, like batch jobs or one-shot generation, do not need it.
+
+    The instrumentation creates the LLM span for you, so there is no call to pass the session ID to. Add a span processor that sets the `$ai_session_id` attribute as each span starts. PostHog forwards span attributes it does not recognize onto the event, so the value arrives as the `$ai_session_id` property.
+
+    PostHog AI
+
+    ### Python
+
+    ```python
+    import contextvars
+    from collections.abc import Iterator
+    from contextlib import contextmanager
+    from typing import Optional
+    from opentelemetry.context import Context
+    from opentelemetry.sdk.trace import Span, SpanProcessor
+    session_id_var: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
+        "ai_session_id", default=None
+    )
+    class SessionIdSpanProcessor(SpanProcessor):
+        def on_start(self, span: Span, parent_context: Optional[Context] = None) -> None:
+            session_id = session_id_var.get()
+            if session_id is not None:
+                span.set_attribute("$ai_session_id", session_id)
+    @contextmanager
+    def ai_session(session_id: str) -> Iterator[None]:
+        token = session_id_var.set(session_id)
+        try:
+            yield
+        finally:
+            session_id_var.reset(token)
+    # Register it on the same provider as PostHogSpanProcessor
+    provider.add_span_processor(SessionIdSpanProcessor())
+    # Resetting on exit keeps the ID off the next request that reuses this thread
+    with ai_session("conversation-abc"):
+        reply = handle_turn(user_message)
+    ```
+
+    ### Node
+
+    ```typescript
+    import { AsyncLocalStorage } from 'node:async_hooks'
+    import type { Span, SpanProcessor } from '@opentelemetry/sdk-trace-base'
+    const sessionStore = new AsyncLocalStorage<string>()
+    class SessionIdSpanProcessor implements SpanProcessor {
+      onStart(span: Span): void {
+        const sessionId = sessionStore.getStore()
+        if (sessionId) {
+          span.setAttribute('$ai_session_id', sessionId)
+        }
+      }
+      onEnd(): void {}
+      async shutdown(): Promise<void> {}
+      async forceFlush(): Promise<void> {}
+    }
+    // Every span started inside the callback carries this session ID
+    const reply = await sessionStore.run('conversation-abc', () => handleTurn(userMessage))
+    ```
+
+    On Node, add `new SessionIdSpanProcessor()` to the `spanProcessors` array of the `NodeSDK` you configured earlier, next to `PostHogSpanProcessor`. Keep the rest of that setup as it is, including `instrumentations` and the `sdk.start()` call.
+
+    If a process only ever handles one session, set `$ai_session_id` as a resource attribute next to `service.name` instead. Resource attributes apply to every span the process emits, so that only works when the process and the session are the same thing.
+
+5.  ## Verify traces and generations
 
     Recommended
 
@@ -161,7 +251,7 @@
 
     [Check for LLM events in PostHog](https://app.posthog.com/ai-observability/generations)
 
-5.  4
+6.  5
 
     ## Next steps
 
@@ -177,9 +267,9 @@
     | [Spans](/docs/ai-observability/spans.md) | Review spans and their role in representing individual operations. |
     | [Anaylze LLM performance](/docs/ai-observability/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

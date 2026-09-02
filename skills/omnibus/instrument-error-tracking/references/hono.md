@@ -1,4 +1,10 @@
-# Hono error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Hono Error Tracking installation - Docs
+
+Copy page
+
+# Hono Error Tracking installation - Docs
 
 1.  1
 
@@ -26,6 +32,12 @@
 
     ```bash
     pnpm add posthog-node
+    ```
+
+    ### bun
+
+    ```bash
+    bun add posthog-node
     ```
 
 2.  2
@@ -128,9 +140,9 @@
 
     [Upload source maps](/docs/error-tracking/upload-source-maps.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

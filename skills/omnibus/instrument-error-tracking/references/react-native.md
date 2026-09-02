@@ -1,4 +1,10 @@
-# React Native error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# React Native Error Tracking installation - Docs
+
+Copy page
+
+# React Native Error Tracking installation - Docs
 
 1.  1
 
@@ -108,6 +114,7 @@
           uncaughtExceptions: true,
           unhandledRejections: true,
           console: ['error', 'warn'],
+          nativeCrashes: true, // native iOS/Android crashes (see below)
         },
       },
     })
@@ -120,6 +127,15 @@
     | uncaughtExceptions | Captures Uncaught exceptions (ReactNativeGlobal.ErrorUtils.setGlobalHandler) |
     | unhandledRejections | Captures Unhandled rejections (ReactNativeGlobal.onunhandledrejection) |
     | console | Captures console logs as errors according to the reported LogLevel |
+    | nativeCrashes | Captures native iOS/Android crashes. Requires @posthog/react-native-plugin and uploaded native symbols (see below) |
+
+    **Capturing native crashes**
+
+    `nativeCrashes` captures native iOS and Android crashes that the JavaScript layer can't see. Beyond the config above, it needs:
+
+    1.  The optional native plugin installed — `npx expo install @posthog/react-native-plugin` (Expo) or `npm i @posthog/react-native-plugin` (bare React Native). If it's missing, native capture is a no-op and your JS-level autocapture is unaffected.
+    2.  Your project's **Enable exception autocapture** setting enabled in [error tracking settings](https://app.posthog.com/settings/project-error-tracking#exception-autocapture) — the same server-side setting that gates JavaScript autocapture.
+    3.  Native debug symbols uploaded at build time, so crash stack traces are readable. See [native crash symbolication](/docs/error-tracking/upload-source-maps/react-native.md#native-crash-symbolication).
 
 5.  5
 
@@ -197,10 +213,9 @@
 
     We currently don't support the following features:
 
-    -   No native Android and iOS exception capture
     -   No automatic source map uploads on React Native web
 
-    These features will be added in future releases. We recommend you stay up to date with the latest version of the PostHog React Native SDK.
+    This will be added in a future release. We recommend you stay up to date with the latest version of the PostHog React Native SDK.
 
 8.  ## Verify error tracking
 
@@ -216,19 +231,25 @@
 
 9.  8
 
-    ## Upload source maps
+    ## Upload source maps & native symbols
 
     Required
 
-    Great, you're capturing exceptions! If you serve minified bundles, the next step is to upload source maps to generate accurate stack traces.
+    Great, you're capturing exceptions! The next step is to upload source maps (for JavaScript stack traces) and native symbols (for native iOS/Android crash symbolication) so PostHog can generate accurate stack traces.
 
     Let's continue to the next section.
 
-    [Upload source maps](/docs/error-tracking/upload-source-maps/react-native.md)
+    [Upload source maps & native symbols](/docs/error-tracking/upload-source-maps/react-native.md)
 
-### Community questions
+## iOS dependency resolution for native crash capture
 
-Ask a question
+The `@posthog/react-native-plugin` package supports CocoaPods, the hybrid CocoaPods and Swift Package Manager path, and React Native's full Swift Package Manager integration. PostHog verifies the full path with an iOS-only React Native 0.87.1 app and React Native Community CLI 20.2.0. This path requires `@posthog/react-native-plugin` 2.4.0 or later, Xcode 16 or later, and an iOS 15.1 or later app deployment target.
+
+See [iOS dependency paths for the React Native native plugin](/docs/libraries/react-native.md#choose-an-ios-dependency-path-for-the-native-plugin) for the requirements and setup steps. This verification does not cover Expo or other React Native versions. Use CocoaPods or the hybrid path unless you validate full Swift Package Manager for your configuration.
+
+### Still have questions?
+
+Ask PostHog AI
 
 ### Was this page useful?
 
