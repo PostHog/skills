@@ -2,7 +2,7 @@
 
 This is an optional library you can install if you're working with Flutter. It uses an internal queue to make calls fast and non-blocking. It also batches requests and flushes asynchronously, making it perfect to use in any part of your mobile app.
 
-PostHog supports the iOS, macOS, Android and Web platforms.
+PostHog supports the iOS, macOS, Android, and Web platforms.
 
 ## Installation
 
@@ -10,7 +10,7 @@ PostHog is available for install via [Pub](https://pub.dev/packages/posthog_flut
 
 ### Configuration
 
-Set your PostHog project token and change the automatic event tracking on if you wish the library to take care of it for you.
+Set your PostHog project token and enable automatic event tracking if you want the library to capture lifecycle events for you.
 
 Remember that the application lifecycle events won't have any special context set for you by the time it is initialized. If you are using a self-hosted instance of PostHog you will need to have the public hostname or IP for your instance as well.
 
@@ -25,13 +25,13 @@ PostHog AI
 dependencies:
   flutter:
     sdk: flutter
-  posthog_flutter: ^5.24.0
+  posthog_flutter: ^5.26.0
 # rest of your code
 ```
 
-Then complete the set up for each platform:
+Then complete the setup for each platform:
 
-> For Session replay and Surveys you must setup the SDK manually by disabling the `com.posthog.posthog.AUTO_INIT` mode.
+> For Session Replay and Surveys, you must set up the SDK manually by disabling the `com.posthog.posthog.AUTO_INIT` mode.
 
 #### Android setup
 
@@ -187,17 +187,58 @@ PostHog AI
 ```html
 <!DOCTYPE html>
 <html>
-<head>
-  <!-- ... other head elements ... -->
-  <script async>
-    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
-    posthog.init('<ph_project_token>', {
-      api_host:'https://us.i.posthog.com', // 'https://us.i.posthog.com' or 'https://eu.i.posthog.com'
-      defaults: '2026-01-30',
-    })
-  </script>
-</head>
-<!-- other elements -->
+  <head>
+    <!-- ... other head elements ... -->
+    <script async>
+      !(function (t, e) {
+        var o, n, p, r;
+        e.__SV ||
+          ((window.posthog = e),
+          (e._i = []),
+          (e.init = function (i, s, a) {
+            function g(t, e) {
+              var o = e.split(".");
+              (2 == o.length && ((t = t[o[0]]), (e = o[1])),
+                (t[e] = function () {
+                  t.push([e].concat(Array.prototype.slice.call(arguments, 0)));
+                }));
+            }
+            (((p = t.createElement("script")).type = "text/javascript"),
+              (p.crossOrigin = "anonymous"),
+              (p.async = !0),
+              (p.src = s.api_host + "/static/array.js"),
+              (r = t.getElementsByTagName("script")[0]).parentNode.insertBefore(p, r));
+            var u = e;
+            for (
+              void 0 !== a ? (u = e[a] = []) : (a = "posthog"),
+                u.people = u.people || [],
+                u.toString = function (t) {
+                  var e = "posthog";
+                  return ("posthog" !== a && (e += "." + a), t || (e += " (stub)"), e);
+                },
+                u.people.toString = function () {
+                  return u.toString(1) + ".people (stub)";
+                },
+                o =
+                  "capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagResult reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys getNextSurveyStep onSessionId".split(
+                    " ",
+                  ),
+                n = 0;
+              n < o.length;
+              n++
+            )
+              g(u, o[n]);
+            e._i.push([i, s, a]);
+          }),
+          (e.__SV = 1));
+      })(document, window.posthog || []);
+      posthog.init("<ph_project_token>", {
+        api_host: "https://us.i.posthog.com", // 'https://us.i.posthog.com' or 'https://eu.i.posthog.com'
+        defaults: "2026-05-30",
+      });
+    </script>
+  </head>
+  <!-- other elements -->
 </html>
 ```
 
@@ -371,7 +412,7 @@ When you call `identify`, all previously tracked anonymous events will be linked
 
 You may find it helpful to get the current user's distinct ID. For example, to check whether you've already called `identify` for a user or not.
 
-To do this, call `PostHog().getDistinctId()`. This returns either the ID automatically generated by PostHog or the ID that has been passed by a call to `identify()`.
+To do this, call `Posthog().getDistinctId()`. This returns either the ID automatically generated by PostHog or the ID that has been passed by a call to `identify()`.
 
 ## Alias
 
@@ -433,13 +474,13 @@ PostHog AI
 
 ```dart
 final config = PostHogConfig('<ph_project_token>');
-config.host = POSTHOG_HOST;
+config.host = 'https://us.i.posthog.com';
 config.personProfiles = PostHogPersonProfiles.identifiedOnly;
 ```
 
 ### How to capture identified events
 
-If you've set the [`personProfiles` config](/docs/libraries/flutter.md#person-profiles-anonymous-vs-identified-persons) to `IDENTIFIED_ONLY` (the default option), anonymous events are captured by default. Then, to capture identified events, call any of the following functions:
+If you've set the [`personProfiles` config](/docs/libraries/flutter.md#person-profiles-anonymous-vs-identified-persons) to `PostHogPersonProfiles.identifiedOnly` (the default option), anonymous events are captured by default. Then, to capture identified events, call any of the following functions:
 
 -   [`identify()`](/docs/product-analytics/identify.md)
 -   [`alias()`](/docs/product-analytics/identify.md#alias-assigning-multiple-distinct-ids-to-the-same-user)
@@ -447,7 +488,7 @@ If you've set the [`personProfiles` config](/docs/libraries/flutter.md#person-pr
 
 When you call any of these functions, it creates a [person profile](/docs/data/persons.md) for the user. Once this profile is created, all subsequent events for this user will be captured as identified events.
 
-Alternatively, you can set `personProfiles` to `ALWAYS` to capture identified events by default.
+Alternatively, you can set `personProfiles` to `PostHogPersonProfiles.always` to capture identified events by default.
 
 ## Super properties
 
@@ -463,7 +504,7 @@ PostHog AI
 
 ```dart
 import 'package:posthog_flutter/posthog_flutter.dart';
-await Posthog().register("team_id", 22)
+await Posthog().register("team_id", 22);
 ```
 
 The call above ensures that every event sent by the user will include `"team_id": 22`. This way, if you filtered events by property using `team_id = 22`, it would display all events captured on that user after the `Posthog().register` call, since they all include the specified super property.
@@ -480,7 +521,7 @@ PostHog AI
 
 ```dart
 import 'package:posthog_flutter/posthog_flutter.dart';
-await Posthog().unregister("team_id")
+await Posthog().unregister("team_id");
 ```
 
 This will remove the super property and subsequent events will not include it.
@@ -489,36 +530,9 @@ If you are doing this as part of a user logging out you can instead simply use `
 
 ## Group analytics
 
-Group analytics allows you to associate the events for that person's session with a group (e.g. teams, organizations, etc.). Read the [Group Analytics](/docs/user-guides/group-analytics.md) guide for more information.
+Group analytics allows you to associate the events for that person's session with a group (e.g. teams, organizations, etc.). See [Group Analytics](/docs/product-analytics/group-analytics.md) for Flutter examples and implementation details.
 
 > **Note:** This is a paid feature and is not available on the open-source or free cloud plan. Learn more on the [pricing page](/pricing.md).
-
--   Associate the events for this session with a group
-
-Dart
-
-PostHog AI
-
-```dart
-await Posthog().group(groupType: "company", groupKey: "company_id_in_your_db");
-```
-
--   Associate the events for this session with a group AND update the properties of that group
-
-Dart
-
-PostHog AI
-
-```dart
-await Posthog().group(
-  groupType: "company",
-  groupKey: "company_id_in_your_db",
-  groupProperties: {
-    "name": "ACME Corp"
-});
-```
-
-The `name` is a special property which is used in the PostHog UI for the name of the group. If you don't specify a `name` property, the group ID will be used instead.
 
 ## Feature flags
 
@@ -531,10 +545,11 @@ Dart
 PostHog AI
 
 ```dart
-if (await Posthog().isFeatureEnabled('flag-key')) {
+final result = await Posthog().getFeatureFlagResult('flag-key');
+if (result != null && result.enabled) {
   // Do something differently for this user
-  // Optional: fetch the payload
-  final matchedFlagPayload = await Posthog().getFeatureFlagPayload('flag-key');
+  // Optional: fetch the payload from the same evaluation result
+  final matchedFlagPayload = result.payload;
 }
 ```
 
@@ -545,16 +560,17 @@ Dart
 PostHog AI
 
 ```dart
-if (await Posthog().getFeatureFlag('flag-key') == 'variant-key') { // replace 'variant-key' with the key of your variant
+final result = await Posthog().getFeatureFlagResult('flag-key');
+if (result != null && result.variant == 'variant-key') { // replace 'variant-key' with the key of your variant
   // Do something differently for this user
-  // Optional: fetch the payload
-  final matchedFlagPayload = await Posthog().getFeatureFlagPayload('flag-key');
+  // Optional: fetch the payload from the same evaluation result
+  final matchedFlagPayload = result.payload;
 }
 ```
 
 ### Ensuring flags are loaded before usage
 
-> To use the `onFeatureFlags` callback, you must [set up the SDK manually](#installation) by disabling the `com.posthog.posthog.AUTO_INIT` mode.
+> To use the `onFeatureFlags` callback, you must [set up the SDK manually](#installation). On Android and iOS, disable `com.posthog.posthog.AUTO_INIT` first.
 
 Every time a user opens the app, we send a request in the background to fetch the feature flags that apply to that user. We store those flags in the storage.
 
@@ -589,29 +605,80 @@ PostHog AI
 await Posthog().reloadFeatureFlags();
 ```
 
-## Experiments (A/B tests)
+### Bootstrapping flags
 
-Since [experiments](/docs/experiments/start-here.md) use feature flags, the code for running an experiment is very similar to the feature flags code:
+Since there is a delay between initializing PostHog and fetching feature flags, feature flags are not always available immediately. This makes them unusable if you want to do something like redirecting a user to a different page based on a feature flag.
+
+To have your feature flags available immediately, you can initialize PostHog with precomputed values until it has had a chance to fetch them. This is called bootstrapping. After the SDK fetches feature flags from PostHog, it will use those flag values instead of bootstrapped ones.
+
+Set `config.bootstrap` before calling `setup()` to seed identity and flag values before the first `/flags` response (requires the Flutter SDK `5.31.0`+):
 
 Dart
 
 PostHog AI
 
 ```dart
-if (await Posthog().getFeatureFlag('experiment-feature-flag-key') == 'variant-name') {
-    // Do something
-}
+final config = PostHogConfig('<ph_project_token>');
+config.host = 'https://us.i.posthog.com';
+config.bootstrap = PostHogBootstrapConfig(
+  distinctId: 'distinct_id_of_your_user',
+  isIdentifiedId: true,
+  featureFlags: {
+    'flag-1': true,
+    'variant-flag': 'control',
+  },
+);
+await Posthog().setup(config);
 ```
+
+The values are forwarded to the native iOS and Android SDKs:
+
+-   **Bootstrapped identity applies during setup.** On a fresh install, setting it before `setup()` means events captured synchronously during initialization (like `Application Installed`) carry your distinct ID instead of the SDK-generated UUID.
+    -   An **anonymous** bootstrap (`isIdentifiedId: false`, the default) seeds the anonymous ID only when none is persisted yet. Once an anonymous ID exists on disk, or the person has been identified, the SDK ignores it.
+    -   An **identified** bootstrap (`isIdentifiedId: true`) is for a signed-in identity available to your app (for example, from a backend session token). On a fresh install, it seeds the distinct ID, marks the person identified, and generates a separate device ID. On a returning install, a matching anonymous ID is marked identified without emitting `$identify`; a different anonymous ID is merged via `identify()` when person profiles are enabled. This emits `$identify` unless capturing is opted out. A different, already-identified person is left untouched.
+-   **Bootstrapped flags are served until the first `/flags` response, then replaced.** A complete `/flags` response takes over entirely, so bootstrapped-only keys don't persist past it. Only *enabled* flags are seeded: a `true` boolean or a non-empty variant string. A `false` or empty value is dropped, matching posthog-js. Seed payloads with the separate `featureFlagPayloads` option. Flag values and payloads must be JSON-serializable, or they're dropped. Bootstrapped flags are cleared on `reset()`.
+
+The feature-flags-loaded signal fires as soon as bootstrapped flags are applied, so startup logic can read them immediately. These SDKs don't support the `sessionID` bootstrap option. When person profiles are set to `never`, the SDK preserves a different anonymous identity instead of merging it into an identified bootstrap.
+
+On Flutter web, `bootstrap` is not applied, so configure it in your `posthog.init({...})` snippet instead. See the [SDK bootstrapping guide](/docs/libraries/bootstrapping.md) for the cross-SDK overview.
+
+### Setting properties for flag evaluation
+
+If a flag targets person or group properties, you can send those properties inline with the next flag evaluation request instead of waiting for a `$set` event to be ingested. This avoids the race where a flag returns a stale value right after you set a property.
+
+Dart
+
+PostHog AI
+
+```dart
+// Person properties — included in the next flag evaluation request
+await Posthog().setPersonPropertiesForFlags({
+  'storefront_country': 'US',
+  'is_beta_user': true,
+});
+// Group properties
+await Posthog().setGroupPropertiesForFlags('company', {'plan': 'enterprise'});
+```
+
+By default these reload feature flags, and the returned `Future` completes once the reload finishes, so the next `getFeatureFlag` reflects the new properties. Pass `reloadFeatureFlags: false` to set several properties before reloading. Use `resetPersonPropertiesForFlags()` and `resetGroupPropertiesForFlags()` to clear them. See [property overrides for flag evaluation](/docs/feature-flags/property-overrides.md) for details.
+
+## Experiments (A/B tests)
+
+Since [experiments](/docs/experiments/start-here.md) use feature flags, the code for running an experiment is very similar to the feature flags code. See [feature flag code examples](/docs/feature-flags/adding-feature-flag-code?tab=Flutter.md) for Flutter implementation details.
 
 It's also possible to [run experiments without using feature flags](/docs/experiments/running-experiments-without-feature-flags.md).
 
 ## Error tracking
 
-To set up error tracking in your project, follow the [Flutter installation guide](/docs/error-tracking/installation/flutter.md).
+To set up error tracking in your project, see the [error tracking docs](/docs/error-tracking.md).
+
+## Logs
+
+To set up [logs](/docs/logs.md) in your Flutter app, follow the [Flutter logs installation guide](/docs/logs/installation/flutter.md). The SDK exposes `Posthog().logger.{trace,debug,info,warn,error,fatal}` (and `Posthog().captureLog` for full control) for sending structured records to PostHog Logs, with batching, offline persistence, and a rate cap built in.
 
 ## Session replay
 
-> **Note:** Session replay is supported on the Flutter Web, Android and iOS environments.
+> **Note:** Session replay is supported on Flutter Web, Android, and iOS.
 
 To set up [session replay web](/docs/session-replay.md) or [mobile session replay](/docs/session-replay/mobile.md) in your project, all you need to do is install the Flutter SDK, follow the [additional installation instructions](/docs/session-replay/installation/flutter.md), and enable "Record user sessions" in [your project settings](https://us.posthog.com/settings/project-replay) and enable the `sessionReplay` option.
 
@@ -619,7 +686,7 @@ If you're using Flutter Web, also enable the [Canvas capture](/docs/session-repl
 
 ## Surveys
 
-> **Note:** Surveys is supported in Flutter for **Web**, **iOS** and **Android** platforms.
+> **Note:** Surveys are supported in Flutter for **Web**, **iOS**, and **Android** platforms.
 
 [Surveys](/docs/surveys.md) launched with [popover presentation](/docs/surveys/creating-surveys.md#presentation) are automatically shown to users matching the [display conditions](/docs/surveys/creating-surveys.md#display-conditions) you set up.
 
@@ -671,7 +738,7 @@ PostHog AI
 await Posthog().disable();
 ```
 
-This prevents any future events from being sent. It doesn’t remove events already captured for the user. To opt the user back in:
+This prevents any future events from being sent. It doesn't remove events already captured for the user. To opt the user back in:
 
 Dart
 
@@ -688,12 +755,12 @@ Dart
 PostHog AI
 
 ```dart
-await Posthog().isOptedOut();
+await Posthog().isOptOut();
 ```
 
 ## Amending or dropping events
 
-Since version 5.13.0, you can provide a `beforeSend` callback when initializing the SDK to amend or drop events before they are sent to PostHog.
+Since version 5.13.0, you can provide `beforeSend` callbacks when initializing the SDK to amend or drop events before they are sent to PostHog.
 
 ### Redacting information in events
 
@@ -706,13 +773,15 @@ PostHog AI
 ```dart
 final config = PostHogConfig('<ph_project_token>');
 config.host = 'https://us.i.posthog.com';
-config.beforeSend = (event) {
-  // Redact email from properties
-  if (event.properties?['email'] != null) {
-    event.properties?['email'] = '***@***.***';
-  }
-  return event;
-};
+config.beforeSend = [
+  (event) {
+    // Redact email from properties
+    if (event.properties?['email'] != null) {
+      event.properties?['email'] = '***@***.***';
+    }
+    return event;
+  },
+];
 await Posthog().setup(config);
 ```
 
@@ -725,24 +794,49 @@ Dart
 PostHog AI
 
 ```dart
-config.beforeSend = (event) {
-  // Drop events you don't want to send
-  if (event.event == 'ignored_event') {
-    return null;
-  }
-  return event;
-};
+config.beforeSend = [
+  (event) {
+    // Drop events you don't want to send
+    if (event.event == 'ignored_event') {
+      return null;
+    }
+    return event;
+  },
+];
+```
+
+### Filtering autocaptured screens
+
+You can stop specific screens from being autocaptured by filtering them in your before-send hook. Return `null` for any `$screen` event whose `$screen_name` matches a screen you don't want to track, and it's dropped before being sent – keeping unwanted screen views out of your event log.
+
+Because it's just a function, you can filter however you like – an **ignorelist** (drop the screens you name), an **allowlist** (invert the check to capture only the screens you name), or any custom rule such as a name prefix, a regex, or a check against the event's properties.
+
+Dart
+
+PostHog AI
+
+```dart
+const ignoredScreens = {'Splash', 'Debug'};
+config.beforeSend = [
+  (event) {
+    final screenName = event.properties?['$screen_name'];
+    if (event.event == '$screen' && ignoredScreens.contains(screenName)) {
+      return null;
+    }
+    return event;
+  },
+];
 ```
 
 ### Limitations
 
-The `beforeSend` callback only applies to events captured via Dart APIs:
+The `beforeSend` callbacks only apply to events captured via Dart APIs:
 
 -   `Posthog().capture()` - custom events
 -   `Posthog().screen()` - screen events (event name is `$screen`)
 -   `Posthog().captureException()` - exception events (event name is `$exception`)
 
-It does **not** intercept native-initiated events such as:
+They do **not** intercept native-initiated events such as:
 
 -   Session replay events (`$snapshot`)
 -   Application lifecycle events (`Application Opened`, etc.)
@@ -775,7 +869,8 @@ Dart
 PostHog AI
 
 ```dart
-await Posthog().debug();
+await Posthog().debug(true);
+await Posthog().debug(false);
 ```
 
 ### Community questions
