@@ -1,5 +1,9 @@
 # Identify users - Docs
 
+Copy page
+
+# Identify users - Docs
+
 Linking events to specific users enables you to build a full picture of how they're using your product across different sessions, devices, and platforms.
 
 This is straightforward to do when [capturing backend events](/docs/product-analytics/capture-events?tab=Node.js.md), as you associate events to a specific user using a `distinct_id`, which is a required argument.
@@ -54,9 +58,10 @@ posthog.identify('distinct_id', { // Replace "distinct_id" with your user's uniq
 await Posthog().identify(
   userId: 'distinct_id', // Replace "distinct_id" with your user's unique identifier
   userProperties: {
-    email: "max@hedgehogmail.com", // optional: set additional person properties
-    name: "Max Hedgehog"
-});
+    'email': 'max@hedgehogmail.com', // optional: set additional person properties
+    'name': 'Max Hedgehog',
+  },
+);
 ```
 
 Events captured after calling `identify` are identified events and this creates a person profile if one doesn't exist already.
@@ -92,6 +97,31 @@ This ensures that events sent during your users' sessions are correctly associat
 You only need to call `identify` once per session, and you should avoid calling it multiple times unnecessarily.
 
 If you call `identify` multiple times with the same data without reloading the page in between, PostHog will ignore the subsequent calls.
+
+#### Identify users when the web SDK loads
+
+If your app already knows the signed-in user when you initialize the JavaScript web SDK, the [`loaded` callback](/docs/libraries/js/config.md) is a convenient place to call `identify`. This identifies the user as soon as the SDK has loaded:
+
+Web
+
+PostHog AI
+
+```javascript
+posthog.init('<ph_project_token>', {
+    api_host: 'https://us.i.posthog.com',
+    defaults: '2026-05-30',
+    loaded: (posthog) => {
+        if (currentUser?.id) {
+            posthog.identify(currentUser.id, {
+                email: currentUser.email,
+                name: currentUser.name,
+            })
+        }
+    },
+})
+```
+
+In this example, `currentUser` represents user data already available from your authentication system. If your app loads the user asynchronously, call `posthog.identify()` as soon as that data becomes available instead.
 
 ### 2\. Use unique strings for distinct IDs
 
@@ -141,7 +171,7 @@ posthog.reset()
 ### Dart
 
 ```dart
-Posthog().reset()
+await Posthog().reset();
 ```
 
 If you *also* want to reset the `device_id` so that the device will be considered a new device in future events, you can pass `true` as an argument:
