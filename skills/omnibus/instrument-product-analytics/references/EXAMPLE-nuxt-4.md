@@ -1,7 +1,7 @@
 # PostHog nuxt-4 Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/nuxt-4
+Path: example-apps/nuxt-4
 
 ---
 
@@ -117,7 +117,7 @@ export default defineNuxtConfig({
     host: process.env.NUXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
     clientConfig: {
       capture_exceptions: true, // Enables automatic exception capture on the client side (Vue)
-      __add_tracing_headers: ['localhost', 'yourdomain.com'], // Add your domain here
+      tracing_headers: ['localhost', 'yourdomain.com'], // Add your domain here
     },
     serverConfig: {
       enableExceptionAutocapture: true, // Enables automatic exception capture on the server side (Nitro)
@@ -138,7 +138,7 @@ export default defineNuxtConfig({
 - Client-side error tracking is enabled via `capture_exceptions: true`
 - Server-side error tracking is enabled via `enableExceptionAutocapture: true`
 - Source map uploads are configured for better error tracking
-- The `__add_tracing_headers` option automatically adds `X-POSTHOG-SESSION-ID` and `X-POSTHOG-DISTINCT-ID` headers to requests
+- The `tracing_headers` option automatically adds `X-POSTHOG-SESSION-ID` and `X-POSTHOG-DISTINCT-ID` headers to requests
 
 **Important**: do not identify users on the server-side.
 
@@ -161,7 +161,7 @@ const handleSubmit = async () => {
 }
 ```
 
-The session and distinct ID are automatically passed to the backend via the `X-POSTHOG-SESSION-ID` and `X-POSTHOG-DISTINCT-ID` headers because we set the `__add_tracing_headers` option in the PostHog configuration.
+The session and distinct ID are automatically passed to the backend via the `X-POSTHOG-SESSION-ID` and `X-POSTHOG-DISTINCT-ID` headers because we set the `tracing_headers` option in the PostHog configuration.
 
 **Important**: do not identify users on the server-side.
 
@@ -618,7 +618,7 @@ const handleConsideration = async () => {
     <h1 v-else>Welcome to Burrito Consideration App</h1>
 
     <div v-if="user">
-      <p>You are now logged in. Feel free to explore:</p>
+      <p>You are logged in. Feel free to explore:</p>
       <ul>
         <li>Consider the potential of burritos</li>
         <li>View your profile and statistics</li>
@@ -879,7 +879,7 @@ export default defineNuxtConfig({
     host: process.env.NUXT_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com', // Optional: defaults to https://us.i.posthog.com. Use https://eu.i.posthog.com for EU region
     clientConfig: {
       capture_exceptions: true, // Enables automatic exception capture on the client side (Vue)
-      __add_tracing_headers: [ 'localhost', 'yourdomain.com' ], // Add your domain here
+      tracing_headers: [ 'localhost', 'yourdomain.com' ], // Add your domain here
     },
     serverConfig: {
       enableExceptionAutocapture: true, // Enables automatic exception capture on the server side (Nitro)
@@ -946,6 +946,9 @@ export default defineEventHandler(async (event) => {
     },
   })
 
+  // This handler is short-lived; flush so the enqueued event sends before it returns
+  await posthog.flush()
+
   return {
     success: true,
     user,
@@ -1001,6 +1004,9 @@ export default defineEventHandler(async (event) => {
     },
   })
 
+  // This handler is short-lived; flush so the enqueued event sends before it returns
+  await posthog.flush()
+
   return {
     success: true,
     user: { ...user },
@@ -1025,6 +1031,8 @@ export function useServerPostHog(): PostHog {
     const posthogConfig = config.public.posthog
     client = new PostHog(posthogConfig.publicKey, {
       host: posthogConfig.host,
+      flushAt: 1,
+      flushInterval: 0,
     })
   }
   return client
