@@ -12,14 +12,17 @@ PostHog AI
 
 ```html
 <script>
-    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
-    posthog.init('<ph_project_token>',{api_host:'https://us.i.posthog.com', defaults:'2026-01-30'})
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagResult isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty createPersonProfile opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing debug".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+    posthog.init('<ph_project_token>', {
+        api_host: 'https://us.i.posthog.com',
+        defaults: '2026-05-30',
+    })
 </script>
 ```
 
 Keeping the SDK version up to date
 
-Be careful to avoid things which can cause the SDK version to be cached and fail to update. See: [Ways SDK versions fall behind](/docs/sdk-doctor/keeping-sdks-current.md#ways-sdk-versions-fall-behind)
+Be careful to avoid things which can cause the SDK version to be cached and fail to update. See: [Ways SDK versions fall behind](/docs/health-checks/keeping-sdks-current.md#ways-sdk-versions-fall-behind)
 
 Using TypeScript with the script tag?
 
@@ -80,6 +83,18 @@ pnpm add posthog-js
 bun add posthog-js
 ```
 
+> **If your site sets a Content-Security-Policy**, it needs to allow PostHog. This applies to the snippet and to package installs alike: the SDK lazy-loads extra bundles (session replay, surveys) from PostHog's CDN, and sends events to the ingestion host. PostHog serves from subdomains of `posthog.com` that change over time, so allow the wildcard:
+>
+> PostHog AI
+>
+> ```
+> script-src 'self' https://*.posthog.com;
+> connect-src 'self' https://*.posthog.com;
+> worker-src 'self' blob: data:;
+> ```
+>
+> `script-src` covers the snippet and the lazy-loaded bundles, `connect-src` covers event ingestion and feature flags, and `worker-src` covers session replay. The [toolbar needs a few more](/docs/advanced/content-security-policy.md), or use a [reverse proxy](/docs/advanced/proxy.md) so everything is first-party. Failing to do so causes silent failures where `capture` and `identify` calls never send, so the integration looks complete while zero events arrive. Remember `connect-src` falls back to `default-src`, so `default-src 'self'` blocks event delivery even when the script itself is bundled.
+
 And then include it with your project token and host (which you can find in [your project settings](https://us.posthog.com/settings/project)):
 
 Web
@@ -90,7 +105,7 @@ PostHog AI
 import posthog from 'posthog-js'
 posthog.init('<ph_project_token>', {
   api_host: 'https://us.i.posthog.com',
-  defaults: '2026-01-30'
+  defaults: '2026-05-30'
 })
 ```
 
@@ -145,7 +160,7 @@ PostHog AI
 import posthog from 'posthog-js/dist/module.no-external'
 // No external code loading possible but all external dependencies pre-bundled
 import posthog from 'posthog-js/dist/module.full.no-external'
-// All external dependencies pre-bundled and with the ability to load external scripts (primarily useful is you use Site Apps)
+// All external dependencies pre-bundled and with the ability to load external scripts (primarily useful is you use JS snippets)
 import posthog from 'posthog-js/dist/module.full'
 // Finally you can also import specific extra dependencies
 import "posthog-js/dist/posthog-recorder"
@@ -155,7 +170,7 @@ import "posthog-js/dist/tracing-headers"
 import "posthog-js/dist/web-vitals"
 import posthog from 'posthog-js/dist/module.no-external'
 // All other posthog commands are the same as usual
-posthog.init('<ph_project_token>', { api_host: 'https://us.i.posthog.com', defaults: '2026-01-30' })
+posthog.init('<ph_project_token>', { api_host: 'https://us.i.posthog.com', defaults: '2026-05-30' })
 ```
 
 **Note:** You should ensure if using this option that you always import `posthog-js` from the same module, otherwise multiple bundles could get included. At this time `@posthog/react` does not work with any module import other than the default.
@@ -176,7 +191,7 @@ import {
 } from 'posthog-js/dist/extension-bundles'
 posthog.init('<ph_project_token>', {
     api_host: 'https://us.i.posthog.com',
-    defaults: '2026-01-30',
+    defaults: '2026-05-30',
     __extensionClasses: {
         ...SessionReplayExtensions,
         ...AnalyticsExtensions,
@@ -196,11 +211,11 @@ posthog.init('<ph_project_token>', {
 | ErrorTrackingExtensions | [Error Tracking](/docs/error-tracking.md) |
 | SurveysExtensions | [Surveys](/docs/surveys.md) |
 | ExperimentsExtensions | [Experiments](/docs/experiments.md) |
-| SiteAppsExtensions | [Site apps](/docs/site-apps.md) |
+| SiteAppsExtensions | [JS snippets](/docs/js-snippets.md) |
 | TracingExtensions | Distributed tracing header injection |
 | ToolbarExtensions | [Toolbar](/docs/toolbar.md) |
 | LogsExtensions | [Log capture](/docs/logs.md) |
-| ConversationsExtensions | Conversations |
+| ConversationsExtensions | [Support](/docs/support.md) |
 | AllExtensions | Everything (equivalent to the default posthog-js bundle) |
 
 **Note:** Each extension bundle includes its own dependencies. You don't need to worry about adding them separately.
@@ -215,19 +230,25 @@ PostHog AI
 
 ```javascript
 if (!window.location.host.includes('127.0.0.1') && !window.location.host.includes('localhost')) {
-    posthog.init('<ph_project_token>', { api_host: 'https://us.i.posthog.com', defaults: '2026-01-30' })
+    posthog.init('<ph_project_token>', { api_host: 'https://us.i.posthog.com', defaults: '2026-05-30' })
 }
 ```
 
 What is the \`defaults\` option?
 
-The `defaults` is a date, such as `2026-01-30`, for a configuration snapshot used as defaults to initialize PostHog. This default is overridden when you explicitly set a value for any of the options.
+The `defaults` is a date, such as `2026-05-30`, for a configuration snapshot used as defaults to initialize PostHog. This default is overridden when you explicitly set a value for any of the options.
 
 ## Identifying users
 
 > **Identifying users is required.** Call `posthog.identify('your-user-id')` after login to link events to a known user. This is what connects frontend event captures, [session replays](/docs/session-replay.md), [LLM traces](/docs/ai-engineering.md), and [error tracking](/docs/error-tracking.md) to the same person — and lets backend events link back too.
 >
+> Use a stable ID from your auth system when possible, not an email or display name. Send those as person properties instead. If your app has no other stable key, email works as a fallback if they are unique. Never a shared literal like `"anonymous"` or `"user"`, which pools many people onto one person and corrupts their data. When no ID is available at all, skip the identify and retain the anonymous distinct ID that's automatically assigned.
+>
+> Call `posthog.reset()` on logout, so the next person to use the browser doesn't inherit the last one's identity.
+>
 > See our guide on [identifying users](/docs/getting-started/identify-users.md) for how to set this up.
+
+If your app already knows the signed-in user when PostHog initializes, you can [call `identify` from the `loaded` callback](/docs/getting-started/identify-users.md#identify-users-when-the-web-sdk-loads) to identify them as soon as the web SDK loads.
 
 Once you've installed PostHog, see our [features doc](/docs/libraries/js/features.md) for more information about what you can do with it. You can also install the [PostHog VS Code extension](/docs/vscode-extension.md) to see live analytics, flag status, and session replay links inline in your code.
 
