@@ -37,13 +37,31 @@ You can find your project token and instance address in [your project settings](
 
 ## Identifying users
 
-> **Identifying users is required.** Backend events need a `distinct_id` that matches the ID your frontend uses when calling `posthog.identify()`. Without this, backend events are orphaned — they can't be linked to frontend event captures, [session replays](/docs/session-replay.md), [LLM traces](/docs/ai-engineering.md), or [error tracking](/docs/error-tracking.md).
+> **Identifying users is required.** Backend events need a `distinct_id` to associate events with the correct user.
 >
-> See our guide on [identifying users](/docs/getting-started/identify-users.md) for how to set this up.
+> In Python, you can do this through a context. All event captures in the same context will be tagged automatically with the correct `distinct_id`. Typically, you would set a fresh context and identify at the top of each route.
+>
+> Python
+>
+> PostHog AI
+>
+> ```python
+> from posthog import new_context, identify_context, capture
+> @app.get("/foo")
+> def foo(current_user: User = Depends(get_current_user)):
+>     with new_context(): # Set context at the top of a route
+>         identify_context(current_user.id)
+>         capture("foo_viewed")
+>     return {"status": "ok"}
+> ```
 
 ## Request contexts
 
-Use [contexts](/docs/libraries/python.md#contexts) to share identity, session IDs, and tags across multiple captures during a request:
+Use [contexts](/docs/libraries/python.md#contexts) to share identity, session IDs, and tags across multiple captures during a request.
+
+If you're using [PostHog JS](/docs/libraries/js.md) on the frontend, configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your Flask backend hostname so browser requests include the session and distinct ID headers.
+
+Then read the incoming headers in your Flask request handler. Tracing headers are client-controlled analytics context, not authentication or authorization, so prefer your authenticated user ID when one is available:
 
 Python
 
@@ -54,8 +72,8 @@ from flask import request, session
 from posthog import identify_context, set_context_session, tag
 @app.route('/api/dashboard', methods=['POST'])
 def api_dashboard():
-    with posthog.new_context():
-        distinct_id = request.headers.get('X-POSTHOG-DISTINCT-ID') or session.get('user_id')
+    with posthog.new_context(fresh=True):
+        distinct_id = session.get('user_id') or request.headers.get('X-POSTHOG-DISTINCT-ID')
         if distinct_id:
             identify_context(str(distinct_id))
         session_id = request.headers.get('X-POSTHOG-SESSION-ID')
