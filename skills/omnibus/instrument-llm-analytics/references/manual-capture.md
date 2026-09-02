@@ -1,10 +1,34 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
 # Manual capture AI Observability installation - Docs
+
+Copy page
+
+# Manual capture AI Observability installation - Docs
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_9608fcca70)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_dark_a92b0e022d)
+
+Let AI instrument your LLM calls for you
+
+Skip the manual setup — run this in your project and the wizard installs the SDK and wires up AI Observability for you.
+
+`npx @posthog/wizard ai-observability`
+
+[Learn more](/wizard.md)
+
+![PostHog Wizard hedgehog](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)Let AI instrument your LLM calls for you
 
 1.  1
 
     ## Capture LLM events manually
 
-    If you're using a different server-side SDK or prefer to use the API, you can manually capture the data by calling the `capture` method or using the [capture API](/docs/api/capture.md).
+    If you use a different server-side SDK, or prefer to use the API, capture the data manually. Call the `capture` method, or use the [capture API](/docs/api/capture.md).
+
+    `$ai_trace_id` groups the events of one LLM interaction into a trace. `$ai_session_id` is optional and groups related traces into a session, which is what the Sessions tab reads. Set it if your product has multi-turn conversations. Workloads that finish in a single trace, like batch jobs or one-shot generation, do not need it. Send it as `null` on those to say so explicitly, which tells the instrumentation checklist the workload is complete rather than missing a session id.
 
     ## API
 
@@ -19,6 +43,7 @@
                 "properties": {
                     "distinct_id": "user_123",
                     "$ai_trace_id": "trace_id_here",
+                    "$ai_session_id": "conversation-abc",
                     "$ai_model": "gpt-5-mini",
                     "$ai_provider": "openai",
                     "$ai_input": [{"role": "user", "content": "Tell me a fun fact about hedgehogs"}],
@@ -58,6 +83,7 @@
         event: '$ai_generation',
         properties: {
             $ai_trace_id: 'trace_id_here',
+            $ai_session_id: 'conversation-abc', // optional: groups traces into one session
             $ai_model: 'gpt-5-mini',
             $ai_provider: 'openai',
             $ai_input: [{ role: 'user', content: 'Tell me a fun fact about hedgehogs' }],
@@ -97,6 +123,7 @@
         event='$ai_generation',
         properties={
             '$ai_trace_id': 'trace_id_here',
+            '$ai_session_id': 'conversation-abc',  # optional: groups traces into one session
             '$ai_model': 'gpt-5-mini',
             '$ai_provider': 'openai',
             '$ai_input': [{'role': 'user', 'content': 'Tell me a fun fact about hedgehogs'}],
@@ -138,6 +165,8 @@
         Event:      "$ai_generation",
         Properties: map[string]interface{}{
             "$ai_trace_id":        "trace_id_here",
+            // $ai_session_id is optional: it groups traces into one session
+            "$ai_session_id":      "conversation-abc",
             "$ai_model":           "gpt-5-mini",
             "$ai_provider":        "openai",
             "$ai_input_tokens":    10,
@@ -177,6 +206,7 @@
         event: '$ai_generation',
         properties: {
         '$ai_trace_id' => 'trace_id_here',
+        '$ai_session_id' => 'conversation-abc', # optional: groups traces into one session
         '$ai_model' => 'gpt-5-mini',
         '$ai_provider' => 'openai',
         '$ai_input_tokens' => 10,
@@ -217,6 +247,7 @@
         'event' => '$ai_generation',
         'properties' => [
             '$ai_trace_id' => 'trace_id_here',
+            '$ai_session_id' => 'conversation-abc', // optional: groups traces into one session
             '$ai_model' => 'gpt-5-mini',
             '$ai_provider' => 'openai',
             '$ai_input_tokens' => 10,
@@ -246,7 +277,7 @@
     | Property | Description |
     | --- | --- |
     | $ai_trace_id | The trace ID (a UUID to group AI events) like conversation_idMust contain only letters, numbers, and special characters: -, _, ~, ., @, (, ), !, ', :, \|Example: d9222e05-8708-41b8-98ea-d4a21849e761 |
-    | $ai_session_id | (Optional) Groups related traces together. Use this to organize traces by whatever grouping makes sense for your application (user sessions, workflows, conversations, or other logical boundaries).Example: session-abc-123, conv-user-456 |
+    | $ai_session_id | (Optional) Groups related traces into a session, which is what the Sessions tab reads. Set it if your product has multi-turn conversations. A workload that finishes in a single trace does not need it. Send it as null to say so explicitly, which tells the instrumentation checklist the workload is complete rather than missing a session id.Example: session-abc-123, conv-user-456 |
     | $ai_span_id | (Optional) Unique identifier for this generation |
     | $ai_span_name | (Optional) Name given to this generationExample: summarize_text |
     | $ai_parent_id | (Optional) Parent span ID for tree view grouping |
@@ -276,6 +307,7 @@
     | $ai_request_cost_usd | (Optional) The cost in USD for the requests |
     | $ai_web_search_cost_usd | (Optional) The cost in USD for the web searches |
     | $ai_total_cost_usd | (Optional) The total cost in USD (sum of all cost components) |
+    | $ai_cost_passthrough | (Optional) Set this when your provider reports the real cost, such as an LLM gateway. We keep your $ai_total_cost_usd and leave the input and output costs unset. |
 
     #### Custom pricing
 
@@ -284,7 +316,8 @@
     | $ai_input_token_price | (Optional) Price per input token (used to calculate $ai_input_cost_usd) |
     | $ai_output_token_price | (Optional) Price per output token (used to calculate $ai_output_cost_usd) |
     | $ai_cache_read_token_price | (Optional) Price per cached token read |
-    | $ai_cache_write_token_price | (Optional) Price per cached token write |
+    | $ai_cache_write_token_price | (Optional) Price per cached token write. For custom Anthropic pricing, this applies to both cache TTLs unless $ai_cache_write_1h_token_price is set. |
+    | $ai_cache_write_1h_token_price | (Optional) Price per token written to Anthropic's 1-hour cache. Takes precedence over $ai_cache_write_token_price for 1-hour writes. |
     | $ai_request_price | (Optional) Price per request |
     | $ai_request_count | (Optional) Number of requests (defaults to 1 if $ai_request_price is set) |
     | $ai_web_search_price | (Optional) Price per web search |
@@ -295,7 +328,9 @@
     | Property | Description |
     | --- | --- |
     | $ai_cache_read_input_tokens | (Optional) Number of tokens read from cache |
-    | $ai_cache_creation_input_tokens | (Optional) Number of tokens written to cache (Anthropic-specific) |
+    | $ai_cache_creation_input_tokens | (Optional) Number of tokens written to cache (Anthropic-specific)When both TTL-specific counts are present, PostHog uses them instead of this aggregate. The aggregate should equal their sum; if either count is missing, PostHog uses the aggregate. |
+    | $ai_cache_creation_5m_input_tokens | (Optional) Number of tokens written to Anthropic's 5-minute cache |
+    | $ai_cache_creation_1h_input_tokens | (Optional) Number of tokens written to Anthropic's 1-hour cache |
     | $ai_cache_reporting_exclusive | (Optional) Whether cache tokens are excluded from $ai_input_tokens. When true, cache tokens are separate from input tokens. When false, input tokens already include cache tokens. Defaults to true for Anthropic provider or Claude models, false otherwise. |
 
     ### Model parameters
@@ -317,7 +352,7 @@
     | Property | Description |
     | --- | --- |
     | $ai_trace_id | The trace ID (a UUID to group related AI events together)Must contain only letters, numbers, and special characters: -, _, ~, ., @, (, ), !, ', :, \|Example: d9222e05-8708-41b8-98ea-d4a21849e761 |
-    | $ai_session_id | (Optional) Groups related traces together. Use this to organize traces by whatever grouping makes sense for your application (user sessions, workflows, conversations, or other logical boundaries).Example: session-abc-123, conv-user-456 |
+    | $ai_session_id | (Optional) Groups related traces into a session, which is what the Sessions tab reads. Set it if your product has multi-turn conversations. A workload that finishes in a single trace does not need it. Send it as null to say so explicitly, which tells the instrumentation checklist the workload is complete rather than missing a session id.Must contain only letters, numbers, and special characters: -, _, ~, ., @, (, ), !, ', :, \|Example: session-abc-123, conv-user-456 |
     | $ai_latency | (Optional) The latency of the trace in seconds |
     | $ai_span_name | (Optional) The name of the traceExample: chat_completion, rag_pipeline |
     | $ai_is_error | (Optional) Boolean to indicate if the trace encountered an error |
@@ -348,7 +383,7 @@
     | Property | Description |
     | --- | --- |
     | $ai_trace_id | The trace ID (a UUID to group related AI events together)Must contain only letters, numbers, and the following characters: -, _, ~, ., @, (, ), !, ', :, \|Example: d9222e05-8708-41b8-98ea-d4a21849e761 |
-    | $ai_session_id | (Optional) Groups related traces together. Use this to organize traces by whatever grouping makes sense for your application (user sessions, workflows, conversations, or other logical boundaries).Example: session-abc-123, conv-user-456 |
+    | $ai_session_id | (Optional) Groups related traces into a session, which is what the Sessions tab reads. Set it if your product has multi-turn conversations. A workload that finishes in a single trace does not need it. Send it as null to say so explicitly, which tells the instrumentation checklist the workload is complete rather than missing a session id.Example: session-abc-123, conv-user-456 |
     | $ai_span_id | (Optional) Unique identifier for this spanExample: bdf42359-9364-4db7-8958-c001f28c9255 |
     | $ai_span_name | (Optional) The name of the spanExample: vector_search, data_retrieval, tool_call |
     | $ai_parent_id | (Optional) Parent ID for tree view grouping (trace_id or another span_id)Example: 537b7988-0186-494f-a313-77a5a8f7db26 |
@@ -366,7 +401,7 @@
     | Property | Description |
     | --- | --- |
     | $ai_trace_id | The trace ID (a UUID to group related AI events together). Must contain only letters, numbers, and special characters: -, _, ~, ., @, (, ), !, ', :, \|Example: d9222e05-8708-41b8-98ea-d4a21849e761 |
-    | $ai_session_id | (Optional) Groups related traces together. Use this to organize traces by whatever grouping makes sense for your application (user sessions, workflows, conversations, or other logical boundaries).Example: session-abc-123, conv-user-456 |
+    | $ai_session_id | (Optional) Groups related traces into a session, which is what the Sessions tab reads. Set it if your product has multi-turn conversations. A workload that finishes in a single trace does not need it. Send it as null to say so explicitly, which tells the instrumentation checklist the workload is complete rather than missing a session id.Example: session-abc-123, conv-user-456 |
     | $ai_span_id | (Optional) Unique identifier for this embedding operation |
     | $ai_span_name | (Optional) Name given to this embedding operationExample: embed_user_query, index_document |
     | $ai_parent_id | (Optional) Parent span ID for tree-view grouping |
@@ -419,9 +454,13 @@
     | [Spans](/docs/ai-observability/spans.md) | Review spans and their role in representing individual operations. |
     | [Anaylze LLM performance](/docs/ai-observability/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
 
-### Community questions
+## Large events
 
-Ask a question
+For large events, use the dedicated AI ingestion path – see [capturing large AI events](/docs/ai-observability/large-events.md).
+
+### Still have questions?
+
+Ask PostHog AI
 
 ### Was this page useful?
 

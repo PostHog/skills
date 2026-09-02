@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Vue.js - Docs
+
+Copy page
+
 # Vue.js - Docs
 
 PostHog makes it easy to get data about usage of your [Vue.js](https://vuejs.org/) app. Integrating PostHog into your app enables analytics about user behavior, custom events capture, session replays, feature flags, and more.
@@ -43,6 +49,18 @@ pnpm add posthog-js
 bun add posthog-js
 ```
 
+> **If your site sets a Content-Security-Policy**, it needs to allow PostHog. This applies to the snippet and to package installs alike: the SDK lazy-loads extra bundles (session replay, surveys) from PostHog's CDN, and sends events to the ingestion host. PostHog serves from subdomains of `posthog.com` that change over time, so allow the wildcard:
+>
+> PostHog AI
+>
+> ```
+> script-src 'self' https://*.posthog.com;
+> connect-src 'self' https://*.posthog.com;
+> worker-src 'self' blob: data:;
+> ```
+>
+> `script-src` covers the snippet and the lazy-loaded bundles, `connect-src` covers event ingestion and feature flags, and `worker-src` covers session replay. The [toolbar needs a few more](/docs/advanced/content-security-policy.md), or use a [reverse proxy](/docs/advanced/proxy.md) so everything is first-party. Failing to do so causes silent failures where `capture` and `identify` calls never send, so the integration looks complete while zero events arrive. Remember `connect-src` falls back to `default-src`, so `default-src 'self'` blocks event delivery even when the script itself is bundled.
+
 Next, depending on your Vue version, we recommend initializing PostHog using the composition API or as a plugin.
 
 ## Vue 3: Composition API
@@ -65,7 +83,7 @@ import posthog from "posthog-js";
 const app = createApp(App);
 posthog.init(import.meta.env.VITE_POSTHOG_PROJECT_TOKEN || '<ph_project_token>', {
   api_host: import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com',
-  defaults: '2026-01-30',
+  defaults: '2026-05-30',
 });
 app.use(createPinia())
 app.use(router)
@@ -108,7 +126,7 @@ export default {
   install(Vue) {
     posthog.init('<ph_project_token>', {
       api_host: 'https://us.i.posthog.com',
-      defaults: '2026-01-30'
+      defaults: '2026-05-30'
     })
     Vue.prototype.$posthog = posthog
   }
@@ -139,11 +157,33 @@ This makes PostHog available as `this.$posthog` in any Vue component.
 
 > **Identifying users is required.** Call `posthog.identify('your-user-id')` after login to link events to a known user. This is what connects frontend event captures, [session replays](/docs/session-replay.md), [LLM traces](/docs/ai-engineering.md), and [error tracking](/docs/error-tracking.md) to the same person — and lets backend events link back too.
 >
+> Use a stable ID from your auth system when possible, not an email or display name. Send those as person properties instead. If your app has no other stable key, email works as a fallback if they are unique. Never a shared literal like `"anonymous"` or `"user"`, which pools many people onto one person and corrupts their data. When no ID is available at all, skip the identify and retain the anonymous distinct ID that's automatically assigned.
+>
+> Call `posthog.reset()` on logout, so the next person to use the browser doesn't inherit the last one's identity.
+>
 > See our guide on [identifying users](/docs/getting-started/identify-users.md) for how to set this up.
+
+If your app calls your own backend, `tracing_headers` adds `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID` to matching `fetch` and `XMLHttpRequest` requests. This lets server-side SDKs link backend events, errors, and LLM traces back to frontend sessions and replays. Use hostnames only, without protocols or paths.
+
+JavaScript
+
+PostHog AI
+
+```javascript
+posthog.init('<ph_project_token>', {
+  api_host: 'https://us.i.posthog.com',
+  // Optional: send PostHog session/user context to your backend
+  tracing_headers: ['api.example.com'],
+})
+```
+
+This works in local development too, but match on the hostname alone: use `'localhost'`, not `'localhost:3000'`. Ports are never part of a hostname, so a value with one in it never matches anything. `localhost` and `127.0.0.1` are also different hostnames — use whichever your app actually calls.
+
+Tracing headers help you attribute events across front and backend consistently. When this isn't available, use your server-side stable IDs to deduce the matching `distinctId`, and pass it in when capturing the event.
 
 ## Capturing custom events, using feature flags, and more
 
-Once you have PostHog initialized, there is a lot more you can do with it beyond autocapture, pageviews, and pageleaves. You can find the full details in our [JavaScript SDK docs](/docs/libraries/js/features.md), but we'll cover a few examples here.
+Once you have PostHog initialized, there is a lot more you can do with it beyond autocapture, pageviews, and pageleaves. You can find the full details in our [JavaScript SDK docs](/docs/libraries/js/usage.md), but we'll cover a few examples here.
 
 ## Vue 3: Composition API
 
@@ -278,17 +318,21 @@ This makes it possible to track users across their entire journey (e.g. from vis
 
 Add IPs to Firewall/WAF allowlists (recommended)
 
-For certain features like [heatmaps](/docs/toolbar/heatmaps.md), your Web Application Firewall (WAF) may be blocking PostHog’s requests to your site. Add these IP addresses to your WAF allowlist or rules to let PostHog access your site.
+For certain features like [heatmaps](/docs/toolbar/heatmaps.md), your Web Application Firewall (WAF) may be blocking PostHog's requests to your site. Add these IP addresses to your WAF allowlist or rules to let PostHog access your site.
 
 **EU**: `3.75.65.221`, `18.197.246.42`, `3.120.223.253`
 
 **US**: `44.205.89.55`, `52.4.194.122`, `44.208.188.173`
 
-These are public, stable IPs used by PostHog services (e.g., Celery tasks for snapshots).
+These are public, stable IPs used by PostHog services.
+
+PostHog captures heatmap screenshots using [Browserless](https://www.browserless.io), which has its own IP addresses. Browserless [publishes the current list here](https://docs.browserless.io/baas/troubleshooting/whitelisting-ips).
+
+An allowlist does not help when your app has a private address. For apps on an internal network, see [internal and intranet applications](/docs/session-replay/troubleshooting.md#internal-and-intranet-applications).
 
 ## Next steps
 
-For any technical questions for how to integrate specific PostHog features into Vue (such as analytics, feature flags, A/B testing, or surveys), have a look at our [JavaScript Web](/docs/libraries/js/features.md) SDK docs.
+For any technical questions for how to integrate specific PostHog features into Vue (such as analytics, feature flags, A/B testing, or surveys), have a look at our [JavaScript Web](/docs/libraries/js/usage.md) SDK docs.
 
 Alternatively, the following tutorials can help you get started:
 
@@ -297,9 +341,9 @@ Alternatively, the following tutorials can help you get started:
 -   [How to set up A/B tests in Vue](/tutorials/vue-ab-tests.md)
 -   [How to set up surveys in Vue](/tutorials/vue-surveys.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

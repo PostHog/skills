@@ -1,4 +1,10 @@
-# Nuxt error tracking installation (v3.6 and below) - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Nuxt Error Tracking installation (v3.6 and below) - Docs
+
+Copy page
+
+# Nuxt Error Tracking installation (v3.6 and below) - Docs
 
 1.  1
 
@@ -28,6 +34,12 @@
     pnpm add posthog-js
     ```
 
+    ### bun
+
+    ```bash
+    bun add posthog-js
+    ```
+
     **Nuxt version**
 
     This guide is for Nuxt v3.0 and above. For Nuxt v2.16 and below, see our [Nuxt docs](/docs/libraries/nuxt-js.md#nuxt-v216-and-below).
@@ -50,7 +62,7 @@
         public: {
           posthogPublicKey: '<ph_project_token>',
           posthogHost: 'https://us.i.posthog.com',
-          posthogDefaults: '2026-01-30'
+          posthogDefaults: '2026-05-30'
         }
       }
     })
@@ -114,6 +126,12 @@
 
     ```bash
     pnpm add posthog-node
+    ```
+
+    ### bun
+
+    ```bash
+    bun add posthog-node
     ```
 
     server/api/example.js
@@ -242,9 +260,9 @@
 
     [Upload source maps](/docs/error-tracking/upload-source-maps/nuxt.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

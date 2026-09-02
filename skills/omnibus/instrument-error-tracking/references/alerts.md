@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Send error tracking alerts - Docs
+
+Copy page
+
 # Send error tracking alerts - Docs
 
 To stay on top of issues, you can set up alerts. These enable you to post to Slack, Discord, Teams, or an HTTP Webhook when an issue is created or reopened.
@@ -6,7 +12,7 @@ To stay on top of issues, you can set up alerts. These enable you to post to Sla
 
 To alert when an issue is created or reopened, go to [error tracking's configuration page](https://app.posthog.com/error_tracking/configuration#selectedSetting=error-tracking-alerting) and click **Alerting**. This shows you a list of existing alerts. Clicking **New notification** brings you to a page to create a new one.
 
-![Error tracking alerting](https://res.cloudinary.com/dmukukwp6/image/upload/error_alerts_create_light_1a05deef21.png)![Error tracking alerting](https://res.cloudinary.com/dmukukwp6/image/upload/error_alerts_create_dark_7585087b18.png)
+![Error tracking alerting](https://res.cloudinary.com/dmukukwp6/image/upload/pasted_image_2026_06_24_T14_03_05_339_Z_fce7707d31.png)![Error tracking alerting](https://res.cloudinary.com/dmukukwp6/image/upload/pasted_image_2026_06_24_T14_02_44_265_Z_400e53c07a.png)
 
 Choosing an option brings you to a page to configure the alert. This may require setting up the Slack integration or pasting in a webhook URL. Once done, you can test the alert by clicking **Test function** and then finalize by clicking **Create & enable**.
 
@@ -14,7 +20,7 @@ This will then send alerts to your chosen destination when an issue is created o
 
 ## Issue properties and assignments
 
-You can filter an alert based on the properties of an issue. This is useful for notifying a specific team when they have been auto assigned an issue using [auto assignment rules](/docs/error-tracking/managing-issues.md#auto-assignment-rules).
+You can filter an alert based on the properties of an issue. This is useful for notifying a specific team when they have been automatically assigned an issue using [assignment rules](/docs/error-tracking/assigning-issues.md#automatic-issue-assignment).
 
 ![Error tracking alert assignee filtering](https://res.cloudinary.com/dmukukwp6/image/upload/assignee_filter_light_e575af6512.png)![Error tracking alert assignee filtering](https://res.cloudinary.com/dmukukwp6/image/upload/assignee_filter_dark_9a8907af03.png)
 
@@ -54,9 +60,9 @@ This sends an email notification to the user you choose. Check out our [alerts d
 
 If you'd like a destination to be added that we don't yet support, [let us know in-app](https://app.posthog.com/#panel=support%3Afeedback%3Aerror_tracking%3A%3Afalse).
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
