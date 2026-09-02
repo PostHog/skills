@@ -1,5 +1,9 @@
 # iOS Logs installation - Docs
 
+Copy page
+
+# iOS Logs installation - Docs
+
 The PostHog iOS SDK has built-in support for capturing structured Logs from iOS, macOS, tvOS, watchOS, and visionOS apps. The SDK handles OTLP encoding, batching, on-disk persistence across app restarts, and lifecycle integration. You just call `PostHogSDK.shared.captureLog(...)` or `PostHogSDK.shared.logger?.{trace,debug,info,warn,error,fatal}(...)`.
 
 > **Manual capture only.** Logs are emitted by your code. The SDK does not autocapture system log streams (`os_log`, `Logger`, `print`).
@@ -23,7 +27,7 @@ The PostHog iOS SDK has built-in support for capturing structured Logs from iOS,
     PostHog AI
 
     ```ruby
-    pod "PostHog", "~> 3.58.0"
+    pod "PostHog", "~> 3.59.3"
     ```
 
     ### Swift Package Manager
@@ -38,7 +42,7 @@ The PostHog iOS SDK has built-in support for capturing structured Logs from iOS,
 
     ```swift
     dependencies: [
-      .package(url: "https://github.com/PostHog/posthog-ios.git", from: "3.58.0")
+      .package(url: "https://github.com/PostHog/posthog-ios.git", from: "3.59.3")
     ],
     ```
 
