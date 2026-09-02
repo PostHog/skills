@@ -17,6 +17,21 @@ Clicking on a trace opens a timeline of the interaction with all the generation 
 
 A trace presents LLM event data in a timeline, tree-structured view
 
+### Waterfall timeline
+
+Above the trace tree, a waterfall timeline shows when each operation started and how long it ran. Each bar represents a generation, span, or embedding event, color-coded to match the tree view.
+
+The waterfall helps you:
+
+-   **See latency breakdown** — Identify which operations took the longest and where time was spent waiting.
+-   **Spot concurrency** — Operations running in parallel appear on separate lanes. Parent-child connectors distinguish nested operations from concurrent siblings.
+-   **Find errors at a glance** — Errored operations display a red border on their bar.
+-   **Navigate the trace** — Click any bar to select the corresponding event in the tree view.
+
+The time axis uses clock-friendly intervals (e.g. 15s, 30s, 1m, 2m). For deeply nested traces, the timeline caps at 6 visible lanes and scrolls vertically. You can collapse the timeline or expand it to full screen.
+
+The waterfall also appears in the session view's steps drawer when inspecting a specific trace.
+
 ## Conversation display options
 
 When viewing a trace, you can control how conversation messages are displayed using the display options dropdown. The available options are:
@@ -31,7 +46,7 @@ Traces display any [tools](/docs/ai-observability/tools.md) called by the genera
 
 ## Sentiment classification
 
-PostHog can classify the sentiment of user messages in a trace as negative, neutral, or positive. Sentiment is computed on-demand using a local model when you view a trace — no data is sent to third-party services. Each trace gets an overall sentiment label and score, with a per-generation and per-message breakdown. See [Sentiment classification](/docs/ai-observability/sentiment.md) for more details.
+PostHog can classify the sentiment of user messages in a trace as negative, neutral, or positive using a local model — no data is sent to third-party services. Sentiment runs as a [sentiment analysis evaluation](/docs/ai-evals.md#sentiment-analysis-evaluations) that you configure. Each trace gets an overall sentiment label and score, with a per-generation and per-message breakdown. See [Sentiment classification](/docs/ai-observability/sentiment.md) for more details.
 
 ## Search traces with PostHog AI
 
