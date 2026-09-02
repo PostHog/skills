@@ -8,7 +8,7 @@ This guide walks you through integrating PostHog into your SvelteKit app using t
 
 Install PostHog for Svelte in seconds with our wizard by running this prompt with [LLM coding agents](/blog/envoy-wizard-llm-agent.md) like Cursor and Bolt, or by running it in your terminal.
 
-`npx @posthog/wizard@latest`
+`npx @posthog/wizard`
 
 [Learn more](/wizard.md)
 
@@ -57,7 +57,7 @@ export const load = async () => {
   if (browser) {
     posthog.init('<ph_project_token>', {
       api_host: 'https://us.i.posthog.com',
-      defaults: '2026-01-30',
+      defaults: '2026-05-30',
     })
   }
   return
@@ -88,7 +88,7 @@ This makes it possible to track users across their entire journey (e.g. from vis
 
 Add IPs to Firewall/WAF allowlists (recommended)
 
-For certain features like [heatmaps](/docs/toolbar/heatmaps.md), your Web Application Firewall (WAF) may be blocking PostHog’s requests to your site. Add these IP addresses to your WAF allowlist or rules to let PostHog access your site.
+For certain features like [heatmaps](/docs/toolbar/heatmaps.md), your Web Application Firewall (WAF) may be blocking PostHog's requests to your site. Add these IP addresses to your WAF allowlist or rules to let PostHog access your site.
 
 **EU**: `3.75.65.221`, `18.197.246.42`, `3.120.223.253`
 
@@ -217,7 +217,7 @@ kit: {
 
 ## Next steps
 
-For any technical questions for how to integrate specific PostHog features into Svelte (such as analytics, feature flags, A/B testing, surveys, etc.), have a look at our [JavaScript Web](/docs/libraries/js/features.md) and [Node]((/docs/libraries/node)) SDK docs.
+For any technical questions for how to integrate specific PostHog features into Svelte (such as analytics, feature flags, A/B testing, surveys, etc.), have a look at our [JavaScript Web](/docs/libraries/js/features.md) and [Node](/docs/libraries/node.md) SDK docs.
 
 Alternatively, the following tutorials can help you get started:
 
