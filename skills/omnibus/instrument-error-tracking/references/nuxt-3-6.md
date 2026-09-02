@@ -1,5 +1,9 @@
 # Nuxt error tracking installation (v3.6 and below) - Docs
 
+Copy page
+
+# Nuxt error tracking installation (v3.6 and below) - Docs
+
 1.  1
 
     ## Install the package
@@ -50,7 +54,7 @@
         public: {
           posthogPublicKey: '<ph_project_token>',
           posthogHost: 'https://us.i.posthog.com',
-          posthogDefaults: '2026-01-30'
+          posthogDefaults: '2026-05-30'
         }
       }
     })
