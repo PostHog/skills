@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Rust Feature Flags installation - Docs
+
+Copy page
+
 # Rust Feature Flags installation - Docs
 
 Install the `posthog-rs` crate by adding it to your `Cargo.toml`.
@@ -8,7 +14,7 @@ PostHog AI
 
 ```toml
 [dependencies]
-posthog-rs = "0.3.5"
+posthog-rs = "0.14"
 ```
 
 Next, set up the client with your PostHog project key.
@@ -18,7 +24,7 @@ Rust
 PostHog AI
 
 ```rust
-let client = posthog_rs::client(env!("<ph_project_token>"));
+let client = posthog_rs::client("<ph_project_token>").await;
 ```
 
 ### Blocking client
@@ -33,10 +39,10 @@ PostHog AI
 
 ```toml
 [dependencies]
-posthog-rs = { version = "0.3.5", default-features = false }
+posthog-rs = { version = "0.14", default-features = false }
 ```
 
-In blocking mode, calls to `capture` and related methods will block until the PostHog event capture API returns – generally this is on the order of tens of milliseconds, but you may want to `thread::spawn` a background thread when you send an event.
+With the blocking client, the same methods are available without `.await`. Either way, `capture` is non-blocking: it hands the event to a background worker that batches and sends it, so it returns immediately instead of waiting on the network. Because delivery happens in the background, call `flush()` or `shutdown()` before your program exits, or buffered events may be lost.
 
 ## Using feature flags
 
@@ -118,7 +124,7 @@ if flags.is_enabled("flag-key") {
 }
 let mut event = Event::new("event_name", "distinct_id_of_your_user");
 event.with_flags(&flags);
-client.capture(event).await.unwrap();
+client.capture(event);
 ```
 
 By default, this attaches every flag in the snapshot using `$feature/<flag-key>` properties and `$active_feature_flags`.
@@ -133,11 +139,11 @@ PostHog AI
 // Attach only flags accessed with is_enabled() or get_flag() before this call
 let mut event = Event::new("event_name", "distinct_id_of_your_user");
 event.with_flags(&flags.only_accessed());
-client.capture(event).await.unwrap();
+client.capture(event);
 // Attach only specific flags
 let mut event = Event::new("event_name", "distinct_id_of_your_user");
 event.with_flags(&flags.only(&["checkout-flow", "new-dashboard"]));
-client.capture(event).await.unwrap();
+client.capture(event);
 ```
 
 `only_accessed()` is order-dependent. If you call it before accessing any flags with `is_enabled()` or `get_flag()`, no feature flag properties are attached.
@@ -154,7 +160,7 @@ PostHog AI
 use posthog_rs::Event;
 let mut event = Event::new("event_name", "distinct_id_of_your_user");
 event.insert_prop("$feature/feature-flag-key", "variant-key").unwrap();
-client.capture(event).await.unwrap();
+client.capture(event);
 ```
 
 ### Evaluating only specific flags
@@ -213,9 +219,9 @@ Now that you're evaluating flags, continue with the resources below to learn wha
 | [How to do a phased rollout](/tutorials/phased-rollout.md) | Gradually roll out features to minimize risk |
 | [More tutorials](/docs/feature-flags/tutorials.md) | Other real-world examples and use cases |
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

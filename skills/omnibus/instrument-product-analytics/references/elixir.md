@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Elixir - Docs
+
+Copy page
+
 # Elixir - Docs
 
 This library provides an Elixir HTTP client for PostHog. [See the repository](https://github.com/posthog/posthog-elixir) for more information.
@@ -36,7 +42,7 @@ config :posthog,
 
 You can see all the available configuration options in the [PostHog.Config](https://hexdocs.pm/posthog/PostHog.Config.html) module.
 
-Optionally, you might want to enable the [Plug integration](https://hexdocs.pm/posthog/PostHog.Integrations.Plug.html) to automatically capture events from your Plug-based applications including Phoenix.
+Optionally, you might want to enable the [Plug integration](https://hexdocs.pm/posthog/PostHog.Integrations.Plug.html) to attach request metadata and tracing context in Plug-based applications including Phoenix. You still need to capture events explicitly with `PostHog.capture/2` or `PostHog.capture/3`.
 
 #### Development/Test mode
 
@@ -139,6 +145,41 @@ PostHog.capture("$groupidentify", %{
 })
 ```
 
+## Request context
+
+For Phoenix or Plug apps, add `PostHog.Integrations.Plug` before your router to attach request metadata and PostHog tracing headers to events captured during the request.
+
+lib/my\_app\_web/endpoint.ex
+
+PostHog AI
+
+```elixir
+plug PostHog.Integrations.Plug
+plug MyAppWeb.Router
+```
+
+For plain Plug routers, add it before `:match` and `:dispatch`:
+
+Elixir
+
+PostHog AI
+
+```elixir
+defmodule MyRouter do
+  use Plug.Router
+  plug PostHog.Integrations.Plug
+  plug :match
+  plug :dispatch
+  # ... routes
+end
+```
+
+The plug adds request metadata such as `$current_url`, `$host`, `$pathname`, `$request_method`, `$user_agent`, and `$ip`. It also reads `X-PostHog-Distinct-Id` and `X-PostHog-Session-Id` as analytics context so backend events and errors can be linked to frontend users and sessions.
+
+If you're using [PostHog JS](/docs/libraries/js.md) on the frontend, configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your Phoenix or Plug backend hostname so browser requests include these headers.
+
+Tracing headers are client-controlled analytics context, not authentication or authorization. Pass an authenticated `distinct_id` explicitly for security-sensitive server-side decisions.
+
 ## Feature flags
 
 PostHog's [feature flags](/docs/feature-flags.md) enable you to safely deploy and roll back new features as well as target specific users and groups with them.
@@ -219,7 +260,7 @@ PostHog AI
 
 ```elixir
 {:ok, snapshot} = PostHog.FeatureFlags.evaluate_flags("distinct_id_of_your_user")
-# Attach only flags accessed with enabled?/2, get_flag/2, or get_flag_payload/2 before this call
+# Attach only flags accessed with enabled?/2 or get_flag/2 before this call
 PostHog.FeatureFlags.Evaluations.enabled?(snapshot, "flag-key")
 PostHog.FeatureFlags.set_in_context(
   PostHog.FeatureFlags.Evaluations.only_accessed(snapshot)
@@ -230,7 +271,7 @@ PostHog.FeatureFlags.set_in_context(
 )
 ```
 
-`only_accessed/1` is order-dependent. If you call it before accessing any flags with `enabled?/2`, `get_flag/2`, or `get_flag_payload/2`, no feature flag properties are attached.
+`only_accessed/1` is order-dependent. If you call it before accessing any flags with `enabled?/2` or `get_flag/2`, no feature flag properties are attached.
 
 #### Method 2: Include the `$feature/feature_flag_name` property manually
 
@@ -268,6 +309,36 @@ PostHog AI
 Capturing `$feature_flag_called` events enables PostHog to know when a flag was accessed by a user and provide [analytics and insights](/docs/product-analytics/insights.md) on the flag. With `evaluate_flags/1`, the SDK sends this event when you call `PostHog.FeatureFlags.Evaluations.enabled?/2` or `PostHog.FeatureFlags.Evaluations.get_flag/2` for a flag.
 
 `PostHog.FeatureFlags.Evaluations.get_flag_payload/2` doesn't send `$feature_flag_called` events.
+
+### Local feature flag evaluation
+
+Local evaluation is available in version 2.15.0 and later. Follow the [server-side local evaluation guide](/docs/feature-flags/local-evaluation.md) to find your secure key and see how to pass the person properties, groups, and group properties that your flag conditions require.
+
+Store the secure key in a server-side environment variable. Don't expose it to client-side applications:
+
+config/runtime.exs
+
+PostHog AI
+
+```elixir
+config :posthog,
+  api_host: "https://us.i.posthog.com",
+  api_key: "<ph_project_token>",
+  secret_key: System.fetch_env!("POSTHOG_FEATURE_FLAGS_SECURE_API_KEY")
+```
+
+When `secret_key` is set, the SDK fetches definitions when it starts and polls for updates every 30 seconds. `PostHog.FeatureFlags.evaluate_flags/1` evaluates each flag locally first. If a flag can't be evaluated locally, the SDK makes one `/flags` request to resolve the remaining flags. Set `only_evaluate_locally: true` in the evaluation map to prevent this remote fallback. The SDK then omits unresolved flags from the snapshot.
+
+Use these configuration options to control local evaluation:
+
+| Option | Default | Purpose |
+| --- | --- | --- |
+| enable_local_evaluation | true | Starts local evaluation when secret_key is set. |
+| feature_flags_poll_interval_ms | 30_000 | Sets the interval between definition refreshes. |
+| flag_definition_request_timeout_ms | 10_000 | Sets the timeout for each definition request. |
+| flag_definition_cache_provider_timeout_ms | 5_000 | Sets the timeout for each shared cache provider callback. |
+
+For multiple server instances, you can implement `PostHog.FeatureFlags.FlagDefinitionCacheProvider` and set `flag_definition_cache_provider: {module, state}`. This optional provider shares definitions and coordinates which instance polls PostHog. See [local evaluation in distributed environments](/docs/feature-flags/local-evaluation/distributed-environments?tab=Elixir.md) for the callback contract and configuration.
 
 ## Error tracking
 
@@ -370,9 +441,9 @@ PostHog.capture(AnotherPostHog, "user_signed_up", %{distinct_id: "user123"})
 
 The library is maintained by the PostHog team since February 2025. Thanks to [nkezhaya](https://github.com/nkezhaya) for contributing v0.1.0. Thanks to [martosaur](https://github.com/martosaur) for contributing v2.0.0.
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

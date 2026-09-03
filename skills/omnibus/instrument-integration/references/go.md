@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Go - Docs
+
+Copy page
+
 # Go - Docs
 
 This library uses an internal queue to make calls fast and non-blocking. It also batches requests and flushes asynchronously, making it perfect to use in any part of your web app or other server-side application that needs performance.
@@ -97,7 +103,7 @@ client.Enqueue(posthog.Capture{
 
 ## Person profiles and properties
 
-For backward compatibility, the Go SDK captures identified events by default. These create [person profiles](/docs/data/persons.md). To set [person properties](/docs/data/user-properties.md) in these profiles, include them when capturing an event:
+For backward compatibility, the Go SDK captures identified events by default. These create [person profiles](/docs/data/persons.md). To set [person properties](/docs/product-analytics/person-properties.md) in these profiles, include them when capturing an event:
 
 Go
 
@@ -118,7 +124,7 @@ client.Enqueue(posthog.Capture{
 })
 ```
 
-For more details on the difference between `$set` and `$set_once`, see our [person properties docs](/docs/data/user-properties.md#what-is-the-difference-between-set-and-set_once).
+For more details on the difference between `$set` and `$set_once`, see our [person properties docs](/docs/product-analytics/person-properties.md#what-is-the-difference-between-set-and-set_once).
 
 To capture [anonymous events](/docs/data/anonymous-vs-identified-events.md) without person profiles, set the event's `$process_person_profile` property to `false`:
 
@@ -153,25 +159,13 @@ client.Enqueue(posthog.Alias{
 })
 ```
 
-We strongly recommend reading our docs on [alias](/docs/data/identify.md#alias-assigning-multiple-distinct-ids-to-the-same-user) to best understand how to correctly use this method.
+We strongly recommend reading our docs on [alias](/docs/product-analytics/identify.md#alias-assigning-multiple-distinct-ids-to-the-same-user) to best understand how to correctly use this method.
 
 ## Request context
 
 Use request context to apply a distinct ID, session ID, and common request properties to capture and exception events inside a `net/http` request. This is useful when connecting frontend activity to backend events, session replay, error tracking, and feature flag evaluation.
 
-If you're using PostHog on your frontend, enable tracing headers for your backend domain:
-
-JavaScript
-
-PostHog AI
-
-```javascript
-posthog.init('<ph_project_token>', {
-    __add_tracing_headers: ['your-backend-domain.com']
-})
-```
-
-Then wrap your handler with `NewRequestContextMiddleware` and use the context-aware helpers:
+If you're using [PostHog JS](/docs/libraries/js.md) on the frontend, configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your Go backend hostname so browser requests include the session and distinct ID headers. Then wrap your handler with `NewRequestContextMiddleware` and use the context-aware helpers:
 
 Go
 
@@ -444,12 +438,13 @@ Go
 PostHog AI
 
 ```go
+// import "time"
 client, _ := posthog.NewWithConfig(
     os.Getenv("<ph_project_token>"),
     posthog.Config{
         PersonalApiKey:            "your personal API key", // Optional, but much more performant. If this token is not supplied, then fetching feature flag values will be slower.
         Endpoint:                  "https://us.i.posthog.com",
-        FeatureFlagRequestTimeout: 3, // Time in seconds. Defaults to 3.
+        FeatureFlagRequestTimeout: 3 * time.Second, // Defaults to 3 seconds.
     },
 )
 ```
@@ -569,9 +564,9 @@ The `name` is a special property which is used in the PostHog UI for the name of
 
 This library is largely based on the `analytics-go` package.
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

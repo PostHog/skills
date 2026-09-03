@@ -1,10 +1,12 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Logs troubleshooting - Docs
+
+Copy page
+
 # Logs troubleshooting - Docs
 
 This page covers troubleshooting for Logs. For setup, see the [installation guide](/docs/logs/installation.md).
-
-## Have a question? Ask PostHog AI
-
-Ask PostHog AI
 
 ## Authentication errors
 
@@ -38,6 +40,17 @@ Ask PostHog AI
 -   Check that logs are being sent in the correct OTLP format
 -   Ensure your project has access to the Logs feature in PostHog
 -   Check the network tab in your browser/application to verify requests are succeeding (200 status)
+
+## Early startup logs are missing
+
+**Problem**: Console output from the first moments of a page load – React hydration warnings, errors thrown during bootstrap – never reaches Logs, while console calls made later arrive fine.
+
+**Solutions**:
+
+-   Upgrade to posthog-js **1.422.0** or later, which buffers `console.*` calls made while the logs script is still loading and backfills them once it is ready.
+-   Enable capture with `logs: { captureConsoleLogs: true }` in `posthog.init()` rather than only with the **Capture console logs** project setting. With the project setting alone, a visitor's first page load does not start capturing until remote config responds; the `init()` option starts at `posthog.init()` on every load.
+-   Check that the calls are among the levels captured: `console.log`, `console.info`, `console.debug`, `console.warn`, and `console.error`.
+-   If more than `logs.maxBufferSize` console calls (100 by default) happen before the script loads, only the earliest are kept.
 
 ## Performance issues
 
@@ -105,9 +118,9 @@ If you're still experiencing problems:
 3.  Check the network requests to see the actual HTTP status codes and error messages
 4.  Contact PostHog support with your specific error messages and configuration details
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

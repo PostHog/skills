@@ -1,10 +1,14 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Python - Docs
+
+Copy page
+
 # Python - Docs
 
 The Python SDK makes it easy to capture events, evaluate feature flags, track errors, and more in your Python apps.
 
-**Python 3.9 and lower**
-
-Python 3.9 is no longer supported for PostHog Python SDK versions `7.x.x` and higher.
+> These docs cover version `7.x` of the Python SDK, which requires Python 3.10 or higher. On Python 3.9? See [supported versions](#supported-versions).
 
 ## Installation
 
@@ -35,11 +39,129 @@ posthog = Posthog('<ph_project_token>', host='https://us.i.posthog.com')
 
 You can find your project token and instance address in the [project settings](https://app.posthog.com/project/settings) page in PostHog.
 
+## Use the asyncio client
+
+The Python SDK includes an asyncio-native client in version `7.45.0` and later. Continue to use `Posthog` in synchronous apps. For an asyncio app, install the optional async dependencies:
+
+Terminal
+
+PostHog AI
+
+```bash
+pip install "posthog[async]>=7.45.0"
+```
+
+Import `AsyncPosthog`, the customer-facing name for `AsyncClient`. Both names provide the same async context manager and lifecycle methods. Keep one client for the lifetime of your app. For example, use a FastAPI lifespan handler:
+
+Python
+
+PostHog AI
+
+```python
+import os
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+from posthog import AsyncPosthog
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with AsyncPosthog(
+        os.environ["POSTHOG_PROJECT_TOKEN"],
+        host=os.environ["POSTHOG_HOST"],
+        secret_key=os.environ.get("POSTHOG_FEATURE_FLAGS_SECURE_API_KEY"),
+    ) as posthog:
+        app.state.posthog = posthog
+        yield
+app = FastAPI(lifespan=lifespan)
+```
+
+Exiting the context calls `shutdown()`. This flushes buffered events, waits for in-flight operations, stops the workers, and closes the HTTP transport. If you don't use the context manager, call `await posthog.shutdown()` during app shutdown. `await posthog.join()` has the same effect.
+
+### Capture events without blocking the event loop
+
+`capture()` queues an event and returns without waiting for a network request. Don't await it:
+
+Python
+
+PostHog AI
+
+```python
+posthog.capture(
+    "event_name",
+    distinct_id="user-distinct-id",
+    properties={"source": "fastapi"},
+)
+```
+
+Use `capture_immediate()` when your code must wait for that event's delivery attempt:
+
+Python
+
+PostHog AI
+
+```python
+capture_id = await posthog.capture_immediate(
+    "event_name",
+    distinct_id="user-distinct-id",
+)
+```
+
+### Evaluate feature flags
+
+Await `evaluate_flags()` once, then use its snapshot with synchronous in-memory accessors. Pass the same snapshot to `capture()` to attach the exact values used for branching without another feature flag request:
+
+Python
+
+PostHog AI
+
+```python
+flags = await posthog.evaluate_flags("user-distinct-id")
+if flags.is_enabled("new-checkout"):
+    # Show the new checkout
+    pass
+posthog.capture(
+    "checkout started",
+    distinct_id="user-distinct-id",
+    flags=flags,
+)
+```
+
+The snapshot provides synchronous `is_enabled()`, `get_flag()`, and `get_flag_payload()` accessors. The awaited `evaluate_flags()` call also accepts `groups`, `person_properties`, `group_properties`, `disable_geoip`, `flag_keys`, and `device_id` arguments.
+
+### Fetch remote config
+
+Initialize the client with a server-side [feature flags secure API key](/docs/feature-flags/remote-config.md#step-1-find-your-feature-flags-secure-api-key) as `secret_key`, then await the remote config request:
+
+Python
+
+PostHog AI
+
+```python
+config = await posthog.get_remote_config_payload("landing-page-config")
+```
+
+See [Remote config](/docs/feature-flags/remote-config.md) for setup and security details.
+
 ## Identifying users
 
-> **Identifying users is required.** Backend events need a `distinct_id` that matches the ID your frontend uses when calling `posthog.identify()`. Without this, backend events are orphaned — they can't be linked to frontend event captures, [session replays](/docs/session-replay.md), [LLM traces](/docs/ai-engineering.md), or [error tracking](/docs/error-tracking.md).
+> **Identifying users is required.** Backend events need a `distinct_id` to associate events with the correct user.
 >
-> See our guide on [identifying users](/docs/getting-started/identify-users.md) for how to set this up.
+> In Python, you can do this through a context. All event captures in the same context will be tagged automatically with the correct `distinct_id`. Typically, you would set a fresh context and identify at the top of each route.
+>
+> Python
+>
+> PostHog AI
+>
+> ```python
+> from posthog import new_context, identify_context, capture
+> @app.get("/foo")
+> def foo(current_user: User = Depends(get_current_user)):
+>     with new_context(): # Set context at the top of a route
+>         identify_context(current_user.id)
+>         capture("foo_viewed")
+>     return {"status": "ok"}
+> ```
+>
+> When possible, write a small piece of **middleware** that resolves your authenticated user, wrap a context around the request, and identifies it. Every `capture()` downstream is then attributed *automatically*. The SDK's Django middleware does this automatically and you can replicate it when using the plain Python SDK.
 
 ## Capturing events
 
@@ -99,7 +221,7 @@ posthog.capture('$pageview', distinct_id="distinct_id_of_the_user", properties={
 
 ## Person profiles and properties
 
-The Python SDK captures identified events if the current context is identified or if you pass a distinct ID explicitly. These create [person profiles](/docs/data/persons.md). To set [person properties](/docs/data/user-properties.md) in these profiles, include them when capturing an event:
+The Python SDK captures identified events if the current context is identified or if you pass a distinct ID explicitly. These create [person profiles](/docs/data/persons.md). To set [person properties](/docs/product-analytics/person-properties.md) in these profiles, include them when capturing an event:
 
 Python
 
@@ -122,7 +244,7 @@ with new_context():
     posthog.capture('event_name')
 ```
 
-For more details on the difference between `$set` and `$set_once`, see our [person properties docs](/docs/data/user-properties.md#what-is-the-difference-between-set-and-set_once).
+For more details on the difference between `$set` and `$set_once`, see our [person properties docs](/docs/product-analytics/person-properties.md#what-is-the-difference-between-set-and-set_once).
 
 To capture [anonymous events](/docs/data/anonymous-vs-identified-events.md) without person profiles, set the event's `$process_person_profile` property to `False`. Events captured with no context or explicit distinct\_id are marked as personless, and will have an auto-generated distinct\_id:
 
@@ -280,19 +402,7 @@ with new_context():
 
 **Using PostHog on your frontend too?**
 
-If you're using the PostHog JavaScript Web SDK on your frontend, it generates a session ID for you. You can pass it to your backend by adding your backend domain to `__add_tracing_headers` in your config. This will automatically add tracing headers to your requests.
-
-JavaScript
-
-PostHog AI
-
-```javascript
-posthog.init('<ph_project_token>', {
-    __add_tracing_headers: ['your-backend-domain.com']
-});
-```
-
-Alternatively, you can retrieve it on the frontend by calling `posthog.get_session_id()`. You then need to pass that session ID to your backend by setting the `X-POSTHOG-SESSION-ID` header on each fetch request.
+If you're using the PostHog JavaScript Web SDK on your frontend, it generates a session ID for you. Configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your backend hostname to add the session and distinct ID headers to browser requests automatically.
 
 You need to extract the header in your request handler (if you're using our Django middleware integration, this happens automatically).
 
@@ -371,6 +481,8 @@ posthog.group_identify('company', 'company_id_in_your_db', {
 The `name` is a special property which is used in the PostHog UI for the name of the group. If you don't specify a `name` property, the group ID will be used instead.
 
 ## Feature flags
+
+The examples in this section use the synchronous `Posthog` client. For `AsyncPosthog`, use the [awaited feature flag example](#evaluate-feature-flags). The returned snapshot uses the same accessors.
 
 PostHog's [feature flags](/docs/feature-flags.md) enable you to safely deploy and roll back new features as well as target specific users and groups with them.
 
@@ -594,7 +706,7 @@ In multi-worker or edge environments, you can implement custom caching for flag 
 
 ## Experiments (A/B tests)
 
-Since [experiments](/docs/experiments/start-here.md) use feature flags, the code for running an experiment is very similar to the feature flags code:
+Since [experiments](/docs/experiments/start-here.md) use feature flags, the code for running an experiment is very similar to the feature flags code. This example uses the synchronous `Posthog` client:
 
 Python
 
@@ -606,6 +718,8 @@ variant = flags.get_flag("experiment-feature-flag-key")
 if variant == "variant-name":
     # Do something
 ```
+
+With `AsyncPosthog`, await the evaluation: `flags = await posthog.evaluate_flags("user_distinct_id")`. The remaining snapshot access is the same.
 
 It's also possible to [run experiments without using feature flags](/docs/experiments/running-experiments-without-feature-flags.md).
 
@@ -772,6 +886,33 @@ posthog.set_socket_options([
 
 Pass `None` to `set_socket_options()` to reset to default behavior.
 
+## Filtering or modifying events before sending
+
+Use `before_send` to modify or drop events before they are queued for delivery. Return the modified event dictionary to send it, or `None` to drop it.
+
+Python
+
+PostHog AI
+
+```python
+from typing import Any
+import posthog
+def scrub_pii(event: dict[str, Any]) -> dict[str, Any] | None:
+    properties = event.get("properties", {})
+    if "email" in properties:
+        email = properties["email"]
+        properties["email"] = f"***@{email.split('@', 1)[1]}" if "@" in email else "***"
+    if event.get("event") == "test_event":
+        return None
+    return event
+client = posthog.Client(
+    "<ph_project_api_key>",
+    before_send=scrub_pii,
+)
+```
+
+If your callback raises an exception, the SDK logs the error and continues with the original unmodified event.
+
 ## Historical migrations
 
 You can use the Python or Node SDK to run [historical migrations](/docs/migrate.md) of data into PostHog. To do so, set the `historical_migration` option to `true` when initializing the client.
@@ -843,10 +984,16 @@ await client.shutdown()
 
 ## Serverless environments (Render/Lambda/...)
 
-By default, the library buffers events before sending them to the capture endpoint, for better performance. This can lead to lost events in serverless environments, if the Python process is terminated by the platform before the buffer is fully flushed. To avoid this, you can either:
+### Synchronous `Posthog`
 
--   Ensure that `posthog.shutdown()` is called after processing every request by adding a middleware to your server. This allows `posthog.capture()` to remain asynchronous for better performance. `posthog.shutdown()` is blocking.
--   Enable the `sync_mode` option when initializing the client, so that all calls to `posthog.capture()` become synchronous.
+By default, the synchronous `Posthog` client buffers events before sending them to the capture endpoint. This can lead to lost events if the platform terminates the Python process before the buffer is fully flushed. To avoid this, you can either:
+
+-   Call `posthog.shutdown()` before the process ends. This blocking call attempts to deliver queued events and cleans up the client.
+-   Enable `sync_mode` when initializing the client so each `posthog.capture()` call attempts delivery before it returns.
+
+### Asyncio `AsyncPosthog`
+
+Keep one `AsyncPosthog` client for the lifetime of your application. Use buffered `capture()` by default, or `await capture_immediate()` when one invocation must wait for an event's delivery attempt. Call `await posthog.shutdown()` once during application cleanup. Don't shut down the client after each request.
 
 ## Django
 
@@ -860,9 +1007,17 @@ As our open source project [PostHog](https://github.com/PostHog/posthog) shares 
 
 This library is largely based on the `analytics-python` package.
 
-### Community questions
+## Supported versions
 
-Ask a question
+These docs cover version `7.x` of the PostHog Python SDK, which requires Python 3.10 or higher. Python 3.9 is no longer supported on `7.x.x` and higher — pin to the 6.x line with `pip install 'posthog<7'`, where `6.9.3` is the final release.
+
+Everything on this page works the same way on `6.9.3`. Event capture, the context API (`new_context`, `identify_context`, `set_context_session`), and `PosthogContextMiddleware` are identical on `6.9.3` and `7.0.0` — `7.0.0` only dropped Python 3.9 and bumped the optional LLM provider SDKs. That includes the middleware identifying the request context from the `X-POSTHOG-DISTINCT-ID` header and falling back to the authenticated user, which behaves the same across both lines.
+
+Later `7.x` releases add what the 6.x line does not receive, such as the Celery integration, tracing header sanitization, and `set_context_device_id`. They also changed the middleware's own captured properties: `7.x` sends the request IP as `$ip`, where `6.9.3` sends it as `$ip_address`, and `7.x` additionally captures `$request_path`, `$raw_user_agent`, and the authenticated user's `email`.
+
+### Still have questions?
+
+Ask PostHog AI
 
 ### Was this page useful?
 
