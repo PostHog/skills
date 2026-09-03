@@ -1,4 +1,10 @@
-# Next.js error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Next.js Error Tracking installation - Docs
+
+Copy page
+
+# Next.js Error Tracking installation - Docs
 
 1.  1
 
@@ -26,6 +32,12 @@
 
     ```bash
     pnpm add posthog-js
+    ```
+
+    ### bun
+
+    ```bash
+    bun add posthog-js
     ```
 
 2.  2
@@ -65,7 +77,7 @@
     import posthog from 'posthog-js'
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN!, {
         api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-        defaults: '2026-01-30'
+        defaults: '2026-05-30'
     })
     ```
 
@@ -87,7 +99,7 @@
       useEffect(() => {
         posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN as string, {
           api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-          defaults: '2026-01-30'
+          defaults: '2026-05-30'
         })
       }, [])
       return (
@@ -138,7 +150,7 @@
       useEffect(() => {
         posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN as string, {
           api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-          defaults: '2026-01-30',
+          defaults: '2026-05-30',
           loaded: (posthog) => {
             if (process.env.NODE_ENV === 'development') posthog.debug()
           }
@@ -481,9 +493,9 @@
 
      [Upload source maps](/docs/error-tracking/upload-source-maps/nextjs.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

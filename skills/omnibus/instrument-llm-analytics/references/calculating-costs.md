@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Calculating LLM costs - Docs
+
+Copy page
+
 # Calculating LLM costs - Docs
 
 ## How are LLM costs calculated?
@@ -186,11 +192,11 @@ When PostHog calculates costs automatically, it sets the following metadata prop
 
 These properties are useful for debugging cost discrepancies or understanding which pricing was applied when using model aliases or custom configurations.
 
-You can find the code for this on [GitHub](https://github.com/PostHog/posthog/tree/master/plugin-server/src/ingestion/ai-costs).
+You can find the code for this on [GitHub](https://github.com/PostHog/posthog/tree/master/nodejs/src/ingestion/pipelines/ai/costs).
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
