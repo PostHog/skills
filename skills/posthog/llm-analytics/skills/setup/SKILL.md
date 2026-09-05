@@ -3,7 +3,7 @@ name: llm-analytics-setup
 description: PostHog LLM analytics for all supported providers
 metadata:
   author: PostHog
-  version: 1.9.4
+  version: dev
 ---
 
 # PostHog LLM analytics
@@ -12,43 +12,45 @@ This skill helps you add PostHog LLM analytics to any application using AI/LLM p
 
 ## Reference files
 
-- `references/openai.md` - Openai llm analytics installation - docs
-- `references/azure-openai.md` - Azure openai llm analytics installation - docs
-- `references/anthropic.md` - Anthropic llm analytics installation - docs
-- `references/google.md` - Google llm analytics installation - docs
-- `references/cohere.md` - Cohere llm analytics installation - docs
-- `references/mistral.md` - Mistral llm analytics installation - docs
-- `references/perplexity.md` - Perplexity llm analytics installation - docs
-- `references/deepseek.md` - Deepseek llm analytics installation - docs
-- `references/groq.md` - Groq llm analytics installation - docs
-- `references/together-ai.md` - Together ai llm analytics installation - docs
-- `references/fireworks-ai.md` - Fireworks ai llm analytics installation - docs
-- `references/xai.md` - Xai llm analytics installation - docs
-- `references/cerebras.md` - Cerebras llm analytics installation - docs
-- `references/hugging-face.md` - Hugging face llm analytics installation - docs
-- `references/ollama.md` - Ollama llm analytics installation - docs
-- `references/openrouter.md` - Openrouter llm analytics installation - docs
-- `references/langchain.md` - Langchain llm analytics installation - docs
-- `references/llamaindex.md` - Llamaindex llm analytics installation - docs
-- `references/crewai.md` - Crewai llm analytics installation - docs
-- `references/autogen.md` - Autogen llm analytics installation - docs
-- `references/dspy.md` - Dspy llm analytics installation - docs
-- `references/langgraph.md` - Langgraph llm analytics installation - docs
-- `references/pydantic-ai.md` - Pydantic ai llm analytics installation - docs
-- `references/vercel-ai.md` - Vercel ai SDK llm analytics installation - docs
-- `references/litellm.md` - Litellm llm analytics installation - docs
-- `references/instructor.md` - Instructor llm analytics installation - docs
-- `references/semantic-kernel.md` - Semantic kernel llm analytics installation - docs
-- `references/mirascope.md` - Mirascope llm analytics installation - docs
-- `references/mastra.md` - Mastra llm analytics installation - docs
-- `references/smolagents.md` - Smolagents llm analytics installation - docs
-- `references/openai-agents.md` - Openai agents SDK llm analytics installation - docs
-- `references/portkey.md` - Portkey llm analytics installation - docs
-- `references/helicone.md` - Helicone llm analytics installation - docs
-- `references/manual-capture.md` - Manual capture llm analytics installation - docs
-- `references/basics.md` - Llm analytics basics - docs
+- `references/openai.md` - Openai observability installation - docs
+- `references/azure-openai.md` - Azure openai observability installation - docs
+- `references/README.md` - PostHog.ai for .net
+- `references/anthropic.md` - Anthropic ai observability installation - docs
+- `references/google.md` - Google ai observability installation - docs
+- `references/cohere.md` - Cohere ai observability installation - docs
+- `references/mistral.md` - Mistral ai observability installation - docs
+- `references/perplexity.md` - Perplexity ai observability installation - docs
+- `references/deepseek.md` - Deepseek ai observability installation - docs
+- `references/groq.md` - Groq ai observability installation - docs
+- `references/together-ai.md` - Together ai observability installation - docs
+- `references/fireworks-ai.md` - Fireworks ai observability installation - docs
+- `references/xai.md` - Xai observability installation - docs
+- `references/cerebras.md` - Cerebras ai observability installation - docs
+- `references/hugging-face.md` - Hugging face ai observability installation - docs
+- `references/ollama.md` - Ollama ai observability installation - docs
+- `references/openrouter.md` - Openrouter ai observability installation - docs
+- `references/langchain.md` - Langchain ai observability installation - docs
+- `references/llamaindex.md` - Llamaindex ai observability installation - docs
+- `references/crewai.md` - Crewai observability installation - docs
+- `references/autogen.md` - Autogen ai observability installation - docs
+- `references/dspy.md` - Dspy ai observability installation - docs
+- `references/langgraph.md` - Langgraph ai observability installation - docs
+- `references/pydantic-ai.md` - Pydantic ai observability installation - docs
+- `references/vercel-ai.md` - Vercel ai SDK observability installation - docs
+- `references/litellm.md` - Litellm ai observability installation - docs
+- `references/instructor.md` - Instructor ai observability installation - docs
+- `references/semantic-kernel.md` - Semantic kernel ai observability installation - docs
+- `references/mirascope.md` - Mirascope ai observability installation - docs
+- `references/mastra.md` - Mastra ai observability installation - docs
+- `references/smolagents.md` - Smolagents ai observability installation - docs
+- `references/openai-agents.md` - Openai agents SDK observability installation - docs
+- `references/portkey.md` - Portkey ai observability installation - docs
+- `references/helicone.md` - Helicone ai observability installation - docs
+- `references/manual-capture.md` - Manual capture ai observability installation - docs
+- `references/basics.md` - Ai observability basics - docs
 - `references/traces.md` - Traces - docs
 - `references/calculating-costs.md` - Calculating llm costs - docs
+- `references/COMMANDMENTS.md` - Framework-specific rules the integration must follow
 
 Each provider reference contains installation instructions, SDK setup, and code examples specific to that provider or framework. Find the reference that matches the user's stack and follow its instructions.
 
@@ -64,6 +66,7 @@ If the user's provider isn't listed, use `manual-capture.md` as a fallback — i
 
 ## Framework guidelines
 
+- A missing PostHog configuration must never break the app — read keys optionally (never a required setting), guard init and capture behind their presence, and keep build and boot working with no PostHog environment set — but never silently: in development or debug builds fail loudly, using the language's idiomatic error, with the message "<VAR> variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once <VAR> is configured" (substituting the actual variable name); production stays a no-op
 - Remember that source code is available in the venv/site-packages directory
 - posthog is the Python SDK package name
 - Install dependencies with `pip install posthog` or `pip install -r requirements.txt` and do NOT use unquoted version specifiers like `>=` directly in shell commands
@@ -74,3 +77,6 @@ If the user's provider isn't listed, use `manual-capture.md` as a fallback — i
 - PII belongs in identify() person properties, NOT in capture() event properties. Safe event properties are metadata like message_length, form_type, boolean flags.
 - Register posthog_client.shutdown with atexit.register() to ensure all events are flushed on exit
 - The Python SDK has NO identify() method — use posthog_client.set(distinct_id=user_id, properties={...}) to set person properties, or use identify_context(user_id) within a context
+- Remember that source code is available in the node_modules directory
+- Check package.json for type checking or build scripts to validate changes
+- When identity comes from framework-bridged state (Inertia or SSR shared props, a serialized session), confirm the backend actually shares that field — add the share server-side if missing — before identifying from it

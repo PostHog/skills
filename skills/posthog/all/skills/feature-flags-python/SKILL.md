@@ -3,7 +3,7 @@ name: feature-flags-python
 description: PostHog feature flags for Python applications
 metadata:
   author: PostHog
-  version: 1.9.4
+  version: dev
 ---
 
 # PostHog feature flags for Python
@@ -14,7 +14,8 @@ This skill helps you add PostHog feature flags to Python applications.
 
 - `references/python.md` - Python feature flags installation - docs
 - `references/adding-feature-flag-code.md` - Adding feature flag code - docs
-- `references/best-practices.md` - Feature flag best practices - docs
+- `references/best-practices.md` - Best practices for production-ready flags - docs
+- `references/COMMANDMENTS.md` - Framework-specific rules the integration must follow
 
 Consult the documentation for API details and framework-specific patterns.
 
@@ -31,6 +32,7 @@ Check if a PostHog MCP server is connected. If available, look for tools related
 
 ## Framework guidelines
 
+- A missing PostHog configuration must never break the app — read keys optionally (never a required setting), guard init and capture behind their presence, and keep build and boot working with no PostHog environment set — but never silently: in development or debug builds fail loudly, using the language's idiomatic error, with the message "<VAR> variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once <VAR> is configured" (substituting the actual variable name); production stays a no-op
 - Remember that source code is available in the venv/site-packages directory
 - posthog is the Python SDK package name
 - Install dependencies with `pip install posthog` or `pip install -r requirements.txt` and do NOT use unquoted version specifiers like `>=` directly in shell commands

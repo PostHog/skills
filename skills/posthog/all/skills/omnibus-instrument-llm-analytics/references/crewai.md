@@ -1,4 +1,26 @@
-# CrewAI LLM analytics installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# CrewAI observability installation - Docs
+
+Copy page
+
+# CrewAI observability installation - Docs
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_9608fcca70)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_dark_a92b0e022d)
+
+Let AI instrument your LLM calls for you
+
+Skip the manual setup — run this in your project and the wizard installs the SDK and wires up AI Observability for you.
+
+`npx @posthog/wizard ai-observability`
+
+[Learn more](/wizard.md)
+
+![PostHog Wizard hedgehog](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)Let AI instrument your LLM calls for you
 
 1.  1
 
@@ -35,7 +57,7 @@
     ```python
     import os
     import litellm
-    from crewai import Agent, Task, Crew
+    from crewai import Agent, Task, Crew, LLM
     # Set PostHog environment variables
     os.environ["POSTHOG_API_KEY"] = "<ph_project_token>"
     os.environ["POSTHOG_API_URL"] = "https://us.i.posthog.com"
@@ -46,7 +68,7 @@
 
     **How this works**
 
-    CrewAI uses LiteLLM under the hood for LLM provider access. By configuring PostHog as a LiteLLM callback, all LLM calls made through CrewAI are automatically captured as `$ai_generation` events without proxying your calls.
+    CrewAI can route LLM calls either through its own provider clients or through LiteLLM. PostHog hooks into LiteLLM's callback system, so you need `is_litellm=True` on the `LLM` you pass to your agents. With it, PostHog captures every call as an `$ai_generation` event, without proxying your calls.
 
 4.  4
 
@@ -54,23 +76,58 @@
 
     Required
 
-    Run your CrewAI agents as normal. PostHog automatically captures generation events for each LLM call.
+    Run your CrewAI agents as normal. PostHog automatically captures an `$ai_generation` event for each LLM call. LiteLLM's callback does not see the tools your agents call. Capture a tool's own execution as a span from inside the tool itself instead, as `my_tool` does below.
 
     ```python
+    from posthog import Posthog
+    from crewai.tools import tool
+    import time, uuid
+    posthog = Posthog("<ph_project_token>", host="https://us.i.posthog.com")
+    trace_id = str(uuid.uuid4())
+    @tool
+    def my_tool(query: str) -> str:
+        """Describe what your tool does."""
+        start = time.time()
+        result = run_tool(query)
+        posthog.capture(
+            distinct_id="user_123",
+            event="$ai_span",
+            properties={
+                "$ai_trace_id": trace_id,
+                "$ai_session_id": "conversation-abc",
+                "$ai_span_id": str(uuid.uuid4()),
+                "$ai_span_name": "my_tool",
+                "$ai_input_state": {"query": query},
+                "$ai_output_state": result,
+                "$ai_latency": time.time() - start,
+            },
+        )
+        return result
+    # is_litellm=True routes calls through LiteLLM so the PostHog
+    # callback fires. Without it, CrewAI uses its own provider client
+    # and no events are captured.
+    llm = LLM(
+        model="gpt-4o-mini",
+        is_litellm=True,
+        metadata={
+            "user_id": "user_123",
+            "$ai_session_id": "conversation-abc",
+            "$ai_trace_id": trace_id,
+        },
+    )
     researcher = Agent(
         role="Researcher",
-        goal="Find interesting facts about hedgehogs",
+        goal="Find the weather in a city",
         backstory="You are an expert wildlife researcher.",
+        llm=llm,
+        tools=[my_tool],
     )
     task = Task(
-        description="Research three fun facts about hedgehogs.",
-        expected_output="A list of three fun facts.",
+        description="Find the weather in Paris.",
+        expected_output="The weather in Paris.",
         agent=researcher,
     )
-    crew = Crew(
-        agents=[researcher],
-        tasks=[task],
-    )
+    crew = Crew(agents=[researcher], tasks=[task])
     result = crew.kickoff()
     print(result)
     ```
@@ -88,7 +145,7 @@
     | $ai_output_choices | List of response choices from the LLM |
     | $ai_output_tokens | The number of tokens in the output (often found in response.usage) |
     | $ai_total_cost_usd | The total cost in USD (input + output) |
-    | [[...]](/docs/llm-analytics/generations.md#event-properties) | See [full list](/docs/llm-analytics/generations.md#event-properties) of properties |
+    | [[...]](/docs/ai-observability/generations.md#event-properties) | See [full list](/docs/ai-observability/generations.md#event-properties) of properties |
 
 5.  ## Verify traces and generations
 
@@ -96,11 +153,11 @@
 
     *Confirm LLM events are being sent to PostHog*
 
-    Let's make sure LLM events are being captured and sent to PostHog. Under **LLM analytics**, you should see rows of data appear in the **Traces** and **Generations** tabs.
+    Let's make sure LLM events are being captured and sent to PostHog. Under **AI Observability**, you should see rows of data appear in the **Traces** and **Generations** tabs.
 
     ![LLM generations in PostHog](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250807_syne_ecd0801880.png)![LLM generations in PostHog](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250807_syjm_5baab36590.png)
 
-    [Check for LLM events in PostHog](https://app.posthog.com/llm-analytics/generations)
+    [Check for LLM events in PostHog](https://app.posthog.com/ai-observability/generations)
 
 6.  5
 
@@ -108,19 +165,19 @@
 
     Recommended
 
-    Now that you're capturing AI conversations, continue with the resources below to learn what else LLM Analytics enables within the PostHog platform.
+    Now that you're capturing AI conversations, continue with the resources below to learn what else AI Observability enables within the PostHog platform.
 
     | Resource | Description |
     | --- | --- |
-    | [Basics](/docs/llm-analytics/basics.md) | Learn the basics of how LLM calls become events in PostHog. |
-    | [Generations](/docs/llm-analytics/generations.md) | Read about the $ai_generation event and its properties. |
-    | [Traces](/docs/llm-analytics/traces.md) | Explore the trace hierarchy and how to use it to debug LLM calls. |
-    | [Spans](/docs/llm-analytics/spans.md) | Review spans and their role in representing individual operations. |
-    | [Anaylze LLM performance](/docs/llm-analytics/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
+    | [Basics](/docs/ai-observability/basics.md) | Learn the basics of how LLM calls become events in PostHog. |
+    | [Generations](/docs/ai-observability/generations.md) | Read about the $ai_generation event and its properties. |
+    | [Traces](/docs/ai-observability/traces.md) | Explore the trace hierarchy and how to use it to debug LLM calls. |
+    | [Spans](/docs/ai-observability/spans.md) | Review spans and their role in representing individual operations. |
+    | [Anaylze LLM performance](/docs/ai-observability/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
