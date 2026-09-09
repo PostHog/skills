@@ -6,7 +6,7 @@ Copy page
 
 # How metrics works - Docs
 
-> **Note:** Metrics is in alpha. The details on this page describe current behavior and may change before general availability.
+> **Note:** Metrics is in private alpha and the viewer is only turned on for selected teams. The details on this page describe current behavior and may change before general availability.
 
 This page explains what happens to a metric between your application and a chart: how ingestion works, what a series is, how aggregations are computed, and where the data lives. You don't need any of this to use metrics, but it helps when you're deciding what to instrument or debugging why a chart looks the way it does.
 

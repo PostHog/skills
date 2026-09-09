@@ -6,7 +6,9 @@ Copy page
 
 # Getting started with metrics - Docs
 
-> **Note:** Metrics is in alpha. Setup details, including the ingestion endpoint, may change before general availability.
+**Metrics is in private alpha**
+
+The metrics viewer is only turned on for selected teams. You can send metrics now and they are stored against your project, but you won't be able to view them in PostHog until your team is added. Setup details, including the ingestion endpoint, may change before general availability.
 
 ## Send your first metrics
 
