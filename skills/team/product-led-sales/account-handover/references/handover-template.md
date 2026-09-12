@@ -82,6 +82,7 @@ Use this template when generating the handover document. Each section includes g
 | **Contract type** | {Monthly / Annual} |
 | **Renewal date** | {date, or N/A for monthly} |
 | **Billing limits set?** | {Yes — ${limit}/month / No} |
+| **Valid payment method on file?** | {Yes / No, plus why not if no. [TAM to confirm] if the data doesn't show it. Never leave blank: a renewal with no way to pay is blocked.} |
 | **Active discounts or credits** | {description, or None} |
 | **Pending billing issues** | {description, or None} |
 
@@ -127,6 +128,8 @@ If no open items are found in the data: "No open items found in Vitally notes/co
 ## 7. Relationship Context
 
 This section depends on the outgoing TAM's knowledge. Present whatever the data reveals, then leave clear prompts for what's missing.
+
+**Renewal ownership**: [TAM to confirm: who on the customer side owns the renewal? Is that the champion or procurement? How long did the last renewal take, and what quirks should the incoming owner expect (security review, legal redlines, PO process)?]
 
 **Communication preferences**: {What the data shows, or: [TAM to confirm — does the customer prefer email, Slack, or calls? How responsive are they? Any preferred meeting times?]}
 

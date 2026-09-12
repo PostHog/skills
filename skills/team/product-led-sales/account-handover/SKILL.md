@@ -224,6 +224,7 @@ Include a note on who the outgoing TAM typically communicated with and through w
 - Contract details: monthly vs. annual, renewal date, any discounts or credits
 - Billing limits (if set)
 - Any pending billing issues or credit requests
+- Valid payment method on file? If not, why not. A renewal with no way to pay is blocked, so this must never be left blank. Use [TAM to confirm] if the billing data doesn't show it.
 
 ### 5. Account History (Timeline)
 
@@ -246,6 +247,7 @@ Chronological list of key events, split into:
 
 This section relies heavily on TAM input. Present what the data shows, then leave clear prompts:
 
+- **Renewal ownership**: [TAM to confirm: who on the customer side owns the renewal? Is that the champion or procurement? How long did the last renewal take, and what quirks should the incoming owner expect (security review, legal redlines, PO process)?]
 - **Communication preferences**: [TAM to confirm — email, Slack, calls? How often?]
 - **Meeting cadence**: [TAM to confirm — weekly, monthly, ad-hoc?]
 - **Internal dynamics**: [TAM to confirm — who drives decisions? Any internal politics to be aware of?]
@@ -271,6 +273,7 @@ Based on the data, suggest:
 7. **Run PostHog queries in parallel** to save time.
 8. **Vitally `lastSeenTimestamp` is unreliable** for activity. Always cross-reference with PostHog event data for "last active" dates.
 9. **If PostHog returns 503** (busy), wait a moment and retry once before giving up on that query.
+10. **Renewal ownership and payment method are required.** Every handover note must say who on the customer side owns the renewal (champion or procurement, how long the last one took, any quirks) and whether a valid payment method is on file (and why not, if not). If the data can't answer these, leave [TAM to confirm] prompts rather than dropping them.
 
 ## After Presenting the Draft
 
