@@ -200,4 +200,4 @@ Patterns covered: `Bearer` tokens, PostHog `phc_/phx_/phs_/sTOK_` prefixes, JWTs
 
 ## Maintainer
 
-Sebastian Muriel — ping in `#project-customer-analytics` with feedback, gaps, or PRs.
+Sebastian Muriel — ping in `#team-customer-success` with feedback, gaps, or PRs.
