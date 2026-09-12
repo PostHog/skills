@@ -1,7 +1,7 @@
 # PostHog React Native Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/react-native
+Path: example-apps/react-native
 
 ---
 
@@ -209,10 +209,10 @@ The PostHog client is configured with V4 SDK options. If no project token is pro
 import PostHog from 'posthog-react-native'
 import Config from 'react-native-config'
 
-const apiKey = Config.POSTHOG_PROJECT_TOKEN
-const isPostHogConfigured = apiKey && apiKey !== 'phc_your_project_token_here'
+const projectToken = Config.POSTHOG_PROJECT_TOKEN
+const isPostHogConfigured = projectToken && projectToken !== 'phc_your_project_token_here'
 
-export const posthog = new PostHog(apiKey || 'placeholder_key', {
+export const posthog = new PostHog(projectToken || 'placeholder_key', {
   host: Config.POSTHOG_HOST || 'https://us.i.posthog.com',
   disabled: !isPostHogConfigured,  // Disable if no project token
   captureAppLifecycleEvents: true,
@@ -335,7 +335,7 @@ posthog.capture('burrito_considered', {
 
 ### Error tracking (screens/ProfileScreen.tsx)
 
-Capture exceptions using the `$exception` event:
+Capture exceptions using `captureException`:
 
 ```typescript
 import { usePostHog } from 'posthog-react-native'
@@ -345,12 +345,7 @@ const posthog = usePostHog()
 try {
   throw new Error('Test error for PostHog error tracking')
 } catch (err) {
-  posthog.capture('$exception', {
-    $exception_type: err.name,
-    $exception_message: err.message,
-    $exception_source: 'ProfileScreen',
-    $exception_stack_trace_raw: err.stack,
-  })
+  posthog.captureException(err)
 }
 ```
 
@@ -1282,9 +1277,9 @@ import Config from 'react-native-config'
 
 // Environment variables are embedded at build time via react-native-config
 // Ensure .env file exists with POSTHOG_PROJECT_TOKEN and POSTHOG_HOST
-const apiKey = Config.POSTHOG_PROJECT_TOKEN
+const projectToken = Config.POSTHOG_PROJECT_TOKEN
 const host = Config.POSTHOG_HOST || 'https://us.i.posthog.com'
-const isPostHogConfigured = apiKey && apiKey !== 'phc_your_project_token_here'
+const isPostHogConfigured = projectToken && projectToken !== 'phc_your_project_token_here'
 
 if (!isPostHogConfigured) {
   console.warn(
@@ -1302,11 +1297,11 @@ if (!isPostHogConfigured) {
  *
  * @see https://posthog.com/docs/libraries/react-native
  */
-export const posthog = new PostHog(apiKey || 'placeholder_key', {
+export const posthog = new PostHog(projectToken || 'placeholder_key', {
   // PostHog API host (usually 'https://us.i.posthog.com' or 'https://eu.i.posthog.com')
   host,
 
-  // Disable PostHog if project token is not configured
+  // Enable PostHog only when a project token is configured
   disabled: !isPostHogConfigured,
 
   // Capture app lifecycle events:
@@ -1858,7 +1853,7 @@ export default function HomeScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>Welcome back, {user.username}!</Text>
           <Text style={styles.text}>
-            You are now logged in. Feel free to explore:
+            You are logged in. Feel free to explore:
           </Text>
 
           <View style={styles.buttonGroup}>
@@ -2107,7 +2102,7 @@ export default function ProfileScreen() {
   /**
    * Triggers a test error and captures it in PostHog
    *
-   * This demonstrates manual exception capture using the $exception event.
+   * This demonstrates manual exception capture via captureException.
    * In production, you would typically set up automatic exception capture
    * or use the before_send callback for customization.
    *
@@ -2119,14 +2114,7 @@ export default function ProfileScreen() {
     } catch (err) {
       const error = err as Error
 
-      // Capture exception in PostHog using the $exception event
-      // This follows PostHog's error tracking format
-      posthog.capture('$exception', {
-        $exception_type: error.name,
-        $exception_message: error.message,
-        $exception_source: 'ProfileScreen.triggerTestError',
-        $exception_stack_trace_raw: error.stack,
-        // Additional context
+      posthog.captureException(error, {
         username: user.username,
         screen: 'Profile',
       })

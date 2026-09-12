@@ -1,0 +1,14 @@
+{
+  "name": "posthog-product-tours",
+  "description": "Build custom in-app product tours with PostHog feature flags and events",
+  "version": "dev",
+  "author": {
+    "name": "PostHog"
+  },
+  "keywords": [
+    "posthog",
+    "product-tours",
+    "onboarding",
+    "feature-flags"
+  ]
+}

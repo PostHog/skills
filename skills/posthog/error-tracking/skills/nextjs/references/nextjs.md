@@ -1,4 +1,10 @@
-# Next.js error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Next.js Error Tracking installation - Docs
+
+Copy page
+
+# Next.js Error Tracking installation - Docs
 
 1.  1
 
@@ -65,7 +71,7 @@
     import posthog from 'posthog-js'
     posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN!, {
         api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-        defaults: '2026-01-30'
+        defaults: '2026-05-30'
     })
     ```
 
@@ -82,12 +88,12 @@
     import { usePathname, useSearchParams } from "next/navigation"
     import { useEffect } from "react"
     import posthog from 'posthog-js'
-    import { PostHogProvider as PHProvider } from 'posthog-js/react'
+    import { PostHogProvider as PHProvider } from '@posthog/react'
     export function PostHogProvider({ children }: { children: React.ReactNode }) {
       useEffect(() => {
         posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN as string, {
           api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-          defaults: '2026-01-30'
+          defaults: '2026-05-30'
         })
       }, [])
       return (
@@ -132,13 +138,13 @@
     import { useEffect } from 'react'
     import { Router } from 'next/router'
     import posthog from 'posthog-js'
-    import { PostHogProvider } from 'posthog-js/react'
+    import { PostHogProvider } from '@posthog/react'
     import type { AppProps } from 'next/app'
     export default function App({ Component, pageProps }: AppProps) {
       useEffect(() => {
         posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN as string, {
           api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-          defaults: '2026-01-30',
+          defaults: '2026-05-30',
           loaded: (posthog) => {
             if (process.env.NODE_ENV === 'development') posthog.debug()
           }
@@ -191,7 +197,7 @@
 
     ```typescript
     'use client'
-    import { usePostHog } from 'posthog-js/react'
+    import { usePostHog } from '@posthog/react'
     export default function CheckoutPage() {
         const posthog = usePostHog()
         function handlePurchase() {
@@ -414,7 +420,7 @@
 
     Importantly, you need to:
 
-    1.  Set up a `posthog-node` client in your server-side code. See our doc on [setting up Next.js server-side analytics](/docs/libraries/next-js.md#server-side-analytics.md) for more.
+    1.  Set up a `posthog-node` client in your server-side code. See our doc on [setting up Next.js server-side analytics](/docs/libraries/next-js.md#server-side-analytics) for more.
     2.  Check the request is running in the `nodejs` runtime to ensure PostHog works. You can call `posthog.debug()` to get verbose logging.
     3.  Get the `distinct_id` from the cookie to connect the error to a specific user.
 
@@ -481,9 +487,9 @@
 
      [Upload source maps](/docs/error-tracking/upload-source-maps/nextjs.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

@@ -3,7 +3,7 @@ name: error-tracking-go
 description: PostHog error tracking for Go
 metadata:
   author: PostHog
-  version: 1.9.4
+  version: dev
 ---
 
 # PostHog error tracking for Go
@@ -18,6 +18,7 @@ This skill helps you add PostHog error tracking to Go applications.
 - `references/monitoring.md` - Monitor and search issues - docs
 - `references/assigning-issues.md` - Assign issues to teammates - docs
 - `references/upload-source-maps.md` - Upload source maps - docs
+- `references/COMMANDMENTS.md` - Framework-specific rules the integration must follow
 
 Consult the documentation for API details and framework-specific patterns.
 
@@ -31,4 +32,14 @@ Consult the documentation for API details and framework-specific patterns.
 
 ## Framework guidelines
 
-_No specific framework guidelines._
+- A missing PostHog configuration must never break the app — read keys optionally (never a required setting), guard init and capture behind their presence, and keep build and boot working with no PostHog environment set — but never silently: in development or debug builds fail loudly, using the language's idiomatic error, with the message "<VAR> variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once <VAR> is configured" (substituting the actual variable name); production stays a no-op
+- posthog-go is the Go SDK package; install it with `go get github.com/posthog/posthog-go` and import `github.com/posthog/posthog-go`
+- Create one PostHog client per process with `posthog.NewWithConfig(...)`; do not create a new client per request or job
+- Always close the client during graceful shutdown with `client.Close()` so queued events flush before the process exits
+- Configure the project token, endpoint, and optional personal API key from environment variables; never hardcode PostHog secrets
+- Server-side captures must set `DistinctId` to a stable user ID that matches frontend identify calls; avoid anonymous or literal IDs for business events
+- Use `posthog.NewProperties().Set(...)` for event properties and keep PII in person properties via `$set`, not in event properties
+- For new feature flag code, prefer `client.EvaluateFlags(...)` once per user/request, then use the returned snapshot's `IsEnabled` or `GetFlag` methods
+- When capturing events related to feature-gated code, attach the evaluated flag snapshot with `Flags`, optionally filtered with `OnlyAccessed()` or `Only(...)`
+- Avoid deprecated feature flag helpers such as `IsFeatureEnabled`, `GetFeatureFlag`, `GetFeatureFlagPayload`, and `Capture.SendFeatureFlags` in new code
+- For error tracking, use `posthog.NewDefaultException(...)` for direct captures or wrap `log/slog` with `posthog.NewSlogCaptureHandler(...)` for automatic warning-and-above exception capture

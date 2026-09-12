@@ -1,10 +1,12 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Logs troubleshooting - Docs
+
+Copy page
+
 # Logs troubleshooting - Docs
 
 This page covers troubleshooting for Logs. For setup, see the [installation guide](/docs/logs/installation.md).
-
-## Have a question? Ask PostHog AI
-
-Ask PostHog AI
 
 ## Authentication errors
 
@@ -19,7 +21,7 @@ Ask PostHog AI
 
 ## Connection issues
 
-**Problem**: Cannot connect to the PostHog logs endpoint.
+**Problem**: Cannot connect to the PostHog Logs endpoint.
 
 **Solutions**:
 
@@ -61,6 +63,17 @@ Ask PostHog AI
 -   Check that log attributes are properly structured
 -   Use the OpenTelemetry logging APIs instead of raw log libraries
 
+## Logs not appearing on a person's profile
+
+**Problem**: Logs are searchable in the **Logs** view, but the person profile's **Logs** tab is empty (or missing logs you expected to see).
+
+**Solutions**:
+
+-   Confirm each log record carries the attribute `posthogDistinctId` (camelCase, lowercase `p`) — see [Link logs to a person](/docs/logs/link-person.md). `distinct_id`, `posthog_distinct_id`, and `user_id` are **not** equivalent unless you've explicitly configured one as the [custom attribute key](/docs/logs/link-person.md#customizing-the-attribute-key).
+-   The value of the attribute must equal one of the person's `distinct_id`s exactly — partial or prefixed matches are not picked up.
+-   If your team has customized the attribute key (via the `logs_config` endpoint), the person profile's Logs tab shows a hint above the chart indicating which key is being used. Make sure your pipeline emits logs under that exact key.
+-   Date range: the person Logs tab respects the same date range picker as the main Logs view. Expand the range if the logs are older than the default window.
+
 ## Project token authentication issues
 
 **Problem**: Confused about which key to use or how to authenticate.
@@ -94,9 +107,9 @@ If you're still experiencing problems:
 3.  Check the network requests to see the actual HTTP status codes and error messages
 4.  Contact PostHog support with your specific error messages and configuration details
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

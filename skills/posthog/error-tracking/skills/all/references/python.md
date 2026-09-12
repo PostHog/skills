@@ -1,4 +1,10 @@
-# Python error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Python Error Tracking installation - Docs
+
+Copy page
+
+# Python Error Tracking installation - Docs
 
 1.  1
 
@@ -56,7 +62,7 @@
 
     ```python
     import posthog
-    posthog.capture('user_123', 'user_signed_up', properties={'example_property': 'example_value'})
+    posthog.capture('user_signed_up', distinct_id='user_123', properties={'example_property': 'example_value'})
     ```
 
 4.  ## Verify PostHog is initialized
@@ -176,9 +182,9 @@
 
     [Check for exceptions in PostHog](https://app.posthog.com/activity/explore)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

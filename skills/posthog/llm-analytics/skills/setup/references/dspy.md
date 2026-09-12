@@ -1,4 +1,26 @@
-# DSPy LLM analytics installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# DSPy AI Observability installation - Docs
+
+Copy page
+
+# DSPy AI Observability installation - Docs
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_9608fcca70)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_dark_a92b0e022d)
+
+Let AI instrument your LLM calls for you
+
+Skip the manual setup — run this in your project and the wizard installs the SDK and wires up AI Observability for you.
+
+`npx @posthog/wizard ai-observability`
+
+[Learn more](/wizard.md)
+
+![PostHog Wizard hedgehog](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)Let AI instrument your LLM calls for you
 
 1.  1
 
@@ -43,7 +65,14 @@
     litellm.success_callback = ["posthog"]
     litellm.failure_callback = ["posthog"]
     # Configure DSPy to use an LLM
-    lm = dspy.LM("openai/gpt-5-mini", api_key="your_openai_api_key")
+    lm = dspy.LM(
+        "openai/gpt-5-mini",
+        api_key="your_openai_api_key",
+        metadata={
+            "user_id": "user_123",  # Maps to PostHog distinct_id
+            "$ai_session_id": "conversation-abc",  # Groups calls into one session
+        },
+    )
     dspy.configure(lm=lm)
     ```
 
@@ -60,16 +89,27 @@
     Use DSPy as normal. PostHog automatically captures an `$ai_generation` event for each LLM call made through LiteLLM.
 
     ```python
+    from posthog import Posthog
+    import time, uuid
+    posthog = Posthog("<ph_project_token>", host="https://us.i.posthog.com")
+    trace_id = str(uuid.uuid4())
+    lm = dspy.LM(
+        "openai/gpt-5-mini",
+        api_key="your_openai_api_key",
+        metadata={
+            "user_id": "user_123",
+            "$ai_session_id": "conversation-abc",
+            "$ai_trace_id": trace_id,
+        },
+    )
+    dspy.configure(lm=lm)
     # Define a simple signature
     class QA(dspy.Signature):
         """Answer the question."""
         question: str = dspy.InputField()
         answer: str = dspy.OutputField()
-    # Create and run a module
     predictor = dspy.Predict(QA)
-    result = predictor(
-        question="What is a fun fact about hedgehogs?"
-    )
+    result = predictor(question="What's a fun fact about hedgehogs?")
     print(result.answer)
     ```
 
@@ -86,39 +126,70 @@
     | $ai_output_choices | List of response choices from the LLM |
     | $ai_output_tokens | The number of tokens in the output (often found in response.usage) |
     | $ai_total_cost_usd | The total cost in USD (input + output) |
-    | [[...]](/docs/llm-analytics/generations.md#event-properties) | See [full list](/docs/llm-analytics/generations.md#event-properties) of properties |
+    | [[...]](/docs/ai-observability/generations.md#event-properties) | See [full list](/docs/ai-observability/generations.md#event-properties) of properties |
 
-5.  ## Verify traces and generations
+5.  5
+
+    ## Capture tool calls as spans
+
+    Optional
+
+    Capture tool calls as a span yourself, as the example below does before calling `predictor`.
+
+    ```python
+    # retrieve() is your existing retrieval setup
+    start = time.time()
+    context = retrieve("hedgehog facts")
+    posthog.capture(
+        distinct_id="user_123",
+        event="$ai_span",
+        properties={
+            "$ai_trace_id": trace_id,
+            "$ai_session_id": "conversation-abc",
+            "$ai_span_id": str(uuid.uuid4()),
+            "$ai_span_name": "retrieve",
+            "$ai_input_state": "hedgehog facts",
+            "$ai_output_state": context,
+            "$ai_latency": time.time() - start,
+        },
+    )
+    question = f"Using this context, answer what a fun fact about hedgehogs is: {context}"
+    result = predictor(question=question)
+    ```
+
+    See [spans](/docs/ai-observability/spans.md) for the full list of span properties.
+
+6.  ## Verify traces and generations
 
     Recommended
 
     *Confirm LLM events are being sent to PostHog*
 
-    Let's make sure LLM events are being captured and sent to PostHog. Under **LLM analytics**, you should see rows of data appear in the **Traces** and **Generations** tabs.
+    Let's make sure LLM events are being captured and sent to PostHog. Under **AI Observability**, you should see rows of data appear in the **Traces** and **Generations** tabs.
 
     ![LLM generations in PostHog](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250807_syne_ecd0801880.png)![LLM generations in PostHog](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250807_syjm_5baab36590.png)
 
-    [Check for LLM events in PostHog](https://app.posthog.com/llm-analytics/generations)
+    [Check for LLM events in PostHog](https://app.posthog.com/ai-observability/generations)
 
-6.  5
+7.  6
 
     ## Next steps
 
     Recommended
 
-    Now that you're capturing AI conversations, continue with the resources below to learn what else LLM Analytics enables within the PostHog platform.
+    Now that you're capturing AI conversations, continue with the resources below to learn what else AI Observability enables within the PostHog platform.
 
     | Resource | Description |
     | --- | --- |
-    | [Basics](/docs/llm-analytics/basics.md) | Learn the basics of how LLM calls become events in PostHog. |
-    | [Generations](/docs/llm-analytics/generations.md) | Read about the $ai_generation event and its properties. |
-    | [Traces](/docs/llm-analytics/traces.md) | Explore the trace hierarchy and how to use it to debug LLM calls. |
-    | [Spans](/docs/llm-analytics/spans.md) | Review spans and their role in representing individual operations. |
-    | [Anaylze LLM performance](/docs/llm-analytics/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
+    | [Basics](/docs/ai-observability/basics.md) | Learn the basics of how LLM calls become events in PostHog. |
+    | [Generations](/docs/ai-observability/generations.md) | Read about the $ai_generation event and its properties. |
+    | [Traces](/docs/ai-observability/traces.md) | Explore the trace hierarchy and how to use it to debug LLM calls. |
+    | [Spans](/docs/ai-observability/spans.md) | Review spans and their role in representing individual operations. |
+    | [Anaylze LLM performance](/docs/ai-observability/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Calculating LLM costs - Docs
+
+Copy page
+
 # Calculating LLM costs - Docs
 
 ## How are LLM costs calculated?
@@ -51,7 +57,7 @@ You can override PostHog's automatic cost calculation by providing custom pricin
 
 ### Option 1: Custom price per token
 
-If you know your pricing per token, you can set the following [custom properties](/docs/llm-analytics/custom-properties.md) when calling your LLM:
+If you know your pricing per token, you can set the following [custom properties](/docs/ai-observability/custom-properties.md) when calling your LLM:
 
 -   `$ai_input_token_price` (required): Price per input/prompt token
 -   `$ai_output_token_price` (required): Price per output/completion token
@@ -120,7 +126,7 @@ Both `$ai_input_token_price` and `$ai_output_token_price` must be provided for c
 
 ### Option 2: Pre-calculated costs
 
-If you're [manually capturing](/docs/llm-analytics/installation/manual-capture.md) LLM events and have already calculated the total costs yourself, you can send them directly:
+If you're [manually capturing](/docs/ai-observability/installation/manual-capture.md) LLM events and have already calculated the total costs yourself, you can send them directly:
 
 -   `$ai_input_cost_usd`: Total cost for input/prompt tokens in USD
 -   `$ai_output_cost_usd`: Total cost for output/completion tokens in USD
@@ -188,9 +194,9 @@ These properties are useful for debugging cost discrepancies or understanding wh
 
 You can find the code for this on [GitHub](https://github.com/PostHog/posthog/tree/master/plugin-server/src/ingestion/ai-costs).
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
