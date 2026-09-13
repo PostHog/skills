@@ -1,7 +1,7 @@
 # PostHog Angular Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/angular
+Path: example-apps/angular
 
 ---
 
@@ -155,11 +155,7 @@ posthogService.posthog.capture('burrito_considered', {
 ### Error tracking (pages/profile/profile.component.ts)
 
 ```typescript
-posthogService.posthog.capture('$exception', {
-  $exception_message: error.message,
-  $exception_type: error.name,
-  $exception_stack_trace_raw: error.stack,
-});
+posthogService.posthog.captureException(error);
 ```
 
 ## Angular-specific details
@@ -514,7 +510,7 @@ import { AuthService } from '../../services/auth.service';
       @if (auth.user(); as user) {
         <div class="container">
           <h1>Welcome back, {{ user.username }}!</h1>
-          <p>You are now logged in. Feel free to explore:</p>
+          <p>You are logged in. Feel free to explore:</p>
           <ul>
             <li>Consider the potential of burritos</li>
             <li>View your profile and statistics</li>
@@ -678,11 +674,7 @@ export class ProfileComponent {
       throw new Error('Test error for PostHog error tracking');
     } catch (err) {
       const error = err as Error;
-      this.posthogService.posthog.capture('$exception', {
-        $exception_message: error.message,
-        $exception_type: error.name,
-        $exception_stack_trace_raw: error.stack,
-      });
+      this.posthogService.posthog.captureException(error);
       console.error('Captured error:', err);
       alert('Error captured and sent to PostHog!');
     }

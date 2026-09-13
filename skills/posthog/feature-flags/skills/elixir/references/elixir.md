@@ -1,4 +1,10 @@
-# Elixir feature flags installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Elixir Feature Flags installation - Docs
+
+Copy page
+
+# Elixir Feature Flags installation - Docs
 
 > This library was built by the community but it's being maintained by the PostHog core team since v1.0.0. Thank you to [Nick Kezhaya](https://github.com/nkezhaya) for building it originally. Thank you to [Alex Martsinovich](https://github.com/martosaur) for contributing v2.0.0.
 
@@ -11,7 +17,7 @@ PostHog AI
 ```elixir
 def deps do
   [
-    {:posthog, "~> 2.2.0"}
+    {:posthog, "~> 2.0"}
   ]
 end
 ```
@@ -32,15 +38,15 @@ config :posthog,
 
 You can see all the available configuration options in the [PostHog.Config](https://hexdocs.pm/posthog/PostHog.Config.html) module.
 
-Optionally, you might want to enable the [Plug integration](https://hexdocs.pm/posthog/PostHog.Integrations.Plug.html) to automatically capture events from your Plug-based applications including Phoenix.
+Optionally, you might want to enable the [Plug integration](https://hexdocs.pm/posthog/PostHog.Integrations.Plug.html) to attach request metadata and tracing context in Plug-based applications including Phoenix. You still need to capture events explicitly with `PostHog.capture/2` or `PostHog.capture/3`.
 
 #### Development/Test mode
 
 For a test environment, you can pass in `test_mode: true` value to the config. This causes events to be dropped instead of sent to PostHog.
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Sessions - Docs
+
+Copy page
+
 # Sessions - Docs
 
 A session is a set of events that try to capture a single use of your product or visit to your website. They are used in multiple areas of PostHog:
@@ -117,7 +123,7 @@ If the events are logically part of the same session, e.g. a user starts a purch
 
 ### Automatically sending session IDs
 
-If you enable tracing headers within the JavaScript SDK, the session ID will be sent on every request. You can enable tracing headers by adding the `__add_tracing_headers` option to your `posthog.init` call:
+If you enable tracing headers within the JavaScript SDK, distinct ID and sessionID will be sent on every request. You can enable tracing headers by adding the `tracing_headers` option to your `posthog.init` call:
 
 TypeScript
 
@@ -125,9 +131,11 @@ PostHog AI
 
 ```typescript
 posthog.init('<ph_project_token>', {
-    __add_tracing_headers: ['your-backend-domain.com']
+    tracing_headers: ['your-backend-domain.com']
 })
 ```
+
+Use hostnames only, without the protocol or path. For example, use `api.example.com` instead of `https://api.example.com/v1`.
 
 If you are using the Python SDK with Django, you can add [the middleware integration](/docs/libraries/django.md#django-contexts-middleware) which correctly extracts the session ID and adds it to every captured event.
 
@@ -194,9 +202,9 @@ Any events with session IDs that do not meet these requirements are not included
 
 Our [JavaScript Web library](/docs/libraries/js.md) and mobile SDKs (Android, iOS, React Native, and Flutter) automatically create session IDs for you, but if you override them, you also must ensure they meet these requirements.
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

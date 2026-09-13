@@ -1,6 +1,12 @@
-# Other languages logs installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
 
-PostHog logs works with any OpenTelemetry-compatible client. Check the [OpenTelemetry documentation](https://opentelemetry.io/docs/) for your specific language or framework.
+# Other languages Logs installation - Docs
+
+Copy page
+
+# Other languages Logs installation - Docs
+
+PostHog Logs works with any OpenTelemetry-compatible client. Check the [OpenTelemetry documentation](https://opentelemetry.io/docs/) for your specific language or framework.
 
 1.  1
 
@@ -11,7 +17,7 @@ PostHog logs works with any OpenTelemetry-compatible client. Check the [OpenTele
     The key requirements are:
 
     -   Use OTLP (OpenTelemetry Protocol) for log export over HTTP
-    -   Send logs to your PostHog logs endpoint (see configuration step below)
+    -   Send logs to your Logs endpoint (see configuration step below)
     -   Include your project token in the Authorization header or as a `?token=` query parameter
 
     Find the OpenTelemetry SDK for your language in the [official registry](https://opentelemetry.io/ecosystem/registry/).
@@ -69,7 +75,7 @@ PostHog logs works with any OpenTelemetry-compatible client. Check the [OpenTele
     Once everything is configured, test that logs are flowing into PostHog:
 
     1.  Send a test log from your application
-    2.  Check the PostHog logs interface for your log entries
+    2.  Check the PostHog Logs interface for your log entries
     3.  Verify the logs appear in your project
 
     [View your logs in PostHog](https://app.posthog.com/logs)
@@ -86,13 +92,14 @@ PostHog logs works with any OpenTelemetry-compatible client. Check the [OpenTele
     | [Search logs](/docs/logs/search.md) | Use the search interface to find specific log entries |
     | Filter by level | Filter by INFO, WARN, ERROR, etc. |
     | [Link session replay](/docs/logs/link-session-replay.md) | Connect logs to users and session replays by passing posthogDistinctId and sessionId |
+    | [Link logs to a person](/docs/logs/link-person.md) | Surface every log emitted on behalf of a user on their PostHog person profile |
     | [Logging best practices](/docs/logs/best-practices.md) | Learn what to log, how to structure logs, and patterns that make logs useful in production |
 
     [Troubleshoot common issues](/docs/logs/troubleshooting.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
