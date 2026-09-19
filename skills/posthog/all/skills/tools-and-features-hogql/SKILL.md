@@ -3,7 +3,7 @@ name: tools-and-features-hogql
 description: HogQL queries for PostHog analytics
 metadata:
   author: PostHog
-  version: 1.9.4
+  version: dev
 ---
 
 # HogQL queries for PostHog
@@ -20,6 +20,7 @@ This skill helps you write HogQL queries for PostHog analytics. HogQL is PostHog
 - `references/useful-functions.md` - Useful sql functions - docs
 - `references/posthog.md` - PostHog table schemas (events, persons, groups, sessions)
 - `references/sessions.md` - Sessions - docs
+- `references/COMMANDMENTS.md` - Framework-specific rules the integration must follow
 
 Consult the documentation for SQL syntax, available functions, and query patterns.
 
@@ -59,6 +60,7 @@ GROUP BY person.properties.email
 
 ## Framework guidelines
 
+- A missing PostHog configuration must never break the app — read keys optionally (never a required setting), guard init and capture behind their presence, and keep build and boot working with no PostHog environment set — but never silently: in development or debug builds fail loudly, using the language's idiomatic error, with the message "<VAR> variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once <VAR> is configured" (substituting the actual variable name); production stays a no-op
 - Use properties.$name syntax for event properties, person.properties.$name for person properties
 - Use bracket notation for special characters like properties['$feature/cool-flag']
 - For cohorts, filter with person_id IN COHORT 'cohort-name'

@@ -1,10 +1,14 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Python - Docs
+
+Copy page
+
 # Python - Docs
 
 The Python SDK makes it easy to capture events, evaluate feature flags, track errors, and more in your Python apps.
 
-**Python 3.9 and lower**
-
-Python 3.9 is no longer supported for PostHog Python SDK versions `7.x.x` and higher.
+> These docs cover version `7.x` of the Python SDK, which requires Python 3.10 or higher. On Python 3.9? See [supported versions](#supported-versions).
 
 ## Installation
 
@@ -37,9 +41,25 @@ You can find your project token and instance address in the [project settings](h
 
 ## Identifying users
 
-> **Identifying users is required.** Backend events need a `distinct_id` that matches the ID your frontend uses when calling `posthog.identify()`. Without this, backend events are orphaned — they can't be linked to frontend event captures, [session replays](/docs/session-replay.md), [LLM traces](/docs/ai-engineering.md), or [error tracking](/docs/error-tracking.md).
+> **Identifying users is required.** Backend events need a `distinct_id` to associate events with the correct user.
 >
-> See our guide on [identifying users](/docs/getting-started/identify-users.md) for how to set this up.
+> In Python, you can do this through a context. All event captures in the same context will be tagged automatically with the correct `distinct_id`. Typically, you would set a fresh context and identify at the top of each route.
+>
+> Python
+>
+> PostHog AI
+>
+> ```python
+> from posthog import new_context, identify_context, capture
+> @app.get("/foo")
+> def foo(current_user: User = Depends(get_current_user)):
+>     with new_context(): # Set context at the top of a route
+>         identify_context(current_user.id)
+>         capture("foo_viewed")
+>     return {"status": "ok"}
+> ```
+>
+> When possible, write a small piece of **middleware** that resolves your authenticated user, wrap a context around the request, and identifies it. Every `capture()` downstream is then attributed *automatically*. The SDK's Django middleware does this automatically and you can replicate it when using the plain Python SDK.
 
 ## Capturing events
 
@@ -224,7 +244,7 @@ Python
 PostHog AI
 
 ```python
-from posthog import new_context
+from posthog import new_context, tag
 with new_context(fresh=True):
     tag("some-key", "value-2")
     # This event only has the property some-key="value-2" from the fresh context
@@ -266,7 +286,7 @@ You can read more about identifying users in the [user identification documentat
 
 ### Contexts and sessions
 
-Contexts can be associated with a session ID by calling `posthog.set_context_session`. Session IDs must be UUIDv7 strings.
+Contexts can be associated with a session ID by calling `posthog.set_context_session`. When linking backend events to frontend sessions, use the session ID from the frontend SDK (PostHog session IDs are UUIDv7 strings).
 
 Python
 
@@ -280,19 +300,7 @@ with new_context():
 
 **Using PostHog on your frontend too?**
 
-If you're using the PostHog JavaScript Web SDK on your frontend, it generates a session ID for you. You can pass it to your backend by adding your backend domain to `__add_tracing_headers` in your config. This will automatically add tracing headers to your requests.
-
-JavaScript
-
-PostHog AI
-
-```javascript
-posthog.init('<ph_project_token>', {
-    __add_tracing_headers: ['your-backend-domain.com']
-});
-```
-
-Alternatively, you can retrieve it on the frontend by calling `posthog.get_session_id()`. You then need to pass that session ID to your backend by setting the `X-POSTHOG-SESSION-ID` header on each fetch request.
+If you're using the PostHog JavaScript Web SDK on your frontend, it generates a session ID for you. Configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your backend hostname to add the session and distinct ID headers to browser requests automatically.
 
 You need to extract the header in your request handler (if you're using our Django middleware integration, this happens automatically).
 
@@ -324,7 +332,7 @@ with new_context(capture_exceptions=False):
 
 ### Decorating functions
 
-The SDK exposes a function decorator. It takes the same arguments as `new_context` and provides a handy way to mark a whole function as being in a new context. For example:
+The SDK exposes a function decorator. It takes the same `fresh` and `capture_exceptions` arguments as `new_context` and provides a handy way to mark a whole function as being in a new context. For example:
 
 Python
 
@@ -374,9 +382,11 @@ The `name` is a special property which is used in the PostHog UI for the name of
 
 PostHog's [feature flags](/docs/feature-flags.md) enable you to safely deploy and roll back new features as well as target specific users and groups with them.
 
-There are 2 steps to implement feature flags in Python:
+There are two steps to implement feature flags in Python:
 
-### Step 1: Evaluate the feature flag value
+### Step 1: Evaluate flags once
+
+Call `posthog.evaluate_flags()` once for the user, then read values from the returned snapshot.
 
 #### Boolean feature flags
 
@@ -385,11 +395,11 @@ Python
 PostHog AI
 
 ```python
-is_my_flag_enabled = posthog.feature_enabled('flag-key', 'distinct_id_of_your_user')
-if is_my_flag_enabled:
+flags = posthog.evaluate_flags("distinct_id_of_your_user")
+if flags.is_enabled("flag-key"):
     # Do something differently for this user
     # Optional: fetch the payload
-    matched_flag_payload = posthog.get_feature_flag_payload('flag-key', 'distinct_id_of_your_user')
+    matched_flag_payload = flags.get_flag_payload("flag-key")
 ```
 
 #### Multivariate feature flags
@@ -399,12 +409,17 @@ Python
 PostHog AI
 
 ```python
-enabled_variant = posthog.get_feature_flag('flag-key', 'distinct_id_of_your_user')
-if enabled_variant == 'variant-key': # replace 'variant-key' with the key of your variant
+flags = posthog.evaluate_flags("distinct_id_of_your_user")
+enabled_variant = flags.get_flag("flag-key")
+if enabled_variant == "variant-key":  # replace "variant-key" with the key of your variant
     # Do something differently for this user
     # Optional: fetch the payload
-    matched_flag_payload = posthog.get_feature_flag_payload('flag-key', 'distinct_id_of_your_user')
+    matched_flag_payload = flags.get_flag_payload("flag-key")
 ```
+
+`flags.get_flag()` returns the variant string for multivariate flags, `True` for enabled boolean flags, `False` for disabled flags, and `None` when the flag wasn't returned by the evaluation.
+
+> **Note:** `posthog.feature_enabled()`, `posthog.get_feature_flag()`, `posthog.get_feature_flag_payload()`, and `posthog.capture(send_feature_flags=True)` still work during the migration period, but they're deprecated. Prefer `posthog.evaluate_flags()` for new code.
 
 ### Step 2: Include feature flag information when capturing events
 
@@ -414,7 +429,52 @@ If you want use your feature flag to breakdown or filter events in your [insight
 
 There are two methods you can use to include feature flag information in your events:
 
-#### Method 1: Include the `$feature/feature_flag_name` property
+#### Method 1: Pass the evaluated flags snapshot to `capture()`
+
+Pass the same `flags` object that you used for branching. This attaches the exact flag values from that evaluation and doesn't make another `/flags` request.
+
+Python
+
+PostHog AI
+
+```python
+flags = posthog.evaluate_flags("distinct_id_of_your_user")
+if flags.is_enabled("flag-key"):
+    # Do something differently for this user
+    pass
+posthog.capture(
+    "event_name",
+    distinct_id="distinct_id_of_your_user",
+    flags=flags,
+)
+```
+
+By default, this attaches every flag in the snapshot using `$feature/<flag-key>` properties and `$active_feature_flags`.
+
+To reduce event property bloat, pass a filtered snapshot:
+
+Python
+
+PostHog AI
+
+```python
+# Attach only flags accessed with is_enabled() or get_flag() before this call
+posthog.capture(
+    "event_name",
+    distinct_id="distinct_id_of_your_user",
+    flags=flags.only_accessed(),
+)
+# Attach only specific flags
+posthog.capture(
+    "event_name",
+    distinct_id="distinct_id_of_your_user",
+    flags=flags.only(["checkout-flow", "new-dashboard"]),
+)
+```
+
+`only_accessed()` is order-dependent. If you call it before accessing any flags with `is_enabled()` or `get_flag()`, no feature flag properties are attached.
+
+#### Method 2: Include the `$feature/feature_flag_name` property manually
 
 In the event properties, include `$feature/feature_flag_name: variant_key`:
 
@@ -427,99 +487,34 @@ posthog.capture(
     "event_name",
     distinct_id="distinct_id_of_the_user",
     properties={
-        "$feature/feature-flag-key": "variant-key"  # replace feature-flag-key with your flag key. Replace 'variant-key' with the key of your variant
+        # Replace feature-flag-key with your flag key and "variant-key" with the key of your variant
+        "$feature/feature-flag-key": "variant-key",
     },
 )
 ```
 
-#### Method 2: Set `send_feature_flags` to `true`
+### Evaluating only specific flags
 
-The `capture()` method has an optional argument `send_feature_flags`, which is set to `false` by default. This parameter controls whether feature flag information is sent with the event.
-
-#### Basic usage
-
-Setting `send_feature_flags` to `True` will include feature flag information with the event:
+By default, `posthog.evaluate_flags()` evaluates every flag for the user. If you only need a few flags, pass `flag_keys` to request only those flags:
 
 Python
 
 PostHog AI
 
 ```python
-posthog.capture(
-    distinct_id="distinct_id_of_the_user",
-    event='event_name',
-    send_feature_flags=True
+flags = posthog.evaluate_flags(
+    "distinct_id_of_your_user",
+    flag_keys=["checkout-flow", "new-dashboard"],
 )
-```
-
-## Advanced usage (v6.3.0+)
-
-As of version 6.3.0, `send_feature_flags` can also accept a dictionary for more granular control:
-
-Python
-
-PostHog AI
-
-```python
-posthog.capture(
-    distinct_id="distinct_id_of_the_user",
-    event='event_name',
-    send_feature_flags={
-        'only_evaluate_locally': True,
-        'person_properties': {'plan': 'premium'},
-        'group_properties': {'org': {'tier': 'enterprise'}}
-    }
-)
-```
-
-#### Performance considerations
-
--   **With local evaluation**: When [local evaluation](/docs/feature-flags/local-evaluation.md) is configured, setting `send_feature_flags: True` will **not** make additional server requests. Instead, it uses the locally cached feature flags, and it provides an interface for including person and/or group properties needed to evaluate the flags in the context of the event, if required.
-
--   **Without local evaluation**: PostHog will make an additional request to fetch feature flag information before capturing the event, which adds delay.
-
-#### Breaking change in v6.3.0
-
-Prior to version 6.3.0, feature flags were automatically sent with events when using local evaluation, even when `send_feature_flags` was not explicitly set. This behavior has been **removed** in v6.3.0 to be more predictable and explicit.
-
-If you were relying on this automatic behavior, you must now explicitly set `send_feature_flags=True` to continue sending feature flags with your events.
-
-### Fetching all flags for a user
-
-You can fetch all flag values for a single user by calling `get_all_flags()` or `get_all_flags_and_payloads()`.
-
-This is useful when you need to fetch multiple flag values and don't want to make multiple requests.
-
-Python
-
-PostHog AI
-
-```python
-posthog.get_all_flags('distinct_id_of_your_user')
-posthog.get_all_flags_and_payloads('distinct_id_of_your_user')
 ```
 
 ### Sending `$feature_flag_called` events
 
-Capturing `$feature_flag_called` events enable PostHog to know when a flag was accessed by a user and thus provide [analytics and insights](/docs/product-analytics/insights.md) on the flag. By default, we send a these event when:
+Capturing `$feature_flag_called` events enables PostHog to know when a flag was accessed by a user and provide [analytics and insights](/docs/product-analytics/insights.md) on the flag. With `posthog.evaluate_flags()`, the SDK sends this event when you call `flags.is_enabled()` or `flags.get_flag()` for a flag.
 
-1.  You call `posthog.get_feature_flag()` or `posthog.feature_enabled()`, AND
-2.  It's a new user, or the value of the flag has changed.
+The SDK deduplicates these events per `(distinct_id, flag, value)` in a local cache. If you reinitialize the PostHog client, the cache resets and `$feature_flag_called` events may be sent again. PostHog handles duplicates, so duplicate `$feature_flag_called` events don't affect your analytics.
 
-> *Note:* Tracking whether it's a new user or if a flag value has changed happens in a local cache. This means that if you reinitialize the PostHog client, the cache resets as well – causing `$feature_flag_called` events to be sent again when calling `get_feature_flag` or `feature_enabled`. PostHog is built to handle this, and so duplicate `$feature_flag_called` events won't affect your analytics.
-
-You can disable automatically capturing `$feature_flag_called` events. For example, when you don't need the analytics, or it's being called at such a high volume that sending events slows things down.
-
-To disable it, set the `send_feature_flag_events` argument in your function call, like so:
-
-Python
-
-PostHog AI
-
-```python
-is_my_flag_enabled = posthog.feature_enabled('flag-key', 'distinct_id_of_your_user', send_feature_flag_events=False)
-# will not send `$feature_flag_called` events
-```
+`flags.get_flag_payload()` doesn't send `$feature_flag_called` events and doesn't count as an access for `only_accessed()`.
 
 ### Advanced: Overriding server properties
 
@@ -534,18 +529,20 @@ Python
 PostHog AI
 
 ```python
-posthog.get_feature_flag(
-    'flag-key',
-    'distinct_id_of_the_user',
-    person_properties={'property_name': 'value'},
+flags = posthog.evaluate_flags(
+    "distinct_id_of_the_user",
+    person_properties={"property_name": "value"},
     groups={
-        'your_group_type': 'your_group_id',
-        'another_group_type': 'your_group_id'},
+        "your_group_type": "your_group_id",
+        "another_group_type": "your_group_id",
+    },
     group_properties={
-        'your_group_type': {'group_property_name': 'value'},
-        'another_group_type': {'group_property_name': 'value'}
+        "your_group_type": {"group_property_name": "value"},
+        "another_group_type": {"group_property_name": "value"},
     },
 )
+if flags.is_enabled("flag-key"):
+    # Do something differently for this user
 ```
 
 ### Overriding GeoIP properties
@@ -577,45 +574,18 @@ Simply include any of these properties in the `person_properties` parameter alon
 
 ### Request timeout
 
-You can configure the `feature_flags_request_timeout_seconds` parameter when initializing your PostHog client to set a flag request timeout. This helps prevent your code from being blocked in the case when PostHog's servers are too slow to respond. By default, this is set at 3 seconds.
+You can configure the `feature_flags_request_timeout_seconds` parameter when initializing your PostHog client to set a flag request timeout. This helps prevent your code from being blocked if PostHog's servers are too slow to respond. By default, this is set to 3 seconds.
 
 Python
 
 PostHog AI
 
 ```python
-posthog = Posthog('<ph_project_token>',
-    host='https://us.i.posthog.com'
-    feature_flags_request_timeout_seconds=3 // Time in second. Default is 3
+posthog = Posthog(
+    "<ph_project_token>",
+    host="https://us.i.posthog.com",
+    feature_flags_request_timeout_seconds=3,  # Time in seconds. Defaults to 3.
 )
-```
-
-### Error handling
-
-When using the PostHog SDK, it's important to handle potential errors that may occur during feature flag operations. Here's an example of how to wrap PostHog SDK methods in an error handler:
-
-Python
-
-PostHog AI
-
-```python
-def handle_feature_flag(client, flag_key, distinct_id):
-    try:
-        is_enabled = client.is_feature_enabled(flag_key, distinct_id)
-        print(f"Feature flag '{flag_key}' for user '{distinct_id}' is {'enabled' if is_enabled else 'disabled'}")
-        return is_enabled
-    except Exception as e:
-        print(f"Error fetching feature flag '{flag_key}': {str(e)}")
-        raise e
-# Usage example
-try:
-    flag_enabled = handle_feature_flag(client, 'new-feature', 'user-123')
-    if flag_enabled:
-        # Implement new feature logic
-    else:
-        # Implement old feature logic
-except Exception as e:
-    # Handle the error at a higher level
 ```
 
 ### Local evaluation
@@ -632,23 +602,24 @@ In multi-worker or edge environments, you can implement custom caching for flag 
 
 ## Experiments (A/B tests)
 
-Since [experiments](/docs/experiments/manual.md) use feature flags, the code for running an experiment is very similar to the feature flags code:
+Since [experiments](/docs/experiments/start-here.md) use feature flags, the code for running an experiment is very similar to the feature flags code:
 
 Python
 
 PostHog AI
 
 ```python
-variant = posthog.get_feature_flag('experiment-feature-flag-key', 'user_distinct_id')
-if variant == 'variant-name':
+flags = posthog.evaluate_flags("user_distinct_id")
+variant = flags.get_flag("experiment-feature-flag-key")
+if variant == "variant-name":
     # Do something
 ```
 
 It's also possible to [run experiments without using feature flags](/docs/experiments/running-experiments-without-feature-flags.md).
 
-## LLM analytics
+## AI Observability
 
-Our Python SDK includes a built-in LLM analytics feature. It enables you to capture LLM usage, performance, and more. Check out our [analytics docs](/docs/llm-analytics.md) for more details on setting it up.
+Our Python SDK includes a built-in AI Observability feature. It enables you to capture LLM usage, performance, and more. Check out our [analytics docs](/docs/ai-observability.md) for more details on setting it up.
 
 ## Error tracking
 
@@ -670,7 +641,7 @@ Python
 PostHog AI
 
 ```python
-posthog.capture_exception(e, 'user_distinct_id', properties=additional_properties)
+posthog.capture_exception(e, distinct_id='user_distinct_id', properties=additional_properties)
 ```
 
 Contexts automatically capture exceptions thrown inside them, unless disable it by passing `capture_exceptions=False` to `new_context()`.
@@ -740,7 +711,7 @@ Python
 PostHog AI
 
 ```python
-posthog.debug = True # +
+posthog.debug = True
 ```
 
 ## Disabling requests during tests
@@ -808,6 +779,33 @@ posthog.set_socket_options([
 ```
 
 Pass `None` to `set_socket_options()` to reset to default behavior.
+
+## Filtering or modifying events before sending
+
+Use `before_send` to modify or drop events before they are queued for delivery. Return the modified event dictionary to send it, or `None` to drop it.
+
+Python
+
+PostHog AI
+
+```python
+from typing import Any
+import posthog
+def scrub_pii(event: dict[str, Any]) -> dict[str, Any] | None:
+    properties = event.get("properties", {})
+    if "email" in properties:
+        email = properties["email"]
+        properties["email"] = f"***@{email.split('@', 1)[1]}" if "@" in email else "***"
+    if event.get("event") == "test_event":
+        return None
+    return event
+client = posthog.Client(
+    "<ph_project_api_key>",
+    before_send=scrub_pii,
+)
+```
+
+If your callback raises an exception, the SDK logs the error and continues with the original unmodified event.
 
 ## Historical migrations
 
@@ -897,9 +895,17 @@ As our open source project [PostHog](https://github.com/PostHog/posthog) shares 
 
 This library is largely based on the `analytics-python` package.
 
-### Community questions
+## Supported versions
 
-Ask a question
+These docs cover version `7.x` of the PostHog Python SDK, which requires Python 3.10 or higher. Python 3.9 is no longer supported on `7.x.x` and higher — pin to the 6.x line with `pip install 'posthog<7'`, where `6.9.3` is the final release.
+
+Everything on this page works the same way on `6.9.3`. Event capture, the context API (`new_context`, `identify_context`, `set_context_session`), and `PosthogContextMiddleware` are identical on `6.9.3` and `7.0.0` — `7.0.0` only dropped Python 3.9 and bumped the optional LLM provider SDKs. That includes the middleware identifying the request context from the `X-POSTHOG-DISTINCT-ID` header and falling back to the authenticated user, which behaves the same across both lines.
+
+Later `7.x` releases add what the 6.x line does not receive, such as the Celery integration, tracing header sanitization, and `set_context_device_id`. They also changed the middleware's own captured properties: `7.x` sends the request IP as `$ip`, where `6.9.3` sends it as `$ip_address`, and `7.x` additionally captures `$request_path`, `$raw_user_agent`, and the authenticated user's `email`.
+
+### Still have questions?
+
+Ask PostHog AI
 
 ### Was this page useful?
 
