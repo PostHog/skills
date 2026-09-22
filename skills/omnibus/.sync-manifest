@@ -134,6 +134,7 @@ signals-scout-insight-alerts
 signals-scout-logs
 signals-scout-mcp-tool-calls
 signals-scout-observability-gaps
+signals-scout-pr-follow-up
 signals-scout-product-analytics
 signals-scout-replay-vision
 signals-scout-revenue-analytics

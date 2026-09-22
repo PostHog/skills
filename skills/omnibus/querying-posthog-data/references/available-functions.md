@@ -873,6 +873,7 @@ tupleToNameValuePairs
 unhex
 uniq
 uniqCombined
+uniqCombined64
 uniqExact
 uniqExactMerge
 uniqExactState
