@@ -2,7 +2,7 @@
 
 # PostHog Python SDK
 
-**SDK Version:** 7.58.0
+**SDK Version:** 7.60.0
 
 Integrate PostHog into any python application.
 
@@ -482,6 +482,58 @@ if enabled_variant == 'variant-key': # replace 'variant-key' with the key of you
 
 ---
 
+#### get_feature_flag_evaluation_runtime()
+
+**Release Tag:** public
+
+Return where a locally loaded feature flag is meant to be evaluated.
+
+### Parameters
+
+- **`key?`** (`str`) - The feature flag key.
+
+### Returns
+
+- `Optional[FeatureFlagEvaluationRuntime]`
+
+### Examples
+
+```python
+from posthog import FeatureFlagEvaluationRuntime
+
+runtime = posthog.get_feature_flag_evaluation_runtime("my-flag")
+if runtime is FeatureFlagEvaluationRuntime.SERVER:
+    ...
+```
+
+---
+
+#### get_feature_flag_keys_by_evaluation_runtime()
+
+**Release Tag:** public
+
+Return the keys of locally loaded flags that a runtime can evaluate.  A flag set to ``FeatureFlagEvaluationRuntime.ALL`` suits either runtime, so it is returned for ``CLIENT`` and for ``SERVER``, and asking for ``ALL`` returns every loaded flag. Use this to decide which flags to hand to a browser when a backend serves flags to its own frontend.
+
+### Parameters
+
+- **`evaluation_runtime?`** (`FeatureFlagEvaluationRuntime`) - The runtime to match, as a         ``FeatureFlagEvaluationRuntime`` or its string value.
+
+### Returns
+
+- `list[str]`
+
+### Examples
+
+```python
+from posthog import FeatureFlagEvaluationRuntime
+
+client_keys = posthog.get_feature_flag_keys_by_evaluation_runtime(
+    FeatureFlagEvaluationRuntime.CLIENT
+)
+```
+
+---
+
 #### get_feature_flag_payload()
 
 **Release Tag:** public
@@ -550,7 +602,7 @@ result = posthog.get_feature_flags_and_payloads('<distinct_id>')
 
 **Release Tag:** public
 
-Get feature flag payloads for a user.
+Get feature flag payloads for a user, preserving valid serialized JSON.
 
 ### Parameters
 
@@ -564,7 +616,7 @@ Get feature flag payloads for a user.
 
 ### Returns
 
-- `dict[str, str]`
+- `dict[str, Optional[str]]`
 
 ### Examples
 
@@ -1398,6 +1450,60 @@ from posthog import get_feature_flag, get_feature_flag_payload
 enabled_variant = get_feature_flag('flag-key', 'distinct_id_of_your_user')
 if enabled_variant == 'variant-key':
     matched_flag_payload = get_feature_flag_payload('flag-key', 'distinct_id_of_your_user')
+```
+
+---
+
+#### get_feature_flag_evaluation_runtime()
+
+**Release Tag:** public
+
+Return where a locally loaded feature flag is meant to be evaluated.
+
+**Notes:**
+
+Reads the `evaluation_runtime` each flag definition carries, so no extra     request is made. Returns `None` when local evaluation has not loaded a     definition for this key. A definition that carries no runtime reports     `FeatureFlagEvaluationRuntime.ALL`, the default PostHog applies.
+
+### Parameters
+
+- **`key?`** (`str`)
+
+### Returns
+
+- `Optional[FeatureFlagEvaluationRuntime]`
+
+### Examples
+
+```python
+from posthog import FeatureFlagEvaluationRuntime, get_feature_flag_evaluation_runtime
+runtime = get_feature_flag_evaluation_runtime("my-flag")
+```
+
+---
+
+#### get_feature_flag_keys_by_evaluation_runtime()
+
+**Release Tag:** public
+
+Return the keys of locally loaded flags that a runtime can evaluate.
+
+**Notes:**
+
+A flag set to `FeatureFlagEvaluationRuntime.ALL` suits either runtime, so     it is returned for `CLIENT` and for `SERVER`. Use this to decide which     flags to hand to a browser when a backend serves flags to its own     frontend.
+
+### Parameters
+
+- **`evaluation_runtime?`** (`FeatureFlagEvaluationRuntime`)
+
+### Returns
+
+- `list[str]`
+
+### Examples
+
+```python
+from posthog import FeatureFlagEvaluationRuntime, get_feature_flag_keys_by_evaluation_runtime
+client_keys = get_feature_flag_keys_by_evaluation_runtime(FeatureFlagEvaluationRuntime.CLIENT)
 ```
 
 ---

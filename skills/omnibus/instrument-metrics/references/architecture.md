@@ -1,10 +1,6 @@
 > AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
 
-# How metrics works - Docs
-
-Copy page
-
-# How metrics works - Docs
+# How metrics works
 
 > **Note:** Metrics is in open alpha. Any team can turn it on — open [Metrics](https://app.posthog.com/metrics) and select **Enable metrics** in the onboarding view. The details on this page describe current behavior and may change before general availability.
 

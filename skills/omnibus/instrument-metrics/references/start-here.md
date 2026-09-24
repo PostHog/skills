@@ -1,10 +1,6 @@
 > AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
 
-# Getting started with metrics - Docs
-
-Copy page
-
-# Getting started with metrics - Docs
+# Getting started with metrics
 
 **Metrics is in open alpha**
 
@@ -18,8 +14,6 @@ If [posthog-js](/docs/libraries/js.md) is already running on your site, record m
 
 JavaScript
 
-PostHog AI
-
 ```javascript
 posthog.metrics.count("checkout.completed");
 posthog.metrics.gauge("cart.items", 3);
@@ -30,8 +24,6 @@ If you use OpenTelemetry anywhere else (backend services, infrastructure, an exi
 
 Terminal
 
-PostHog AI
-
 ```bash
 OTEL_EXPORTER_OTLP_METRICS_ENDPOINT="https://us.i.posthog.com/i/v1/metrics"
 OTEL_EXPORTER_OTLP_METRICS_HEADERS="Authorization=Bearer <ph_project_token>"
@@ -41,8 +33,6 @@ OTEL_SERVICE_NAME="my-app"
 If you run **Kubernetes** and your pods already expose Prometheus metrics, install the PostHog metrics agent Helm chart to scrape and forward them automatically:
 
 Terminal
-
-PostHog AI
 
 ```bash
 helm install posthog-metrics-agent oci://ghcr.io/posthog/charts/posthog-metrics-agent \
