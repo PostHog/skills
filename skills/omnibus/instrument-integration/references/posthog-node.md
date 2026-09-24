@@ -1230,6 +1230,62 @@ const flagValue = await client.getFeatureFlag('local-flag', 'user_123', {
 
 ---
 
+#### getFeatureFlagEvaluationRuntime()
+
+**Release Tag:** public
+
+Get where a locally loaded feature flag is meant to be evaluated.
+
+**Notes:**
+
+Read from the definitions local evaluation already holds, so no request is made. A definition that carries no runtime reports `all`, the default PostHog applies.
+
+### Parameters
+
+- **`key`** (`string`) - The feature flag key
+
+### Returns
+
+**Union of:**
+- `FeatureFlagEvaluationRuntime`
+- `undefined`
+
+### Examples
+
+```node
+const runtime = client.getFeatureFlagEvaluationRuntime('my-flag')
+// Returns: 'client'
+```
+
+---
+
+#### getFeatureFlagKeysByEvaluationRuntime()
+
+**Release Tag:** public
+
+Get the keys of locally loaded flags that a runtime can evaluate.
+
+**Notes:**
+
+A flag set to `all` suits either runtime, so it is returned for `client` and for `server`, and asking for `all` returns every loaded flag. Use this to decide which flags to hand to a browser when a backend serves flags to its own frontend.
+
+### Parameters
+
+- **`evaluationRuntime`** (`FeatureFlagEvaluationRuntime`) - The runtime to match
+
+### Returns
+
+- `string[]`
+
+### Examples
+
+```node
+const clientKeys = client.getFeatureFlagKeysByEvaluationRuntime('client')
+// Returns: ['web-banner', 'shared-copy']
+```
+
+---
+
 #### getFeatureFlagPayload()
 
 **Release Tag:** deprecated
