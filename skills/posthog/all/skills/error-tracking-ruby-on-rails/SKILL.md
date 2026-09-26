@@ -3,7 +3,7 @@ name: error-tracking-ruby-on-rails
 description: PostHog error tracking for Ruby on Rails
 metadata:
   author: PostHog
-  version: 1.9.4
+  version: dev
 ---
 
 # PostHog error tracking for Ruby on Rails
@@ -13,11 +13,13 @@ This skill helps you add PostHog error tracking to Ruby on Rails applications.
 ## Reference files
 
 - `references/ruby-on-rails.md` - Ruby on rails error tracking installation - docs
+- `references/ruby-on-rails.md` - Ruby on rails - docs
 - `references/fingerprints.md` - Fingerprints - docs
 - `references/alerts.md` - Send error tracking alerts - docs
 - `references/monitoring.md` - Monitor and search issues - docs
 - `references/assigning-issues.md` - Assign issues to teammates - docs
 - `references/upload-source-maps.md` - Upload source maps - docs
+- `references/COMMANDMENTS.md` - Framework-specific rules the integration must follow
 
 Consult the documentation for API details and framework-specific patterns.
 
@@ -31,6 +33,7 @@ Consult the documentation for API details and framework-specific patterns.
 
 ## Framework guidelines
 
+- A missing PostHog configuration must never break the app — read keys optionally (never a required setting), guard init and capture behind their presence, and keep build and boot working with no PostHog environment set — but never silently: in development or debug builds fail loudly, using the language's idiomatic error, with the message "<VAR> variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once <VAR> is configured" (substituting the actual variable name); production stays a no-op
 - Use posthog-rails gem alongside posthog-ruby for automatic exception capture and ActiveJob instrumentation
 - Run `rails generate posthog:install` to create the initializer, or manually create config/initializers/posthog.rb
 - Configure auto_capture_exceptions: true to automatically track unhandled exceptions in controllers
@@ -41,7 +44,7 @@ Consult the documentation for API details and framework-specific patterns.
 - capture_exception takes POSITIONAL args: PostHog.capture_exception(exception, distinct_id, additional_properties) — do NOT use keyword args
 - Define posthog_distinct_id on the User model for automatic user association in error reports — posthog-rails auto-detects by trying: posthog_distinct_id, distinct_id, id, pk, uuid (in order)
 - For ActiveJob user association, use the class-level DSL `posthog_distinct_id ->(user) { user.email }` or pass user_id: in a hash argument
-- Store API key in Rails credentials or environment variables, never hardcode
+- Store the project token in Rails credentials or environment variables, never hardcode
 - For frontend tracking alongside posthog-rails, add the posthog-js snippet to the layout template — posthog-js handles pageviews, session replay, and client-side errors while posthog-ruby handles backend events, server errors, feature flags, and background jobs
 - posthog-ruby is the Ruby SDK gem name (add `gem 'posthog-ruby'` to Gemfile) but require it with `require 'posthog'` (NOT `require 'posthog-ruby'`)
 - Use PostHog::Client.new(api_key: key, host: host) for instance-based initialization in scripts and CLIs

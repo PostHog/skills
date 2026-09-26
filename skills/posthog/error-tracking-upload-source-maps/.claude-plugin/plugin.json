@@ -1,0 +1,14 @@
+{
+  "name": "posthog-error-tracking-upload-source-maps",
+  "description": "Skills for uploading source maps to PostHog Error Tracking",
+  "version": "dev",
+  "author": {
+    "name": "PostHog"
+  },
+  "keywords": [
+    "posthog",
+    "error-tracking",
+    "source-maps",
+    "debugging"
+  ]
+}
