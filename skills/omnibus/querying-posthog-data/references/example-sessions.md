@@ -13,7 +13,7 @@ SELECT
 FROM
     sessions
 WHERE
-    and(less($start_timestamp, toDateTime('2026-09-29 12:07:30.867419')), greater($start_timestamp, toDateTime('2026-09-28 12:07:25.867810')))
+    and(less($start_timestamp, toDateTime('2026-09-30 12:06:53.959392')), greater($start_timestamp, toDateTime('2026-09-29 12:06:48.959745')))
 ORDER BY
     $start_timestamp DESC
 LIMIT 50000
