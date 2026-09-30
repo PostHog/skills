@@ -1,4 +1,10 @@
-# Android error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Android Error Tracking installation - Docs
+
+Copy page
+
+# Android Error Tracking installation - Docs
 
 1.  1
 
@@ -146,15 +152,15 @@
 
     Required
 
-    Great, you're capturing exceptions! If you serve minified bundles, the next step is to upload source maps to generate accurate stack traces.
+    Great, you're capturing exceptions! The next step is to upload ProGuard/R8 mapping files so PostHog can deobfuscate your stack traces.
 
     Let's continue to the next section.
 
     [Upload mapping files](/docs/error-tracking/upload-mappings/android.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
