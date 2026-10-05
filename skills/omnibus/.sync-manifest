@@ -98,7 +98,6 @@ modeling-dimension-tables
 modeling-product-usage-metrics
 modeling-revenue-metrics
 modeling-warehouse-foundations
-planning-voice-agent-user-interviews
 querying-canvas-data
 querying-posthog-data
 resolving-ingestion-warnings
