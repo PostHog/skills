@@ -110,6 +110,8 @@ review-hog-perspective-contracts-security
 review-hog-perspective-logic-correctness
 review-hog-perspective-performance-reliability
 review-hog-resolution-criteria
+review-hog-resolution-criteria-gaps
+review-hog-resolution-criteria-small
 review-hog-validation-criteria
 scanning-experiments-with-replay-vision
 setting-up-a-custom-rest-source
