@@ -1,4 +1,10 @@
-# iOS feature flags installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# iOS Feature Flags installation - Docs
+
+Copy page
+
+# iOS Feature Flags installation - Docs
 
 1.  1
 
@@ -14,7 +20,7 @@
 
     ```swift
     dependencies: [
-      .package(url: "https://github.com/PostHog/posthog-ios.git", from: "3.0.0")
+      .package(url: "https://github.com/PostHog/posthog-ios.git", from: "3.56.0")
     ]
     ```
 
@@ -25,7 +31,7 @@
     PostHog AI
 
     ```ruby
-    pod "PostHog", "~> 3.0"
+    pod "PostHog", "~> 3.56"
     ```
 
 2.  2
@@ -48,7 +54,7 @@
         func application(_: UIApplication, didFinishLaunchingWithOptions _: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
             let POSTHOG_PROJECT_TOKEN = "<ph_project_token>"
             let POSTHOG_HOST = "https://us.i.posthog.com"
-            let config = PostHogConfig(apiKey: POSTHOG_PROJECT_TOKEN, host: POSTHOG_HOST)
+            let config = PostHogConfig(projectToken: POSTHOG_PROJECT_TOKEN, host: POSTHOG_HOST)
             PostHogSDK.shared.setup(config)
             return true
         }
@@ -88,7 +94,7 @@
     if isMyFlagEnabled {
         // Do something differently for this user
         // Optional: fetch the payload
-        let matchedFlagPayload = PostHogSDK.shared.getFeatureFlagPayload("flag-key")
+        let matchedFlagPayload = PostHogSDK.shared.getFeatureFlagResult("flag-key")?.payload
     }
     ```
 
@@ -109,7 +115,7 @@
     if enabledVariant == "variant-key" { // replace 'variant-key' with the key of your variant
         // Do something differently for this user
         // Optional: fetch the payload
-        let matchedFlagPayload = PostHogSDK.shared.getFeatureFlagPayload("flag-key")
+        let matchedFlagPayload = PostHogSDK.shared.getFeatureFlagResult("flag-key")?.payload
     }
     ```
 
@@ -137,9 +143,9 @@
     | [How to do a phased rollout](/tutorials/phased-rollout.md) | Gradually roll out features to minimize risk |
     | [More tutorials](/docs/feature-flags/tutorials.md) | Other real-world examples and use cases |
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

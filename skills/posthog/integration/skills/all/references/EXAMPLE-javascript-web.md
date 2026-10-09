@@ -1,7 +1,7 @@
 # PostHog javascript-web Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/javascript-web
+Path: example-apps/javascript-web
 
 ---
 
@@ -429,16 +429,16 @@ renderTodos();
  */
 import posthog from 'posthog-js';
 
-const apiKey = import.meta.env.VITE_POSTHOG_PROJECT_TOKEN;
+const projectToken = import.meta.env.VITE_POSTHOG_PROJECT_TOKEN;
 const apiHost = import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com';
 
-if (!apiKey) {
+if (!projectToken) {
   console.warn(
     'PostHog not configured (VITE_POSTHOG_PROJECT_TOKEN not set).',
     'App will work but analytics will not be tracked.',
   );
 } else {
-  posthog.init(apiKey, {
+  posthog.init(projectToken, {
     api_host: apiHost,
     // Autocapture is ON by default — tracks clicks, form submissions, pageviews
     // capture_pageview: true (default) — captures $pageview on init

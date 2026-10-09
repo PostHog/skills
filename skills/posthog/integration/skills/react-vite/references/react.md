@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# React - Docs
+
+Copy page
+
 # React - Docs
 
 PostHog makes it easy to get data about traffic and usage of your React app. Integrating PostHog into your site enables analytics about user behavior, custom events capture, session recordings, feature flags, and more.
@@ -18,7 +24,7 @@ Using React with a framework like Next.js, Remix, or React Router requires addit
 
 Install PostHog for React in seconds with our wizard by running this prompt with [LLM coding agents](/blog/envoy-wizard-llm-agent.md) like Cursor and Bolt, or by running it in your terminal.
 
-`npx @posthog/wizard@latest`
+`npx @posthog/wizard`
 
 [Learn more](/wizard.md)
 
@@ -26,7 +32,7 @@ Or, to integrate manually, continue with the rest of this guide.
 
 ## Installation
 
-> For React-based frameworks, we recommend the [Next.js integration guide](/docs/libraries/next-js.md) and [Next.js integration guide](/docs/libraries/remix.md) instead.
+> For React-based frameworks, we recommend the [Next.js integration guide](/docs/libraries/next-js.md) and [Remix integration guide](/docs/libraries/remix.md) instead.
 
 1.  Install [`posthog-js`](https://github.com/posthog/posthog-js) and `@posthog/react` using your package manager:
 
@@ -56,15 +62,27 @@ pnpm add posthog-js @posthog/react
 bun add posthog-js @posthog/react
 ```
 
-2.  Add your environment variables to your `.env.local` file and to your hosting provider (e.g. Vercel, Netlify, AWS). You can find your project token and host in [your project settings](https://us.posthog.com/settings/project). If you're using Vite, include `VITE_PUBLIC_` in their names ensures they are accessible in the frontend.
+> **If your site sets a Content-Security-Policy**, it needs to allow PostHog. This applies to the snippet and to package installs alike: the SDK lazy-loads extra bundles (session replay, surveys) from PostHog's CDN, and sends events to the ingestion host. PostHog serves from subdomains of `posthog.com` that change over time, so allow the wildcard:
+>
+> PostHog AI
+>
+> ```
+> script-src 'self' https://*.posthog.com;
+> connect-src 'self' https://*.posthog.com;
+> worker-src 'self' blob: data:;
+> ```
+>
+> `script-src` covers the snippet and the lazy-loaded bundles, `connect-src` covers event ingestion and feature flags, and `worker-src` covers session replay. The [toolbar needs a few more](/docs/advanced/content-security-policy.md), or use a [reverse proxy](/docs/advanced/proxy.md) so everything is first-party. Failing to do so causes silent failures where `capture` and `identify` calls never send, so the integration looks complete while zero events arrive. Remember `connect-src` falls back to `default-src`, so `default-src 'self'` blocks event delivery even when the script itself is bundled.
+
+2.  Add your environment variables to your `.env.local` file and to your hosting provider (e.g. Vercel, Netlify, AWS). You can find your project token and host in [your project settings](https://us.posthog.com/settings/project). If you're using Vite, prefixing variable names with `VITE_` ensures they are accessible in the frontend.
 
 .env.local
 
 PostHog AI
 
 ```shell
-VITE_PUBLIC_POSTHOG_TOKEN=<ph_project_token>
-VITE_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+VITE_POSTHOG_PROJECT_TOKEN=<ph_project_token>
+VITE_POSTHOG_HOST=https://us.i.posthog.com
 ```
 
 3.  Integrate PostHog at the root of your app (such as `main.jsx` for Vite apps and `root.tsx` for React Router V7).
@@ -81,9 +99,9 @@ import './index.css'
 import App from './App.jsx'
 import posthog from 'posthog-js';
 import { PostHogProvider } from '@posthog/react'
-posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_TOKEN, {
-  api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
-  defaults: '2026-01-30',
+posthog.init(import.meta.env.VITE_POSTHOG_PROJECT_TOKEN, {
+  api_host: import.meta.env.VITE_POSTHOG_HOST,
+  defaults: '2026-05-30',
 });
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -101,6 +119,10 @@ Do not directly import `posthog` apart from installation as shown above. This wi
 ## Identifying users
 
 > **Identifying users is required.** Call `posthog.identify('your-user-id')` after login to link events to a known user. This is what connects frontend event captures, [session replays](/docs/session-replay.md), [LLM traces](/docs/ai-engineering.md), and [error tracking](/docs/error-tracking.md) to the same person — and lets backend events link back too.
+>
+> Use a stable ID from your auth system when possible, not an email or display name. Send those as person properties instead. If your app has no other stable key, email works as a fallback if they are unique. Never a shared literal like `"anonymous"` or `"user"`, which pools many people onto one person and corrupts their data. When no ID is available at all, skip the identify and retain the anonymous distinct ID that's automatically assigned.
+>
+> Call `posthog.reset()` on logout, so the next person to use the browser doesn't inherit the last one's identity.
 >
 > See our guide on [identifying users](/docs/getting-started/identify-users.md) for how to set this up.
 
@@ -120,9 +142,11 @@ PostHog AI
 // src/index.js
 import posthog from 'posthog-js';
 import { PostHogProvider} from '@posthog/react'
-posthog.init(process.env.REACT_APP_PUBLIC_POSTHOG_TOKEN, {
+posthog.init(process.env.REACT_APP_PUBLIC_POSTHOG_PROJECT_TOKEN, {
   api_host: process.env.REACT_APP_PUBLIC_POSTHOG_HOST,
-  defaults: '2026-01-30',
+  defaults: '2026-05-30',
+  // Optional: send PostHog session/user context to your backend
+  tracing_headers: ['api.example.com'],
 });
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -145,6 +169,8 @@ To call PostHog methods for actions like identifying users, capturing events, us
 Always use the `usePostHog` hook to access the PostHog library. Directly importing `posthog` will likely cause errors as the library might not be initialized yet. Initialization is handled automatically when you use the `PostHogProvider` and hook.
 
 All the methods of the library are available and can be used as described in the [posthog-js documentation](/docs/libraries/js.md).
+
+If your React app calls your own backend, `tracing_headers` adds `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID` to matching `fetch` and `XMLHttpRequest` requests. This lets server-side SDKs link backend events, errors, and LLM traces back to frontend sessions and replays. Use hostnames only, without protocols or paths.
 
 React
 
@@ -311,7 +337,7 @@ PostHog provides several hooks to make it easy to use feature flags in your Reac
 
 | Hook | Description |
 | --- | --- |
-| useFeatureFlagEnabled | Returns a boolean indicating whether the feature flag is enabled. This sends a $feature_flag_called event. |
+| useFeatureFlagEnabled | Returns whether the feature flag is enabled. This sends a $feature_flag_called event. Without a default value, it returns boolean \\\| undefined while flags are loading or absent. Pass an optional default value to return that value instead and narrow the return type to boolean. |
 | useFeatureFlagVariantKey | Returns the variant key of the feature flag. This sends a $feature_flag_called event. |
 | useActiveFeatureFlags | Returns an array of active feature flags. This does not send a $feature_flag_called event. |
 | useFeatureFlagPayload | Returns the payload of the feature flag. This does not send a $feature_flag_called event. Always use this with useFeatureFlagEnabled or useFeatureFlagVariantKey. |
@@ -323,7 +349,7 @@ React
 PostHog AI
 
 ```jsx
-import { useFeatureFlagEnabled } from '@posthog/react'
+import { useFeatureFlagEnabled, useFeatureFlagPayload } from '@posthog/react'
 function App() {
   const showWelcomeMessage = useFeatureFlagEnabled('flag-key')
   const payload = useFeatureFlagPayload('flag-key')
@@ -346,6 +372,16 @@ function App() {
   );
 }
 export default App;
+```
+
+To avoid handling `undefined` while flags are loading, pass a default value as the second argument:
+
+React
+
+PostHog AI
+
+```jsx
+const showWelcomeMessage = useFeatureFlagEnabled('flag-key', false)
 ```
 
 #### Example 2: Using a multivariate feature flag
@@ -396,7 +432,7 @@ React
 PostHog AI
 
 ```jsx
-import { useFeatureFlagPayload } from '@posthog/react'
+import { useFeatureFlagEnabled, useFeatureFlagPayload } from '@posthog/react'
 function App() {
   const variant = useFeatureFlagEnabled('show-welcome-message')
   const payload = useFeatureFlagPayload('show-welcome-message')
@@ -489,7 +525,7 @@ PostHog AI
 ```javascript
 posthog.init('<ph_project_token>', {
   api_host: 'https://us.i.posthog.com',
-  defaults: '2026-01-30'
+  defaults: '2026-05-30',
   feature_flag_request_timeout_ms: 3000 // Time in milliseconds. Default is 3000 (3 seconds).
 }
 )
@@ -541,7 +577,7 @@ For details on how to implement bootstrapping, see our [bootstrapping guide](/do
 
 ## Experiments (A/B tests)
 
-Since [experiments](/docs/experiments/manual.md) use feature flags, the code for running an experiment is very similar to the feature flags code:
+Since [experiments](/docs/experiments/start-here.md) use feature flags, the code for running an experiment is very similar to the feature flags code:
 
 React
 
@@ -573,9 +609,9 @@ function App() {
 
 It's also possible to [run experiments without using feature flags](/docs/experiments/running-experiments-without-feature-flags.md).
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

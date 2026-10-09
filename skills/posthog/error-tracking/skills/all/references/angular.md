@@ -1,4 +1,10 @@
-# Angular error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Angular Error Tracking installation - Docs
+
+Copy page
+
+# Angular Error Tracking installation - Docs
 
 1.  1
 
@@ -65,7 +71,7 @@
         this.ngZone.runOutsideAngular(() => {
           posthog.init(environment.posthogKey, {
             api_host: environment.posthogHost,
-            defaults: '2026-01-30',
+            defaults: '2026-05-30',
           });
         });
       }
@@ -113,7 +119,7 @@
     import posthog from 'posthog-js'
     posthog.init(environment.posthogKey, {
       api_host: environment.posthogHost,
-      defaults: '2025-11-30'
+      defaults: '2026-05-30'
     })
     bootstrapApplication(AppComponent, appConfig)
       .catch((err) => console.error(err));
@@ -276,9 +282,9 @@
 
     [Upload source maps](/docs/error-tracking/upload-source-maps/angular.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
