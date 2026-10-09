@@ -41,7 +41,7 @@ If the user pastes or attaches an export of events, use it in place of the MCP. 
 
 ## Do not rename a shipped event
 
-A rename splits the history in two. Keep the old name. If the name must change, rename the event and create an action that matches both names, so that the insight keeps its history.
+A rename splits the history in two. Keep the old name. If the name must change, send the new event name and create an action that matches both names, so that the insight keeps its history.
 
 ## Identity check for server events
 

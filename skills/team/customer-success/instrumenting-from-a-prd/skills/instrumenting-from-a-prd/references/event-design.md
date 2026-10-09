@@ -8,7 +8,7 @@ Define each term the first time the plan uses it. Use these definitions.
 - **Property:** a detail attached to an event, a person or a group, for example `invite_method: "link"`.
 - **Person:** the user an event belongs to. PostHog links events to a person through an ID that the code sends, the distinct ID.
 - **Group:** an account, company or workspace that events belong to. A metric that counts accounts needs groups.
-- **Action:** a saved definition that combines or renames events, for example "clicked the invite button". An action also works on past data.
+- **Action:** a saved definition that combines matching events, for example "clicked the invite button". An action also works on past data.
 - **Autocapture:** browser clicks, form submits and page changes that PostHog records with no extra code.
 - **Insight:** a saved chart or number: a trend, funnel, retention table or stickiness chart.
 - **Feature flag:** a switch that turns a feature on for some users. Events record which value each user saw.
