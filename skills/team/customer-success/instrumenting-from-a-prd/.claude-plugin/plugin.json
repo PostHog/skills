@@ -1,7 +1,0 @@
-{
-  "name": "instrumenting-from-a-prd",
-  "description": "Turn a feature PRD in Linear into a PostHog measurement plan, then into capture code and tests that prove it",
-  "version": "0.1.0",
-  "author": { "name": "PostHog" },
-  "keywords": ["posthog", "product-analytics", "instrumentation", "linear", "customer-success"]
-}
