@@ -1,4 +1,26 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
 # Linking PostHog as a data warehouse source - Docs
+
+Copy page
+
+# Linking PostHog as a data warehouse source - Docs
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_9608fcca70)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_dark_a92b0e022d)
+
+Let AI connect your sources for you
+
+Skip the manual setup — run this in your project and the wizard auto-detects your databases and APIs and connects them to PostHog.
+
+`npx @posthog/wizard warehouse`
+
+[Learn more](/wizard.md)
+
+![PostHog Wizard hedgehog](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)Let AI connect your sources for you
 
 Much of your PostHog data is available in the data warehouse by default. This includes data like [events](/docs/data/events.md), [persons](/docs/data/persons.md), [sessions](/docs/data/sessions.md), [groups](/docs/product-analytics/group-analytics.md), and the [query log](/docs/data/query-log.md).
 
@@ -28,7 +50,7 @@ Some products have special event names and properties that can be useful to know
 
 -   [Autocaptured events](/tutorials/hogql-autocapture.md) are named `$autocapture` and have the `elements_chain` property.
 
--   [LLM analytics](/docs/llm-analytics.md) captures events like `$ai_generation`, `$ai_span`, `$ai_embedding` with properties like `$ai_model`, `$ai_input_tokens`, and `$ai_total_cost_usd`.
+-   [AI Observability](/docs/ai-observability.md) captures events like `$ai_generation`, `$ai_span`, `$ai_embedding` with properties like `$ai_model`, `$ai_input_tokens`, and `$ai_total_cost_usd`.
 
 -   [Error tracking](/docs/error-tracking.md) captures `$exception` events with properties like `$exception_list` and `$exception_fingerprint` both with a specific expected schema.
 
@@ -90,6 +112,40 @@ Unlike the other tables, the `sessions` table stores all its properties as separ
 | [View additional session properties](/docs/data/sessions.md#session-properties) | See [full list](/docs/data/sessions.md#session-properties) of session properties |
 
 The `sessions` table is heavily used in [web analytics](/docs/web-analytics.md). It is also useful for [marketing analytics](/docs/web-analytics/marketing-analytics.md) and [session-based metrics](/tutorials/session-metrics.md) more broadly.
+
+### `session_replay_features`
+
+The `session_replay_features` table contains aggregated behavioral metrics for [Session Replay](/docs/session-replay.md) sessions. It's useful for analyzing user interaction patterns, detecting frustration signals like rage clicks and dead clicks, and understanding session quality.
+
+Some of the columns in the `session_replay_features` table are:
+
+| Column | Description |
+| --- | --- |
+| session_id | Unique identifier for the session |
+| distinct_id | Unique identifier for the user |
+| min_first_timestamp | Timestamp of the first event in the session |
+| max_last_timestamp | Timestamp of the last event in the session |
+| event_count | Total number of events in the session |
+| click_count | Number of click events |
+| keypress_count | Number of keypress events |
+| rage_click_count | Number of rage clicks detected |
+| dead_click_count | Number of dead clicks detected |
+| scroll_event_count | Number of scroll events |
+| total_scroll_magnitude | Total scroll distance |
+| max_scroll_y | Maximum scroll depth reached |
+| mouse_distance_traveled | Total distance traveled by the mouse in pixels |
+| mouse_direction_change_count | Number of mouse direction changes |
+| page_visit_count | Number of pages visited |
+| console_error_count | Number of console errors |
+| console_error_after_click_count | Console errors that occurred after a click |
+| network_request_count | Number of network requests |
+| network_failed_request_count | Number of failed network requests |
+| max_idle_gap_ms | Maximum idle time between actions in milliseconds |
+| text_selection_count | Number of text selections |
+| unique_url_count | Count of unique URLs (requires uniqExactMerge() to query) |
+| unique_click_target_count | Count of unique click targets (requires uniqExactMerge() to query) |
+
+> **Note:** The `unique_url_count` and `unique_click_target_count` columns store ClickHouse aggregate function states. Wrap them with `uniqExactMerge()` in your query to get the actual count, e.g. `SELECT uniqExactMerge(unique_url_count) FROM session_replay_features`.
 
 ### `query_log`
 
@@ -177,6 +233,49 @@ The `system.annotations` table contains annotation data from your project. Annot
 | created_at | When the annotation was created |
 | updated_at | When the annotation was last updated |
 
+### `system.batch_export_backfills`
+
+The `system.batch_export_backfills` table contains backfill job data for [batch exports](/docs/cdp/batch-exports.md). Backfills are one-time historical data export jobs triggered for a batch export.
+
+| Column | Description |
+| --- | --- |
+| id | Unique identifier for the backfill |
+| team_id | Team ID the backfill belongs to |
+| batch_export_id | ID of the parent batch export |
+| start_at | Start of the backfill time range |
+| end_at | End of the backfill time range |
+| status | Current status (see values below) |
+| created_at | When the backfill was created |
+| finished_at | When the backfill completed |
+| last_updated_at | When the backfill was last updated |
+| total_records_count | Total records exported (populated after completion) |
+
+Status values include `Starting`, `Running`, `Completed`, `Failed`, `FailedRetryable`, `Cancelled`, `ContinuedAsNew`, `Terminated`, and `TimedOut`.
+
+### `system.batch_exports`
+
+The `system.batch_exports` table contains [batch export](/docs/cdp/batch-exports.md) definitions from your project. Batch exports are recurring data export jobs that send events, persons, or sessions to external destinations.
+
+| Column | Description |
+| --- | --- |
+| id | Unique identifier for the batch export |
+| team_id | Team ID the batch export belongs to |
+| name | Human-readable name of the batch export |
+| model | Data model being exported: events, persons, or sessions |
+| interval | Schedule frequency: hour, day, week, every 5 minutes, every 15 minutes |
+| paused | Whether the export is paused (1 = paused, 0 = active) |
+| deleted | Whether the export is deleted (1 = yes, 0 = no) |
+| destination_id | Reference to the destination configuration |
+| timezone | IANA timezone for scheduling (e.g., UTC, America/New_York) |
+| interval_offset | Offset in seconds from the default interval start time |
+| created_at | When the batch export was created |
+| last_updated_at | When the batch export was last updated |
+| last_paused_at | When the export was last paused |
+| start_at | Earliest time for scheduled runs |
+| end_at | Latest time for scheduled runs |
+
+> **Note:** Filter with `deleted = 0` to exclude soft-deleted exports and `paused = 0` to find actively running exports.
+
 ### `system.cohort_calculation_history`
 
 The `system.cohort_calculation_history` table tracks cohort calculation runs, useful for monitoring cohort computation status and debugging.
@@ -190,6 +289,27 @@ The `system.cohort_calculation_history` table tracks cohort calculation runs, us
 | started_at | When the calculation started |
 | finished_at | When the calculation finished |
 | error_code | Error code if the calculation failed |
+
+### `system.dashboard_tiles`
+
+The `system.dashboard_tiles` table contains dashboard tile layout information from your project. Each tile represents a placed element on a dashboard (insight, text, or button).
+
+| Column | Description |
+| --- | --- |
+| id | Unique identifier for the dashboard tile |
+| team_id | Team ID the tile belongs to |
+| dashboard_id | ID of the parent dashboard |
+| insight_id | ID of the linked insight (if applicable) |
+| text_id | ID of the linked text tile (if applicable) |
+| button_tile_id | ID of the linked button tile (if applicable) |
+| layouts | JSON containing tile layout and positioning configuration |
+| color | Color of the tile |
+| show_description | Whether to show the description |
+| transparent_background | Whether the tile has a transparent background |
+| filters_overrides | JSON containing filter overrides for the tile |
+| deleted | Whether the tile is deleted (1 = yes, 0 = no) |
+
+> **Note:** This table inherits dashboard RBAC permissions. You can only query tiles for dashboards you have access to.
 
 ### `system.data_warehouse_tables`
 
@@ -207,6 +327,92 @@ The `system.data_warehouse_tables` table contains metadata about data warehouse 
 | updated_at | When the table was last updated |
 | deleted | Whether the table is deleted (1 = yes, 0 = no) |
 | deleted_at | When the table was deleted |
+
+### `system.data_modeling_endpoint_versions`
+
+The `system.data_modeling_endpoint_versions` table contains version history for API endpoints. Each endpoint can have multiple versions with different queries and configurations.
+
+| Column | Description |
+| --- | --- |
+| id | Unique identifier for the endpoint version |
+| team_id | Team ID the endpoint version belongs to |
+| endpoint_id | ID of the parent endpoint |
+| version | Version number |
+| description | Description of the endpoint version |
+| query | JSON containing the HogQL query definition |
+| cache_age_seconds | Cache duration in seconds |
+| created_at | When the version was created |
+| is_active | Whether the version is active (1 = yes, 0 = no) |
+| columns | JSON containing column definitions |
+
+### `system.data_modeling_endpoints`
+
+The `system.data_modeling_endpoints` table contains metadata about API endpoints in your project. These endpoints expose HogQL query results via REST API.
+
+| Column | Description |
+| --- | --- |
+| id | Unique identifier for the endpoint |
+| team_id | Team ID the endpoint belongs to |
+| name | Name of the endpoint |
+| is_active | Whether the endpoint is active (1 = yes, 0 = no) |
+| current_version | Current active version number |
+| derived_from_insight | ID of the insight this endpoint was derived from |
+| created_at | When the endpoint was created |
+| updated_at | When the endpoint was last updated |
+| last_executed_at | When the endpoint was last executed |
+| deleted | Whether the endpoint is deleted (1 = yes, 0 = no) |
+
+### `system.early_access_features`
+
+The `system.early_access_features` table contains early access feature definitions from your project.
+
+| Column | Description |
+| --- | --- |
+| id | Unique identifier for the early access feature |
+| team_id | Team ID the feature belongs to |
+| feature_flag_id | ID of the linked feature flag |
+| name | Name of the early access feature |
+| description | Description of the feature |
+| stage | Current stage (draft, alpha, beta, general-availability, archived) |
+| documentation_url | URL to documentation |
+| created_at | When the feature was created |
+
+### `system.data_modeling_views`
+
+The `system.data_modeling_views` table contains metadata about data modeling views (saved queries) in your project. These are the views you can [materialize](/docs/data-warehouse/views/materialize.md) in the data warehouse.
+
+| Column | Description |
+| --- | --- |
+| id | Unique identifier for the view |
+| team_id | Team ID the view belongs to |
+| name | Name of the data modeling view |
+| status | Current status of the view |
+| columns | JSON containing column definitions |
+| query | JSON containing the view's query definition |
+| last_run_at | When the view was last run |
+| is_materialized | Whether the view is materialized (1 = yes, 0 = no) |
+| deleted | Whether the view is deleted (1 = yes, 0 = no) |
+| deleted_at | When the view was deleted |
+| created_at | When the view was created |
+| updated_at | When the view was last updated |
+
+### `system.data_modeling_jobs`
+
+The `system.data_modeling_jobs` table tracks data modeling job runs, useful for monitoring materialization status and debugging.
+
+| Column | Description |
+| --- | --- |
+| id | Unique identifier for the job |
+| team_id | Team ID the job belongs to |
+| data_modeling_view_id | ID of the data modeling view being materialized |
+| status | Current status of the job |
+| rows_materialized | Number of rows materialized |
+| rows_expected | Number of rows expected to be materialized |
+| error | Error message if the job failed |
+| storage_delta_mib | Change in storage size in MiB |
+| last_run_at | When the job was last run |
+| created_at | When the job was created |
+| updated_at | When the job was last updated |
 
 ### `system.error_tracking_issues`
 
@@ -240,6 +446,69 @@ The `system.hog_flows` table contains workflow definitions from your project.
 | created_at | When the workflow was created |
 | updated_at | When the workflow was last updated |
 
+### `system.integrations`
+
+The `system.integrations` table contains third-party service connections configured in your project. Each integration represents a connection to an external service like Slack, GitHub, Salesforce, or an ad platform.
+
+| Column | Description |
+| --- | --- |
+| id | Unique identifier for the integration |
+| team_id | Team ID the integration belongs to |
+| kind | Integration type identifier (e.g., slack, hubspot, github) |
+| integration_id | Identifier in the external system (e.g., Slack workspace ID, GitHub installation ID) |
+| config | JSON containing non-sensitive, kind-specific configuration |
+| errors | Error message if the integration has issues, empty string otherwise |
+| created_at | When the integration was created |
+| created_by_id | User ID of the integration creator |
+
+Supported integration kinds include: `slack`, `salesforce`, `hubspot`, `google-ads`, `google-sheets`, `linkedin-ads`, `meta-ads`, `github`, `gitlab`, `linear`, `jira`, `intercom`, `twilio`, and more.
+
+> **Note:** Sensitive configuration like credentials and tokens is deliberately excluded from this table for security reasons.
+
+### `system.logs_alerts`
+
+The `system.logs_alerts` table contains log alert configurations that monitor log volume and notify when thresholds are breached. Alerts use an N-of-M evaluation model where the alert fires when `datapoints_to_alarm` (N) out of the last `evaluation_periods` (M) checks breach the threshold.
+
+| Column | Description |
+| --- | --- |
+| id | Unique identifier for the alert |
+| team_id | Team ID the alert belongs to |
+| name | Name of the alert |
+| enabled | Whether the alert is actively evaluated (1 = yes, 0 = no) |
+| filters | JSON containing log filter criteria |
+| threshold_count | Number of log entries that triggers the alert |
+| threshold_operator | Threshold direction: above or below |
+| window_minutes | Time window in minutes to evaluate |
+| check_interval_minutes | How often the alert is checked (minutes) |
+| state | Current alert state (see values below) |
+| evaluation_periods | Number of periods in the evaluation window (M in N-of-M) |
+| datapoints_to_alarm | Breaches needed to fire (N in N-of-M) |
+| cooldown_minutes | Minutes to wait after firing before re-evaluating |
+| snooze_until | Snooze expiry timestamp |
+| next_check_at | When the next evaluation is scheduled |
+| last_notified_at | When subscribers were last notified |
+| last_checked_at | When the alert was last evaluated |
+| consecutive_failures | Number of consecutive evaluation failures |
+| created_at | When the alert was created |
+| updated_at | When the alert was last updated |
+
+State values include `not_firing`, `firing`, `pending_resolve`, `errored`, and `snoozed`.
+
+### `system.logs_views`
+
+The `system.logs_views` table contains saved log views — named filter configurations that users create to quickly access frequently-used log queries.
+
+| Column | Description |
+| --- | --- |
+| id | Unique identifier for the log view |
+| team_id | Team ID the log view belongs to |
+| short_id | URL-friendly short identifier |
+| name | Display name of the log view |
+| filters | JSON containing saved filter criteria |
+| pinned | Whether the view is pinned for quick access (1 = yes, 0 = no) |
+| created_at | When the log view was created |
+| updated_at | When the log view was last updated |
+
 ### `system.notebooks`
 
 The `system.notebooks` table contains notebook metadata from your project.
@@ -258,9 +527,253 @@ The `system.notebooks` table contains notebook metadata from your project.
 | created_at | When the notebook was created |
 | last_modified_at | When the notebook was last modified |
 
-### Community questions
+### `system.support_tickets`
 
-Ask a question
+The `system.support_tickets` table contains support ticket data from the Support product, created via widget, email, or Slack channels.
+
+| Column | Description |
+| --- | --- |
+| id | Unique identifier for the ticket (UUID) |
+| team_id | Team ID the ticket belongs to |
+| ticket_number | Auto-incrementing number, unique per team |
+| channel_source | Origin channel: widget, email, or slack |
+| channel_detail | Sub-type: slack_channel_message, slack_bot_mention, slack_emoji_reaction, widget_embedded, etc. |
+| distinct_id | PostHog distinct_id linking the ticket to a person |
+| status | Ticket status: new, open, pending, on_hold, or resolved |
+| priority | Ticket priority: low, medium, or high (null if unset) |
+| anonymous_traits | JSON containing customer-provided traits (name, email, etc.) |
+| ai_resolved | Whether the ticket was resolved by AI (exposed as integer 0/1) |
+| escalation_reason | Reason the ticket was escalated (if applicable) |
+| message_count | Total number of messages in the ticket |
+| unread_customer_count | Number of unread messages for the customer |
+| unread_team_count | Number of unread messages for the team |
+| last_message_at | Timestamp of the most recent message |
+| last_message_text | Preview text of the most recent message |
+| email_subject | Email subject line (email-originated tickets only) |
+| email_from | Sender email address (email-originated tickets only) |
+| session_id | PostHog session ID captured at ticket creation |
+| session_context | JSON containing session context data (replay URL, current URL, etc.) |
+| sla_due_at | SLA deadline timestamp (null if no SLA set) |
+| created_at | When the ticket was created |
+| updated_at | When the ticket was last updated |
+
+Status values: `new` (just created), `open` (being worked on), `pending` (waiting for customer), `on_hold` (paused), `resolved` (completed).
+
+## Schema discovery with information\_schema
+
+PostHog provides four queryable `system.information_schema` tables that let you discover tables, columns, data types, and relationships directly in HogQL. These virtual tables are computed at query time from your project's live schema, so they always reflect your current tables — including data warehouse sources and saved views.
+
+### `system.information_schema.tables`
+
+Lists all tables visible to your project.
+
+SQL
+
+[Run in PostHog](https://us.posthog.com/sql?open_query=SELECT+table_name%2C+table_type%2C+description%0AFROM+system.information_schema.tables)
+
+PostHog AI
+
+```sql
+SELECT table_name, table_type, description
+FROM system.information_schema.tables
+```
+
+| Column | Description |
+| --- | --- |
+| table_catalog | Catalog identifier (same as table_name) |
+| table_schema | Schema grouping: public, system, warehouse, views, or information_schema |
+| table_name | Fully qualified table name |
+| table_type | One of posthog, system, data_warehouse, view, or information_schema |
+| description | Human-readable description of the table (if available) |
+| row_count | Approximate row count (data warehouse tables only) |
+
+### `system.information_schema.columns`
+
+Lists all columns for every visible table, including their types and descriptions.
+
+SQL
+
+[Run in PostHog](https://us.posthog.com/sql?open_query=SELECT+column_name%2C+data_type%2C+is_nullable%2C+description%0AFROM+system.information_schema.columns%0AWHERE+table_name+%3D+'events')
+
+PostHog AI
+
+```sql
+SELECT column_name, data_type, is_nullable, description
+FROM system.information_schema.columns
+WHERE table_name = 'events'
+```
+
+| Column | Description |
+| --- | --- |
+| table_schema | Schema the table belongs to |
+| table_name | Table the column belongs to |
+| column_name | Name of the column |
+| ordinal_position | Column position within the table |
+| data_type | HogQL type (e.g. String, DateTime, Integer, JSON) |
+| is_nullable | Whether the column can be null |
+| is_array | Whether the column is an array type |
+| field_kind | One of column, expression, or virtual_table |
+| description | Human-readable description of the column (if available) |
+| null_fraction | Fraction of NULL values in the column, 0.0–1.0 (data warehouse tables only) |
+| min_value | Minimum observed value from Delta-log stats (data warehouse tables only) |
+| max_value | Maximum observed value from Delta-log stats (data warehouse tables only) |
+
+### `system.information_schema.relationships`
+
+Shows how tables relate to each other through lazy joins and field traversers.
+
+SQL
+
+[Run in PostHog](https://us.posthog.com/sql?open_query=SELECT+source_table%2C+source_column%2C+target_table%2C+relationship_kind%0AFROM+system.information_schema.relationships%0AWHERE+source_table+%3D+'events')
+
+PostHog AI
+
+```sql
+SELECT source_table, source_column, target_table, relationship_kind
+FROM system.information_schema.relationships
+WHERE source_table = 'events'
+```
+
+| Column | Description |
+| --- | --- |
+| source_table | Table the relationship originates from |
+| source_column | Column or field on the source table |
+| target_table | Table the relationship points to |
+| target_column | Column on the target table (if applicable) |
+| relationship_kind | Either lazy_join or field_traverser |
+| via | Join resolver name (for lazy joins) |
+
+### `system.information_schema.data_types`
+
+A static reference of all HogQL data types and their descriptions.
+
+SQL
+
+[Run in PostHog](https://us.posthog.com/sql?open_query=SELECT+type_name%2C+description%0AFROM+system.information_schema.data_types)
+
+PostHog AI
+
+```sql
+SELECT type_name, description
+FROM system.information_schema.data_types
+```
+
+| Column | Description |
+| --- | --- |
+| type_name | Name of the HogQL type |
+| description | What the type represents |
+
+## Schema discovery with information\_schema
+
+The `system.information_schema` namespace provides four queryable virtual tables that describe your database schema. You can use them to discover available tables, columns, relationships, and data types directly through SQL queries.
+
+This is useful for exploring the schema interactively in the [SQL editor](/docs/data-warehouse/query.md), and it's also used by [PostHog AI](/docs/posthog-ai.md) and other AI agents to understand the database structure when writing queries.
+
+> **Note:** The `information_schema` tables respect [warehouse access control](/docs/settings/warehouse-access-control.md). You only see tables and columns you have access to.
+
+### `system.information_schema.tables`
+
+Lists all available tables in your project.
+
+| Column | Description |
+| --- | --- |
+| table_catalog | Catalog name (same as table_name) |
+| table_schema | Schema grouping: public, system, warehouse, views, or information_schema |
+| table_name | Fully qualified table name |
+| table_type | Table classification: posthog, system, data_warehouse, view, or information_schema |
+| description | Human-readable description of the table (nullable) |
+| row_count | Row count for data warehouse tables (nullable) |
+
+SQL
+
+[Run in PostHog](https://us.posthog.com/sql?open_query=SELECT+table_name%2C+table_type%2C+description%0AFROM+system.information_schema.tables)
+
+PostHog AI
+
+```sql
+SELECT table_name, table_type, description
+FROM system.information_schema.tables
+```
+
+### `system.information_schema.columns`
+
+Lists columns for each table with their types and descriptions.
+
+| Column | Description |
+| --- | --- |
+| table_schema | Schema the table belongs to |
+| table_name | Name of the table the column belongs to |
+| column_name | Name of the column |
+| ordinal_position | Position of the column within the table (1-indexed) |
+| data_type | HogQL data type (e.g. String, Integer, DateTime, JSON) |
+| is_nullable | Whether the column accepts null values |
+| is_array | Whether the column is an array type |
+| field_kind | Kind of field: column, expression, or virtual_table |
+| description | Human-readable description of the column (nullable) |
+| null_fraction | Fraction of NULL values in the column, 0.0–1.0 (data warehouse tables only) |
+| min_value | Minimum observed value from Delta-log stats (data warehouse tables only) |
+| max_value | Maximum observed value from Delta-log stats (data warehouse tables only) |
+
+SQL
+
+[Run in PostHog](https://us.posthog.com/sql?open_query=SELECT+column_name%2C+data_type%2C+is_nullable%2C+description%0AFROM+system.information_schema.columns%0AWHERE+table_name+%3D+'events')
+
+PostHog AI
+
+```sql
+SELECT column_name, data_type, is_nullable, description
+FROM system.information_schema.columns
+WHERE table_name = 'events'
+```
+
+### `system.information_schema.relationships`
+
+Shows relationships between tables, including lazy joins and field traversers.
+
+| Column | Description |
+| --- | --- |
+| source_table | Table the relationship originates from |
+| source_column | Column or field path on the source table |
+| target_table | Table the relationship points to |
+| target_column | Column or field path on the target table (nullable) |
+| relationship_kind | Type of relationship: lazy_join or field_traverser |
+| via | Resolver or path used to follow the relationship (nullable) |
+
+SQL
+
+[Run in PostHog](https://us.posthog.com/sql?open_query=SELECT+source_table%2C+source_column%2C+target_table%2C+relationship_kind%0AFROM+system.information_schema.relationships%0AWHERE+source_table+%3D+'events')
+
+PostHog AI
+
+```sql
+SELECT source_table, source_column, target_table, relationship_kind
+FROM system.information_schema.relationships
+WHERE source_table = 'events'
+```
+
+### `system.information_schema.data_types`
+
+A reference of all HogQL data types and their descriptions.
+
+| Column | Description |
+| --- | --- |
+| type_name | Name of the HogQL data type |
+| description | Human-readable description |
+
+SQL
+
+[Run in PostHog](https://us.posthog.com/sql?open_query=SELECT+type_name%2C+description%0AFROM+system.information_schema.data_types)
+
+PostHog AI
+
+```sql
+SELECT type_name, description
+FROM system.information_schema.data_types
+```
+
+### Still have questions?
+
+Ask PostHog AI
 
 ### Was this page useful?
 

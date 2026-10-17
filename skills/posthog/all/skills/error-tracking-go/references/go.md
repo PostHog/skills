@@ -1,4 +1,10 @@
-# Go error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Go Error Tracking installation - Docs
+
+Copy page
+
+# Go Error Tracking installation - Docs
 
 1.  1
 
@@ -16,9 +22,9 @@
     go get github.com/posthog/posthog-go
     ```
 
-    **Source context not yet supported**
+    **Debug symbol uploads**
 
-    The Go SDK captures stack traces with file names, line numbers, and function names, but does not yet support source context (displaying the surrounding lines of code in the error tracking UI). Symbol set uploads for Go are not currently available.
+    The Go SDK resolves stack traces in-process, so captured frames include file names, line numbers, function names, and inlined calls without any symbol uploads. To also see source context (the surrounding lines of code in the error tracking UI), [upload debug symbols](/docs/error-tracking/upload-source-maps/go.md). That needs posthog-go 1.22.0 or later.
 
 2.  2
 
@@ -106,6 +112,8 @@
     client.Enqueue(exception)
     ```
 
+    To see how `net/http` services can automatically associate backend exceptions with frontend users, view the [Go request context documentation](/docs/libraries/go.md#request-context).
+
     ### Option B: Automatic capture with slog
 
     The SDK provides a `SlogCaptureHandler` that wraps Go's standard `log/slog` logger and automatically captures log records as exceptions.
@@ -185,9 +193,9 @@
     client.Close()
     ```
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

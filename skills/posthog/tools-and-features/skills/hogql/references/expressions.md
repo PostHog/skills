@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# SQL expressions - Docs
+
+Copy page
+
 # SQL expressions - Docs
 
 SQL expressions enable you to directly access, modify, and aggregate data in many places in PostHog including:
@@ -5,6 +11,7 @@ SQL expressions enable you to directly access, modify, and aggregate data in man
 -   Filters
 -   Trends series
 -   Breakdowns
+-   [Retention](/docs/product-analytics/retention.md) breakdowns
 -   [Funnel](/docs/product-analytics/funnels.md) aggregations
 -   [User paths](/docs/product-analytics/paths.md)
 -   [Session replays](/docs/session-replay.md)
@@ -104,6 +111,8 @@ Here are some of the most common and useful ones:
 | now(), today(), yesterday() | Returns the current time, date, or yesterday's date respectively |
 | interval | A length of time for use in arithmetic operations with other dates and times like person.properties.trial_started + interval 30 day |
 
+> **Date literals parse in your project's timezone, not UTC.** `toDateTime('2026-07-17 06:42:00')` means 06:42 in project time. A UTC timestamp pasted into a literal can shift by hours, and a recency filter built this way returns no rows and looks like missing data. For relative windows, prefer `now() - interval 20 minute`. For an absolute instant, pass the timezone explicitly: `toDateTime('2026-07-17 06:42:00', 'UTC')`.
+
 ## Use cases
 
 -   Checking if a property or [autocapture element chain](/tutorials/hogql-autocapture.md) contains a specific value or any of an array of values using `in` or `match`.
@@ -112,7 +121,7 @@ Here are some of the most common and useful ones:
 
 -   Grouping or binning events based on properties using `if()`, `multiIf()` like `multiIf(properties.$device_type == 'Desktop', 'Desktop', properties.$os == 'iOS', 'iOS', 'Non-iOS')`.
 
--   Accessing nested properties such as `properties.$set.$geoip_city_name`.
+-   Accessing nested properties such as `properties.cart.total`, or person properties such as `person.properties.$geoip_city_name`.
 
 -   Filtering for events that happened in the last X minutes, hours, or days with `dateDiff()`, `now()`, and `interval` like `dateDiff('minute', timestamp, now()) < 30`.
 
@@ -130,9 +139,9 @@ Here are some of the most common and useful ones:
 
 -   Extracting the ID from [autocaptured elements](/tutorials/hogql-autocapture.md) like `extract(elements_chain, '[:|"]attr__id="(.*?)"')`.
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

@@ -1,75 +1,98 @@
-# Mirascope LLM analytics installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Mirascope AI Observability installation - Docs
+
+Copy page
+
+# Mirascope AI Observability installation - Docs
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_9608fcca70)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_dark_a92b0e022d)
+
+Let AI instrument your LLM calls for you
+
+Skip the manual setup — run this in your project and the wizard installs the SDK and wires up AI Observability for you.
+
+`npx @posthog/wizard ai-observability`
+
+[Learn more](/wizard.md)
+
+![PostHog Wizard hedgehog](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)Let AI instrument your LLM calls for you
 
 1.  1
 
-    ## Install the PostHog SDK
+    ## Install dependencies
 
     Required
 
-    Setting up analytics starts with installing the PostHog SDK. The Mirascope integration uses PostHog's OpenAI wrapper since Mirascope supports passing a custom OpenAI client.
+    **Full working examples**
+
+    See the complete [Python example](https://github.com/PostHog/posthog-python/tree/master/examples/example-ai-mirascope) on GitHub. If you use the PostHog SDK wrapper instead of OpenTelemetry, see the [Python wrapper example](https://github.com/PostHog/posthog-python/tree/7223c52/examples/example-ai-mirascope).
+
+    Install the OpenTelemetry SDK, the OpenAI instrumentation, and Mirascope.
 
     ```bash
-    pip install posthog
+    pip install "mirascope[openai]" opentelemetry-sdk "posthog[otel]" opentelemetry-instrumentation-openai-v2
     ```
 
 2.  2
 
-    ## Install Mirascope
+    ## Set up OpenTelemetry tracing
 
     Required
 
-    Install Mirascope with OpenAI support. PostHog instruments your LLM calls by wrapping the OpenAI client that Mirascope uses under the hood.
+    Configure OpenTelemetry to auto-instrument OpenAI SDK calls and export traces to PostHog. PostHog converts `gen_ai.*` spans into `$ai_generation` events automatically.
 
-    ```bash
-    pip install mirascope openai
+    ```python
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.resources import Resource, SERVICE_NAME
+    from posthog.ai.otel import PostHogSpanProcessor
+    from opentelemetry.instrumentation.openai_v2 import OpenAIInstrumentor
+    resource = Resource(attributes={
+        SERVICE_NAME: "my-app",
+        "posthog.distinct_id": "user_123", # optional: identifies the user in PostHog
+        "foo": "bar", # custom properties are passed through
+    })
+    provider = TracerProvider(resource=resource)
+    provider.add_span_processor(
+        PostHogSpanProcessor(
+            api_key="<ph_project_token>",
+            host="https://us.i.posthog.com",
+        )
+    )
+    trace.set_tracer_provider(provider)
+    OpenAIInstrumentor().instrument()
     ```
 
 3.  3
 
-    ## Initialize PostHog and Mirascope
+    ## Call your LLMs
 
     Required
 
-    Initialize PostHog with your project token and host from [your project settings](https://app.posthog.com/settings/project), then create a PostHog OpenAI wrapper and pass it to Mirascope's `@call` decorator via the `client` parameter.
+    Use Mirascope as normal. PostHog automatically captures an `$ai_generation` event for each LLM call made through the OpenAI SDK that Mirascope uses internally.
 
     ```python
-    from mirascope.llm import call
-    from posthog.ai.openai import OpenAI
-    from posthog import Posthog
-    posthog = Posthog(
-        "<ph_project_token>",
-        host="https://us.i.posthog.com"
-    )
-    openai_client = OpenAI(
-        api_key="your_openai_api_key",
-        posthog_client=posthog
-    )
+    from mirascope import llm
+    # Route OpenAI calls through chat.completions. Mirascope defaults to the
+    # Responses API, which the OpenTelemetry instrumentation does not cover.
+    llm.register_provider("openai:completions")
+    @llm.call("openai/gpt-4o-mini")
+    def fun_fact(topic: str) -> str:
+        return f"Tell me a fun fact about {topic}"
+    response = fun_fact("hedgehogs")
+    print(response.text())
     ```
 
-    **How this works**
+    **Use the completions provider**
 
-    Mirascope's `@call` decorator accepts a `client` parameter for passing a custom OpenAI client. PostHog's `OpenAI` wrapper is a proper subclass of `openai.OpenAI`, so it works directly. PostHog captures `$ai_generation` events automatically without proxying your calls.
+    `opentelemetry-instrumentation-openai-v2` instruments `chat.completions` and `embeddings` only. Mirascope v2 uses the OpenAI Responses API by default, which produces no spans. `llm.register_provider("openai:completions")` switches it to `chat.completions`, so the instrumentation captures the calls. This page targets Mirascope 2.x. The `mirascope.core` API was v1 and no longer exists.
 
-4.  4
-
-    ## Make your first call
-
-    Required
-
-    Use Mirascope as normal, passing the wrapped client to the call decorator. PostHog automatically captures an `$ai_generation` event for each LLM call.
-
-    ```python
-    @call(model="openai/gpt-5-mini", client=openai_client)
-    def recommend_book(genre: str):
-        return f"Recommend a {genre} book."
-    response = recommend_book(
-        "fantasy",
-        posthog_distinct_id="user_123",
-        posthog_trace_id="trace_123",
-        posthog_properties={"conversation_id": "abc123"},
-    )
-    print(response.content)
-    ```
+    > **Note:** If you want to capture LLM events anonymously, omit the `posthog.distinct_id` resource attribute. See our docs on [anonymous vs identified events](/docs/data/anonymous-vs-identified-events.md) to learn more.
 
     You can expect captured `$ai_generation` events to have the following properties:
 
@@ -84,39 +107,39 @@
     | $ai_output_choices | List of response choices from the LLM |
     | $ai_output_tokens | The number of tokens in the output (often found in response.usage) |
     | $ai_total_cost_usd | The total cost in USD (input + output) |
-    | [[...]](/docs/llm-analytics/generations.md#event-properties) | See [full list](/docs/llm-analytics/generations.md#event-properties) of properties |
+    | [[...]](/docs/ai-observability/generations.md#event-properties) | See [full list](/docs/ai-observability/generations.md#event-properties) of properties |
 
-5.  ## Verify traces and generations
+4.  ## Verify traces and generations
 
     Recommended
 
     *Confirm LLM events are being sent to PostHog*
 
-    Let's make sure LLM events are being captured and sent to PostHog. Under **LLM analytics**, you should see rows of data appear in the **Traces** and **Generations** tabs.
+    Let's make sure LLM events are being captured and sent to PostHog. Under **AI Observability**, you should see rows of data appear in the **Traces** and **Generations** tabs.
 
     ![LLM generations in PostHog](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250807_syne_ecd0801880.png)![LLM generations in PostHog](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250807_syjm_5baab36590.png)
 
-    [Check for LLM events in PostHog](https://app.posthog.com/llm-analytics/generations)
+    [Check for LLM events in PostHog](https://app.posthog.com/ai-observability/generations)
 
-6.  5
+5.  4
 
     ## Next steps
 
     Recommended
 
-    Now that you're capturing AI conversations, continue with the resources below to learn what else LLM Analytics enables within the PostHog platform.
+    Now that you're capturing AI conversations, continue with the resources below to learn what else AI Observability enables within the PostHog platform.
 
     | Resource | Description |
     | --- | --- |
-    | [Basics](/docs/llm-analytics/basics.md) | Learn the basics of how LLM calls become events in PostHog. |
-    | [Generations](/docs/llm-analytics/generations.md) | Read about the $ai_generation event and its properties. |
-    | [Traces](/docs/llm-analytics/traces.md) | Explore the trace hierarchy and how to use it to debug LLM calls. |
-    | [Spans](/docs/llm-analytics/spans.md) | Review spans and their role in representing individual operations. |
-    | [Anaylze LLM performance](/docs/llm-analytics/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
+    | [Basics](/docs/ai-observability/basics.md) | Learn the basics of how LLM calls become events in PostHog. |
+    | [Generations](/docs/ai-observability/generations.md) | Read about the $ai_generation event and its properties. |
+    | [Traces](/docs/ai-observability/traces.md) | Explore the trace hierarchy and how to use it to debug LLM calls. |
+    | [Spans](/docs/ai-observability/spans.md) | Review spans and their role in representing individual operations. |
+    | [Anaylze LLM performance](/docs/ai-observability/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
