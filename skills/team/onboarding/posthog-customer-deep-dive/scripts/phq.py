@@ -19,15 +19,18 @@ The two ch- targets read a customer's OWN raw product events, so every query aga
 must filter team_id explicitly or it silently returns PostHog-wide numbers.
 
 Usage:
-  phq.py us "SELECT count() FROM events WHERE $group_0 = '<org>' LIMIT 1"
-  phq.py ch-eu --sql-file /tmp/q.sql
-  phq.py --batch /tmp/<agent>-queries.jsonl  # one {"name","target","sql"} object per line
-                                             # NAMESPACE the filename per agent. Several gatherers
+  phq.py us 'SELECT count() FROM events WHERE $group_0 = '"'"'<org>'"'"' LIMIT 1'   # single quotes: bash eats $group_0
+  phq.py ch-eu --sql-file <run scratchpad>/q.sql
+  phq.py --batch <run scratchpad>/<role>-queries.jsonl  # one {"name","target","sql"} object per line
+                                             # NAME the file for your role. Several gatherers
                                              # run at once and a shared path gets overwritten mid-run.
   phq.py us "..." --raw                      # full JSON instead of the TSV table
 
+Every result prints the server's warnings (a paused warehouse sync, which makes an empty answer
+unmeasured rather than zero) and TRUNCATED when more rows exist than came back.
+
 Batch mode is the point: these reads do not depend on each other, so one invocation fires
-them concurrently (default width 6, --concurrency to change), which is what keeps a run's depth down. Exit code is 0 when every
+them concurrently (default width 4, --concurrency to change), which is what keeps a run's depth down. Exit code is 0 when every
 query returned, 1 when any failed.
 
 Needs: python3 (stdlib only) and curl. No pip packages.
@@ -64,13 +67,36 @@ CONNECTIONS = {
 # execution ceiling rather than a slow network, and the fix is a narrower window, not a longer wait.
 TIMEOUT = 180
 
-# The EU HTTP API throttles at a much lower width than ClickHouse: a measured 12-wide batch
-# returned 429 on 3 of 12. Six is under that line and still eight times faster than serial.
-CONCURRENCY = 6
+# The HTTP API throttles at a much lower width than ClickHouse: a measured 12-wide batch on EU
+# returned 429 on 3 of 12, and width 8 has returned 429 on project 2. Four is the safe default.
+CONCURRENCY = 4
 
 # One retry only. A timeout can still land in the server cache, so an identical retry often
 # returns instantly; a second one just burns another full wait.
 RETRIES = 1
+
+
+def build_cmd(url, key, payload_path, timeout):
+    """The curl command, with the key in a 0600 header file so it never shows in the process list."""
+    fd, hpath = tempfile.mkstemp(suffix=".h", prefix="phq-")
+    with os.fdopen(fd, "w") as fh:
+        fh.write(f"Authorization: Bearer {key}\nContent-Type: application/json\n")
+    os.chmod(hpath, 0o600)
+    cmd = [
+        "curl", "-s", "-S", "--max-time", str(timeout),
+        "-X", "POST", url,
+        "-H", f"@{hpath}",
+        "-w", "\n__HTTP_STATUS__%{http_code}",
+        "--data", f"@{payload_path}",
+    ]
+    return cmd, (lambda: os.path.exists(hpath) and os.unlink(hpath))
+
+
+def check_payload(parsed):
+    """A 2xx body with no results is an error, never an empty answer. Returns an error string or None."""
+    if not isinstance(parsed, dict) or "results" not in parsed:
+        return "2xx response without a results field: " + json.dumps(parsed, default=str)[:300]
+    return None
 
 
 def run_query(name, target, sql, connection=None, timeout=TIMEOUT):
@@ -94,19 +120,13 @@ def run_query(name, target, sql, connection=None, timeout=TIMEOUT):
     try:
         with os.fdopen(fd, "w") as fh:
             fh.write(payload)
-        cmd = [
-            "curl", "-s", "-S", "--max-time", str(timeout),
-            "-X", "POST", url,
-            "-H", f"Authorization: Bearer {key}",
-            "-H", "Content-Type: application/json",
-            "-w", "\n__HTTP_STATUS__%{http_code}",
-            "--data", f"@{path}",
-        ]
+        cmd, cleanup = build_cmd(url, key, path, timeout)
         for attempt in range(RETRIES + 1):
             proc = subprocess.run(cmd, capture_output=True, text=True)
             body, _, status = proc.stdout.rpartition("\n__HTTP_STATUS__")
-            if proc.returncode != 0 and not body:
-                # curl itself failed (network, timeout). Retry once, then report what it said.
+            if proc.returncode != 0:
+                # curl itself failed (network, timeout), possibly after part of the body arrived, which
+                # must never be parsed as an answer. Retry once, then report what it said.
                 if attempt < RETRIES:
                     time.sleep(2)
                     continue
@@ -114,9 +134,14 @@ def run_query(name, target, sql, connection=None, timeout=TIMEOUT):
             try:
                 parsed = json.loads(body)
             except json.JSONDecodeError:
+                # A gateway error often comes back as an HTML page: still transient, so retry it.
+                if status in ("429", "500", "502", "503", "504") and attempt < RETRIES:
+                    time.sleep(5)
+                    continue
                 return (name, False, f"HTTP {status}: non-JSON response: {body[:300]}")
             if status.startswith("2"):
-                return (name, True, parsed)
+                err = check_payload(parsed)
+                return (name, err is None, err or parsed)
             detail = str(parsed.get("detail") or parsed.get("message") or json.dumps(parsed))
             transient = status in ("429", "500", "502", "503", "504") or "SIMULTANEOUS" in detail.upper()
             if transient and attempt < RETRIES:
@@ -137,6 +162,8 @@ def run_query(name, target, sql, connection=None, timeout=TIMEOUT):
             return (name, False, msg)
     finally:
         os.unlink(path)
+        if "cleanup" in locals():
+            cleanup()
 
 
 def render(name, ok, payload, raw=False):
@@ -147,6 +174,10 @@ def render(name, ok, payload, raw=False):
     cols = payload.get("columns") or []
     rows = payload.get("results", [])
     out = [f"=== {name} === ok rows={len(rows)}"]
+    for w in payload.get("warnings") or []:
+        out.append("WARNING " + str(w.get("message") if isinstance(w, dict) else w))
+    if payload.get("hasMore"):
+        out.append(f"TRUNCATED: more rows exist than the {len(rows)} returned; add a LIMIT or page before reading an absence")
     if cols:
         out.append("\t".join(str(c) for c in cols))
     for row in rows:
