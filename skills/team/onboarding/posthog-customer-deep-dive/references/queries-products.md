@@ -6,7 +6,7 @@ One block per product: its org-usage-report fields, its admin-activity read, its
 
 **Every admin-activity query in this file reads the customer's ADMIN events in project 2: their team clicking around the PostHog app, never their product's traffic.** Every `$pageview` under an account's `$group_0` sits on host `us.posthog.com`, in team 2 (PostHog's own project). Never quote one as customer volume; the org usage report is the authoritative per-SDK and billable-volume source.
 
-**Every definition count needs `WHERE deleted = false`**, with two known exceptions called out in their blocks: `posthog_survey` has no `deleted` column and errors on it (filter `archived`), and `posthog_propertydefinition` has no `deleted` column at all (nothing to filter). This list is a prior, not a guarantee. The column set is probe-verifiable, so when a `deleted` filter errors on any other table, read the error and check `system.information_schema.columns` for that table instead of assuming the recipe is right, then say the list missed one.
+**Every definition count needs `WHERE deleted = false`**, with exceptions called out in their own blocks: `posthog_survey` has no `deleted` column and errors on it (filter `archived`); `posthog_propertydefinition`, `posthog_proxyrecord` and the job, run and calculation-history tables have none at all; `hog-functions` keeps deleted rows on purpose. This list is a prior, not a guarantee. The column set is probe-verifiable, so when a `deleted` filter errors on any other table, read the error and check `system.information_schema.columns` for that table instead of assuming the recipe is right, then say the list missed one.
 
 The filter is not optional: a soft-deleted row is gone from the customer's UI and still sitting in the mirror, so an unfiltered count describes something the customer cannot see, and dashboards and flags both overstate badly without it. Filtered, the mirror and the usage report agree exactly, so cross-check them whenever a count drives a recommendation.
 
@@ -20,7 +20,7 @@ WHERE event IN (<the block's event list>) AND timestamp >= now() - INTERVAL <day
   AND $group_0 = '<ORG_ID>' AND person.properties.email IS NOT NULL
 GROUP BY email ORDER BY events DESC LIMIT 50
 ```
-Two variants stay inside the pattern: `countIf(event = '...')` per event name when you want the per-action split, and extra `properties.*` columns in the SELECT and GROUP BY when the block names useful ones. Every admin read here is a **top-N sample**: explicit ORDER BY, stated LIMIT, and a large account routinely fills it, so rows returned equal to the LIMIT means truncated, not complete. Raise the LIMIT (server cap in `data-rules.md`) when you need the tail, and never read a missing name as absent. Queries whose shape genuinely differs appear below as their own recipes.
+Two variants stay inside the pattern: `countIf(event = '...')` per event name when you want the per-action split, and extra `properties.*` columns in the SELECT and GROUP BY when the block names useful ones. Every admin read here is a **top-N sample**: explicit ORDER BY, stated LIMIT, and a large account routinely fills it, so rows returned equal to the LIMIT means truncated, not complete. Raise the LIMIT (server cap in `data-rules.md`) when you need the tail, and never read a missing name as absent. Queries whose shape differs appear below as their own recipes.
 
 ### Reading the org usage report
 
@@ -28,7 +28,7 @@ One row per org per day in project 2, event `organization usage report`; `org-sn
 - **Every `*_in_period` field covers ONE UTC DAY, not a month.** The emitter (`posthog/tasks/usage_report.py`) builds the report from `get_previous_day()`, and the event's own `period` property carries a single day's `start_inclusive` / `end_inclusive`. Reading any of these as a monthly figure is a roughly 30x overstatement. To get a month, sum the daily reports, or use `billing_usage_by_org_date` (`per-product-usage` in `queries-account.md`).
 - **Cumulative vs daily.** `dashboard_count`, `ff_count`, `survey_count`, `symbol_sets_count`, `group_types_total`, `organization_user_count`, `team_count`, and `issues_created_total` are lifetime totals as of that day, not daily deltas. Do not sum them across days.
 - **This event vs `billing_usage_by_org_date`.** They agree field for field on the 16 volume metrics they share, so the choice is about the other roughly 140 keys: default to the billing table for "how much and is it growing", and come here for "what is it made of and where does it run" (the region via `site_url`, self-hosted orgs, the per-SDK breakdown, the per-team map). The billing table's facts and its two confident-zero traps live beside `per-product-usage` in `queries-account.md`.
-- The event carries **155 property keys**. **111 repeat per project inside the `teams` map** and are marked "org+team" below; the remaining 44 are org-level only. Enumerate keys with `JSONExtractKeys(properties)`. `JSONExtractKeys(toJSONString(properties))` returns 0 because it double-encodes an already-JSON string.
+- The event carries well over a hundred property keys and gains more with every product. Most repeat per project inside the `teams` map and are marked "org+team" below; the rest are org-level only. Enumerate the live keys with `JSONExtractKeys(properties)` rather than trusting a count. `JSONExtractKeys(toJSONString(properties))` returns 0 because it double-encodes an already-JSON string.
 - Read one project's metric out of the map with `JSONExtractInt(assumeNotNull(properties.teams), '<TEAM_ID>', '<metric>')` (`properties.teams` is `Nullable(String)`). A team id absent from the map reads as 0, not null, so confirm the id is in `JSONExtractKeys(assumeNotNull(properties.teams))` before reading a 0 as real.
 - **The `teams` breakdown is silently emptied for large orgs.** When the payload exceeds roughly 900KB the emitter drops the per-project map and sets `teams_omitted_due_to_size = true`. A missing or empty `teams` map is a payload-size artifact, not evidence that the org has one project: check `team_count` and the flag before concluding anything about project structure. The flag is absent (reads null) when the map is intact, so treat null as "not omitted".
 - **Two absences on this event, both probe-verifiable against the project-2 catalog.** There is **no autocapture field**, and no per-event-name breakdown of any kind, so neither the customer's autocapture share nor any other `% of your events` figure comes from this event, and no admin-activity count ever stands in for one. Get those from the direct ClickHouse connection, in either region (`references/data-rules.md`). Heatmap volume IS here, as `heatmap_events_count_in_period`, at org level and inside the `teams` map. `heatmaps_opt_in` in `team-config` gives on or off; this gives the number.
@@ -46,35 +46,38 @@ One row per org per day in project 2, event `organization usage report`; `org-sn
 
 **Query cost** (org+team, 14 fields): `query_app_*`, `query_api_*`, `event_explorer_app_*`, `event_explorer_api_*`, each with `_bytes_read`, `_rows_read`, `_duration_ms`; plus `api_queries_bytes_read` and `api_queries_query_count`. `_app_` is the PostHog UI, `_api_` is their programmatic queries. Heavy `_api_` read volume beside light `_app_` usage means they query PostHog from their own tooling, which changes who to talk to and what to demo.
 
-**Org metadata** (org only; the org-only keys are these plus the 19 `$`-prefixed ones; identity, seat, and date fields say what their names say):
+**Org metadata** (org only; the org-only keys are these plus the `$`-prefixed ones; identity, seat, and date fields say what their names say):
 - `teams`: the per-project map, `{"<team_id>": {111 fields}}`. See the size trap above.
 - `site_url` / `$group_1`: **the org's region** (`https://us.posthog.com` or `https://eu.posthog.com`). This event is the reliable region signal, and it is US+EU combined in project 2.
 - `realm` / `product` / `scope` / `instance_tag` / `deployment_infrastructure`: deployment shape (`cloud` vs self-hosted).
 - `clickhouse_version` / `helm` / `plugins_enabled` / `plugins_installed` / `table_sizes` / `users_who_logged_in` / `users_who_logged_in_count` / `users_who_signed_up` / `users_who_signed_up_count`: **null on cloud**, populated for self-hosted only. Do not report these for a cloud account.
-- `num_keys_in_properties`: the emitter's own key count, which is lower than the 155 keys observed on the ingested event (ingestion adds the `$`-prefixed ones).
-- The 19 `$`-prefixed keys (`$lib`, `$lib_version`, `$os`, `$ip`, `$sent_at`, `$transformations_*`, and so on) describe the `posthog-python` cron that emits the report, not the customer. They are never customer signal.
+- `num_keys_in_properties`: the emitter's own key count, which is lower than the keys on the ingested event (ingestion adds the `$`-prefixed ones).
+- The `$`-prefixed keys (`$lib`, `$lib_version`, `$os`, `$ip`, `$sent_at`, `$transformations_*`, and so on) describe the `posthog-python` cron that emits the report, not the customer. They are never customer signal.
 
 ## team-config
 
-Cross-product opt-ins and replay settings: the on/off switches. For replay and heatmaps they are the primary project-2 signal, since capture data for those never lands in the customer's events (the capture-data guardrail in `data-rules.md`). For surveys and error tracking the opt-in is confirmatory, since capture also lands in events. Four rules for reading the result, all read off the column definitions:
+Cross-product opt-ins and replay settings: the on/off switches. For replay and heatmaps they are the primary project-2 signal, since capture data for those never lands in the customer's events (the first entry under "Traps" in `data-rules.md`). For surveys and error tracking the opt-in is confirmatory, since capture also lands in events. Five rules for reading the result, all read off the column definitions, under two rules for reading the live config that beats it:
 
-**Confirm anything you are going to tell the customer about their own settings against the live remote config, which is stronger than this mirror.** It is what their SDK receives, and it costs one fetch with no site scan, login or browser: take `api_token` from this same query and `curl https://<region>.i.posthog.com/array/<token>/config`. Read the `sessionRecording` block (`sampleRate`, `minimumDurationMilliseconds`, `linkedFlag`, `urlTriggers`, `eventTriggers`, `urlBlocklist`, `masking`, `networkPayloadCapture`), plus `autocapture_opt_out`, `heatmaps` and the full `surveys` array with its targeting conditions, all for free in the same response. `sessionRecording: false` there means recording is off for that project outright, which is a different finding from the controls being unset, and the two are easy to conflate from the mirror alone. Where mirror and live config disagree, the live config wins and the disagreement is itself worth reporting: it means a stale sync, and every other setting you read from the mirror in that run is suspect.
+**Confirm anything you are going to tell the customer about their own settings against the live remote config, which is stronger than this mirror.** It is what their SDK receives, and it costs one fetch with no site scan, login or browser: take `api_token` from `resolve-teams` and `curl https://<region>.i.posthog.com/array/<token>/config`. Read the `sessionRecording` block (`version`, `triggerGroups`, `sampleRate`, `minimumDurationMilliseconds`, `linkedFlag`, `urlTriggers`, `eventTriggers`, `triggerMatchType`, `urlBlocklist`, `masking`, `networkPayloadCapture`), plus `autocapture_opt_out`, `heatmaps` and the full `surveys` array with its targeting conditions, all for free in the same response. `sessionRecording: false` there usually means recording is off for that project, which is a different finding from the controls being unset. But it has read `false` on a project still recording hundreds of sessions a day through its trigger groups, so check the recording count in the usage report before calling replay off, and report a contradiction as one rather than resolving it. Where mirror and live config disagree, the live config describes what the SDK receives now; report the disagreement, and read the mirror's other settings with that in mind.
+
+**Read `sessionRecording.version` before reading any other replay control, because on `version: 2` the flat controls beside it are dead values.** Trigger groups replaced the old flat recording conditions, and a team on them holds its sample rate and minimum duration per group inside `triggerGroups`. The payload still carries `sampleRate`, `minimumDurationMilliseconds`, `linkedFlag`, `urlTriggers`, `eventTriggers` and `triggerMatchType` beside them, computed from the legacy columns and sent only for SDKs too old to read `version: 2`, so they hold whatever was last set there and govern nothing. Adopting V2 never clears them, so they stay populated indefinitely. Quoting a `sampleRate` off a V2 payload reports a rate the customer is not running, and reading those fields as null reports a team with tight per-group sampling as a team with no controls at all. On `version: 2` read every control out of `triggerGroups`; on `version: 1` read the flat fields. Each group carries `id`, an optional `name`, `sampleRate`, an optional `minDurationMs`, and `conditions` holding `matchType` (`any` or `all`) plus any of `events`, `urls` and `flag`. Whether their SDK version reads `version: 2` at all is product state, so search it rather than assuming: an old SDK on a V2 team silently runs the legacy fields instead.
 - **Read NULL as off on the `*_opt_in` columns, not as missing data.** They are nullable with no default, and NULL is the common case rather than the exception. Only `session_recording_opt_in` defaults to false and is never NULL.
 - **`autocapture_opt_out` runs the other way.** It is an opt-OUT, so `true` means the customer turned autocapture off, and `false` and NULL both mean it is on (autocapture is on by default). Do not read it like the columns beside it. It is the one autocapture signal that works on EU, where `posthog_action` does not exist, so the zero-Actions check (`actions-defined`) is unavailable.
 - **The replay cost levers sit beside the opt-ins**: `replay_retention`, `console_logs_on`, `url_triggers`, `person_processing_off`. Retention varies per team inside one org, so read it per row rather than per account. Console logs on enlarge the replay payload. A live `url_triggers` regex is the answer to "why is replay recording that page".
-- **`revenue_tracking_config` is the revenue mapping, and `{}` means revenue reports nothing** no matter what properties the customer sends. It is the first thing to read on any revenue question, because the fix is a settings change and not a code change (`SKILL.md`, Expansion). Read `base_currency` beside it: it defaults to USD, so a store selling in another currency reports converted into dollars until someone changes it.
+- **`revenue_tracking_config` is the revenue mapping, and `{}` means revenue reports nothing** no matter what properties the customer sends. It is the first thing to read on any revenue question, because the fix is a settings change and not a code change (`levers.md`). Read `base_currency` beside it: it defaults to USD, so a store selling in another currency reports converted into dollars until someone changes it.
 - **`wizard_onboarding_for` is wizard state, not products-enabled. Never read it as "the products they use".** It records which onboarding wizard flows a team completed, and it is wrong in both directions: teams carry real replay volume without ever declaring replay here, and teams declare replay with no recordings at all. The org usage report volumes are the truth for what a customer uses. `onboarding_tasks` is the same class of data, useful as a map of wizard progress per team and nothing more.
 ```sql
 SELECT id, name,
        session_recording_opt_in AS replay_on, heatmaps_opt_in AS heatmaps_on,
        surveys_opt_in AS surveys_on, autocapture_exceptions_opt_in AS error_tracking_on,
        autocapture_web_vitals_opt_in AS web_vitals_on,
-       autocapture_opt_out AS autocapture_disabled,
+       autocapture_opt_out AS autocapture_disabled, session_recording_masking_config AS masking,
        session_recording_minimum_duration_milliseconds AS min_duration_ms,
        session_recording_sample_rate AS sample_rate, session_recording_linked_flag AS linked_flag,
        session_recording_retention_period AS replay_retention,
        capture_console_log_opt_in AS console_logs_on,
        substring(coalesce(toString(session_recording_url_trigger_config), '[]'), 1, 60) AS url_triggers,
+       substring(coalesce(toString(session_recording_trigger_groups), 'null'), 1, 2000) AS trigger_groups,
        person_processing_opt_out AS person_processing_off,
        base_currency,
        substring(coalesce(toString(revenue_tracking_config), '{}'), 1, 200) AS revenue_config,
@@ -82,11 +85,13 @@ SELECT id, name,
        substring(coalesce(toString(has_completed_onboarding_for), '{}'), 1, 60) AS wizard_onboarding_for
 FROM postgres.posthog_team WHERE organization_id = '<ORG_ID>' ORDER BY id LIMIT 20
 ```
-Every column above exists in both regions, so this runs EU-swapped as written. **Swap the whole `postgres.posthog_team` token for the bare `eu_postgres_posthog_team`, with no `postgres.` prefix: `postgres.eu_postgres_posthog_team` errors with `Unknown table`.** Adding other columns may not swap: the EU team mirror is a strict column subset of the US one (notably `event_retention_months`, `logs_settings`, `session_recording_trigger_groups`, `default_experiment_stats_method`), and a US-only column errors on EU. Region handling is per column here, not only per table.
+Every column above exists in both regions **except `session_recording_trigger_groups`, which is US only: delete that one line on the EU run** or the whole query errors with `Unable to resolve field`, and take trigger groups from the live remote config instead, which answers in both regions and is the stronger read anyway. **Swap the whole `postgres.posthog_team` token for the bare `eu_postgres_posthog_team`, with no `postgres.` prefix: `postgres.eu_postgres_posthog_team` errors with `Unknown table`.** Adding further columns may not swap either. Measured 2026-08-21, the EU team mirror is a strict column subset of the US one, 85 columns against 104 with nothing in EU that is not in US, and a US-only column errors on EU. The 19 that are US only: `business_model`, `conversations_enabled`, `conversations_settings`, `default_evaluation_contexts_enabled`, `default_experiment_confidence_level`, `default_experiment_stats_method`, `event_retention_months`, `ingested_production_event`, `ingested_production_event_last_checked_at`, `llm_gateway_enabled_at`, `llm_gateway_overspend_allowance_usd`, `llm_gateway_revoked_at`, `logs_settings`, `proactive_tasks_enabled`, `product_tours_opt_in`, `require_evaluation_contexts`, `require_evaluation_environment_tags`, `session_recording_encryption`, `session_recording_trigger_groups`. Region handling is per column here, not only per table.
+
+**`session_recording_version` is not the trigger version, in either region, and the EU error offers it as a near miss.** Deleting the trigger-groups line returns `Did you mean: session_recording_url_trigger_config, session_recording_event_trigger_config, session_recording_version?`, and that third suggestion exists in both mirrors carrying `v1`, `v2` or NULL, so it reads exactly like the version check this file demands every run. It is the recorder-format field instead, and it inverts the answer: measured 2026-08-21, three US teams reading `v2`, `v1` and `v1` there each served trigger `version: 1` in their live config, while a team reading NULL served `version: 2` with its groups populated. Across the US mirror the two barely overlap, 3,702 teams at `v2` with no groups against 1,374 with groups and no version, and 5 with both. The live remote config is the only trigger-version read that works in both regions; the recorder version rides beside it there as its own `recorderVersion` key, which is what this column is.
 
 ## proxy-domains
 
-US only; empty = no managed proxy, the common case. `eu_postgres_posthog_proxyrecord` does not exist under any naming, so the EU swap errors rather than returning empty. On EU, managed proxy is unmeasurable from project 2, not absent. The table has no `deleted` column; `status` is the lifecycle field.
+US only; empty = no managed proxy, the common case, but only once the mirror is live: a paused `posthog_proxyrecord` sync answers empty with a warning, which makes it unmeasured. `eu_postgres_posthog_proxyrecord` does not exist under any naming, so the EU swap errors rather than returning empty. On EU, managed proxy is unmeasurable from project 2, not absent. The table has no `deleted` column; `status` is the lifecycle field.
 ```sql
 SELECT domain, status, created_at, updated_at
 FROM postgres.posthog_proxyrecord WHERE organization_id = '<ORG_ID>' ORDER BY created_at DESC LIMIT 20
@@ -96,11 +101,11 @@ FROM postgres.posthog_proxyrecord WHERE organization_id = '<ORG_ID>' ORDER BY cr
 
 **Usage report fields** (org+team):
 - `billable_feature_flag_requests_count_in_period`: the billed flag requests for the day, the flag cost driver.
-- `decide_requests_count_in_period`: `/decide` and `/flags` calls for the day.
-- `local_evaluation_requests_count_in_period`: local-evaluation polls for the day, each billing as 10 requests.
+- `decide_requests_count_in_period`: `/decide` and `/flags` calls for the day. On the org usage report only; `billing_usage_by_org_date` has no such column and returns HTTP 400.
+- `local_evaluation_requests_count_in_period`: local-evaluation polls for the day. How a poll bills (fresh definitions against an unchanged `304`, an ETag-capable SDK or not) is product state and has changed, so read it on the live docs before pricing it (`levers.md`).
 - `ff_count` / `ff_active_count`: flags total vs active (cumulative). A wide gap is flag debt worth a cleanup nudge.
 
-The billing rule, in code: `billable_feature_flag_requests = decide_requests + (local_evaluation_requests x 10)`. Read the two inputs side by side to see which evaluation pattern they run, and to say precisely which one is driving the bill.
+Read decide requests and local-evaluation polls side by side to see which evaluation pattern they run and which one drives the bill. Take the multiplier between them, and how unchanged polls count, from the live [cutting costs](https://posthog.com/docs/feature-flags/cutting-costs.md) page and `usage_report.py` on PostHog's `main`, never from memory, and say which you read.
 
 **Admin activity** (the pattern, with a fixed 90 day window: flag work is sparse, and a 30 day window reads an active flag team as idle): `feature flag created` (useful properties: `creation_context`, `has_rollout_percentage`), `feature flag updated`, `feature flag scheduled`.
 
@@ -143,7 +148,9 @@ ORDER BY ff.created_at ASC LIMIT 40
 - `zero_duration_recording_count_in_period`: recordings with no duration: pure waste, and a concrete minimum-duration recommendation.
 - `replay_vision_credits_used_in_period`: Replay Vision credits spent for the day, and its own cost line. Read it through `replay-vision` below, never as a footnote to the recording count.
 
-**Region and vantage**: replay and heatmap capture data never lands in `events`, and project 2 cannot read a customer's replay tables at all (the full rule and the inside-their-project queries are in `SKILL.md`). From project 2: `team-config` opt-ins and settings for on/off and levers, the fields above for volume, and for heatmaps the opt-in is the ceiling (no volume field exists anywhere).
+**Region and vantage**: replay and heatmap capture data never lands in `events`, and project 2 cannot read a customer's replay tables at all ("Traps" in `data-rules.md`; on the EU direct connection `session_replay_events` and `heatmaps` do read per `team_id`). From project 2: `team-config` opt-ins and settings for on/off and levers, the fields above for volume, and for heatmaps `heatmap_events_count_in_period` in the usage report's per-team `teams` map, since the opt-in alone says nothing about volume.
+
+**Establish which trigger version each team runs before pricing any replay lever, every run.** Two reads, and `team-config` owns both plus the precedence rule: `session_recording_trigger_groups` on `posthog_team` (a JSON blob, US only) and `sessionRecording.version` in the live remote config (both regions, and the authority where they disagree). Never substitute the mirror's `session_recording_version` column for that second read, in either region: it is the recorder-format field, it reads backwards, and `team-config` carries the measurement. Trigger groups replaced the flat recording conditions, so on a V2 team the sample rate and minimum duration are per group and the flat columns are stale leftovers that were never cleared. Recommending a sample rate to a team already sampling per group is the failure this prevents, and nothing in the flat columns shows it. What actually happened per session is readable too: `$sdk_debug_replay_trigger_groups_count` and `$sdk_debug_replay_matched_recording_trigger_groups` ride on their events, per "Why a session was not recorded" in `data-rules.md`.
 
 ### replay-interaction
 
@@ -231,13 +238,17 @@ SELECT person.properties.email AS user, coalesce(properties.experiment_name, pro
          if(countIf(event='experiment ai summary requested')>0, concat('ai summary (', toString(countIf(event='experiment ai summary requested')), ')'), ''),
          if(countIf(event='experiment metric breakdown added')>0, concat('breakdown added (', toString(countIf(event='experiment metric breakdown added')), ')'), ''),
          if(countIf(event='experiment timeseries viewed')>0, concat('timeseries viewed (', toString(countIf(event='experiment timeseries viewed')), ')'), ''),
-         if(countIf(event='experiment release conditions viewed')>0, concat('release conditions viewed (', toString(countIf(event='experiment release conditions viewed')), ')'), '')
+         if(countIf(event='experiment release conditions viewed')>0, concat('release conditions viewed (', toString(countIf(event='experiment release conditions viewed')), ')'), ''),
+         if(countIf(event='experiment tab viewed')>0, concat('tab viewed (', toString(countIf(event='experiment tab viewed')), ')'), ''),
+         if(countIf(event='experiment results refresh completed')>0, concat('results refreshed (', toString(countIf(event='experiment results refresh completed')), ')'), ''),
+         if(countIf(event='experiment recording opened')>0, concat('recording opened (', toString(countIf(event='experiment recording opened')), ')'), '')
        ]), ', ') AS activity
 FROM events
 WHERE timestamp >= now() - INTERVAL <days> DAY AND $group_0 = '<ORG_ID>'
   AND event IN ('experiment viewed','experiment metrics refreshed','experiment variant shipped',
                 'experiment shared metric created','experiment ai summary requested','experiment metric breakdown added',
-                'experiment timeseries viewed','experiment release conditions viewed')
+                'experiment timeseries viewed','experiment release conditions viewed',
+                'experiment tab viewed','experiment results refresh completed','experiment recording opened')
   AND coalesce(properties.experiment_id, properties.id) IS NOT NULL
 GROUP BY person.properties.email, properties.experiment_id, experiment_name ORDER BY latest_activity DESC LIMIT 50
 ```
@@ -309,7 +320,7 @@ ORDER BY s.created_at DESC LIMIT 40
 
 ### surveys-paid-check
 
-A `paid-*` plans_map key is tier enrollment, not spend: pair it with a non-zero forecast or invoice line before claiming they pay for an unused product.
+A `paid-*` plans_map key is tier enrollment, not spend: pair it with a non-zero line in `invoice-line-items` or a non-zero `<product>_mrr` column on `in-flight-period` before claiming they pay for an unused product.
 
 Region-agnostic: usage report plus `billing_customer`, no mirror, so it runs unchanged on EU. Answers two findings in one read. A surveys plan with `surveys_defined = 0` is paying for a product they never set up. `surveys_defined > 0` with `peak_day_responses_8d = 0` is shipped and silent, the stronger finding. Pair the second with `survey-definitions` to name which survey is running. `billing_customer` is live and holds exactly one row per org, so the plan key is current and the join cannot fan out. **The two aggregates differ on purpose, so do not unify them.** `surveys_defined` reads `survey_count`, which is cumulative, so `argMax` pins it to the latest report. `peak_day_responses_8d` reads a **daily** field, and the finding is "did anyone answer at all", so the 8-day peak is the right test and `max` is the correct aggregate: `argMax` would read a single quiet day as silence, which is a false "shipped and silent". `max` also absorbs the same day being emitted twice as late data lands, where a `sum` would double-count it.
 ```sql
@@ -399,7 +410,7 @@ ORDER BY dwt.row_count DESC NULLS LAST LIMIT 50
 
 ### warehouse-sync-jobs
 
-Sharper than `warehouse-tables`: `row_count` is the current table size, this is the actual bill driver. `posthog_externaldatajob` carries per-job `rows_synced` and a `billable` boolean, joinable by team to org. `billable_rows_synced` cross-checks Vitally `rowsSyncedLast30DaysIfSendingData`. A high `limit_blocked_jobs` count = the customer is hammering their warehouse billing limit, a real bill-shock/near-cap signal.
+Sharper than `warehouse-tables`: `row_count` is the current table size, this is the actual bill driver. `posthog_externaldatajob` carries per-job `rows_synced` and a `billable` boolean, joinable by team to org. `billable_rows_synced` cross-checks `rows_synced_in_period` summed over the same window on `billing_usage_by_org_date`. A high `limit_blocked_jobs` count = the customer is hammering their warehouse billing limit, a real bill-shock/near-cap signal. **The job table is large enough that this read often hits the execution ceiling**: after the one identical retry in `data-rules.md`, take rows synced from `dwh_rows_synced` on `per-product-usage` and the failures from `warehouse-schema-health`, and report the job split as unmeasured.
 ```sql
 SELECT t.name AS project_name,
        sumIf(edj.rows_synced, edj.billable AND edj.status = 'Completed') AS billable_rows_synced,
@@ -413,7 +424,7 @@ GROUP BY t.name ORDER BY billable_rows_synced DESC LIMIT 30
 
 ### warehouse-schema-health
 
-Run whenever `active_external_data_schemas` > 0 OR a data warehouse plan exists; the trait undercounts, so a warehouse plan alone is enough to run this, even with a $0 forecast. Reads ALL schemas, not just syncing ones, and classifies: `Failed` = broken setup (`latest_error` names the fix, e.g. "Primary key required for incremental syncs"); `should_sync = false` with no `last_synced_at` = an abandoned setup attempt; `Completed` but `last_synced_at` older than 2x the frequency = stale despite Completed. An abandoned-warehouse story is a first-class onboarding finding: the customer tried to adopt, hit an error wall, and gave up. The table names alone reveal their internal data model. Note: `warehouse-sync-jobs` returns EMPTY when no jobs ran in the window, so an empty result there with nonzero `active_external_data_schemas` means run this, not "no warehouse story".
+Run whenever `active_external_data_schemas_in_period` > 0 on the usage report OR `plans_map` carries a data warehouse key; the usage-report count undercounts, so a warehouse plan alone is enough to run this, even with no warehouse line on the invoice. Reads ALL schemas, not just syncing ones, and classifies: `Failed` = broken setup (`latest_error` names the fix, e.g. "Primary key required for incremental syncs"); `should_sync = false` with no `last_synced_at` = an abandoned setup attempt; `Completed` but `last_synced_at` older than 2x the frequency = stale despite Completed. An abandoned-warehouse story is a first-class onboarding finding: the customer tried to adopt, hit an error wall, and gave up. The table names alone reveal their internal data model. Note: `warehouse-sync-jobs` returns EMPTY when no jobs ran in the window, so an empty result there with nonzero `active_external_data_schemas` means run this, not "no warehouse story".
 ```sql
 SELECT t.name AS project_name, eds.name AS schema_name, eds.sync_type AS sync_type, eds.status AS status,
        eds.should_sync AS should_sync, eds.sync_frequency_interval AS freq_seconds,
@@ -437,11 +448,12 @@ Use the postgres app-DB tables above from project 2. (Inside a customer's own pr
 
 ### hog-functions
 
-Destinations + transformations actually configured. **Scan the `transformation` rows before interpreting any event-volume result**, because one that samples or drops events silently rewrites the denominator under every count and share you are about to compute (the rule is in `data-rules.md`). Read the `inputs` column on a suspect row for the percentage and which events it covers, and read `created_at` as the date the customer's numbers changed meaning. Sampling and drop templates are the ones to look for; GeoIP is the common harmless row.
+Destinations + transformations actually configured. **Scan the `transformation` rows before interpreting any event-volume result**, because one that samples or drops events silently rewrites the denominator under every count and share you are about to compute (the rule is in `data-rules.md`). Read the `inputs` column on a suspect row for the percentage and which events it covers (a custom Hog transformation keeps its logic in the `hog` column instead), and read `created_at` as the date the customer's numbers changed meaning. Sampling and drop templates are the ones to look for; GeoIP is the common harmless row. **Deleted rows are included on purpose**: a transformation deleted inside the window still dropped events until the day it went, so read `deleted` and `updated_at` beside `enabled`. How many events each one actually dropped is on the direct connection, in `app_metrics2` filtered by `team_id`. `cdp_billable_invocations_in_period` counts destination sends, not transformation runs.
 ```sql
-SELECT hf.name, hf.type, hf.created_at, hf.enabled, hf.template_id
+SELECT hf.name, hf.type, hf.created_at, hf.updated_at, hf.enabled, hf.deleted, hf.template_id,
+       substring(toString(hf.inputs), 1, 300) AS inputs, substring(toString(hf.hog), 1, 300) AS hog
 FROM postgres.posthog_hogfunction hf JOIN postgres.posthog_team t ON hf.team_id = t.id
-WHERE t.organization_id = '<ORG_ID>' AND hf.deleted = false ORDER BY hf.created_at ASC LIMIT 50
+WHERE t.organization_id = '<ORG_ID>' ORDER BY hf.deleted, hf.created_at ASC LIMIT 50
 ```
 
 ### batch-exports
@@ -451,6 +463,16 @@ SELECT b.name, b.created_at, b.paused, b.interval, d.type AS destination_type
 FROM postgres.posthog_batchexport b JOIN postgres.posthog_batchexportdestination d ON b.destination_id = d.id
 JOIN postgres.posthog_team t ON b.team_id = t.id
 WHERE t.organization_id = '<ORG_ID>' AND b.deleted = false ORDER BY b.created_at ASC LIMIT 50
+```
+
+Whether the exports actually run, from the run history. On EU swap every table in both queries to its `eu_postgres_` twin, never some; the destination config is encrypted, so the type is all you get. `postgres.posthog_batchexportbackfill` (joined the same way) counts backfills. **Read this before calling an export cut off**: the `rows_exported` quota can read `already limited` every period while every run still completes.
+
+```sql
+SELECT b.name AS export, r.status AS status, count() AS runs, sum(r.records_completed) AS records, max(r.created_at) AS latest
+FROM postgres.posthog_batchexportrun r JOIN postgres.posthog_batchexport b ON r.batch_export_id = b.id
+JOIN postgres.posthog_team t ON b.team_id = t.id
+WHERE t.organization_id = '<ORG_ID>' AND r.created_at > now() - INTERVAL 30 DAY
+GROUP BY export, status ORDER BY export LIMIT 100
 ```
 
 ## AI Observability
@@ -488,7 +510,7 @@ GROUP BY email, day, question_preview ORDER BY day DESC, email, question_preview
 ```
 Twenty prompts is a sample of the newest day, not their whole AI history. `email` and `question_preview` are in the ORDER BY only to make the truncation repeatable; raise the LIMIT to read further back.
 
-**Raise it on any cost or call-prep run, because this is where the customer's stated goal lives in their own words.** Nothing else in the skill reaches it. What they asked PostHog AI is what they were trying to do, in sequence and dated: the question they could not answer, the setting they went looking for, the fix they then applied. It is a required input to `change-timeline` (`queries-account.md`). Quote them verbatim into a brief; a customer's own sentence outranks any restatement of it.
+**Raise it on any cost or call-prep run, because this is where the customer's stated goal lives in their own words.** Nothing else in the skill reaches it. What they asked PostHog AI is what they were trying to do, in sequence and dated: the question they could not answer, the setting they went looking for, the fix they then applied. It is a required input to `change-timeline` (`queries-account.md`). Quote them verbatim into a brief; a customer's own sentence outranks any restatement of it. Redact any API key, token or password a prompt carries, and report it as a credential to rotate.
 
 ## Group analytics
 
@@ -496,7 +518,7 @@ Twenty prompts is a sample of the newest day, not their whole AI history. `email
 
 ### group-types
 
-US only. Empty means no group types defined, **but only once you have confirmed the sync is not paused**: this mirror can sit paused and return zero rows silently while `group_types_total` on the usage report is nonzero. Read the resolver warning and cross-check that field before calling it zero. Group Analytics is a cumulative add-on: switching it on bills every identified event at the group rate from then on. So "add-on paid, no group types defined" is a concrete cost cut, and this query plus `event_count_with_groups_in_period` from the usage report is the pair that proves it. `eu_postgres_posthog_grouptypemapping` is unreadable, so on EU this check is unavailable rather than zero.
+US only. Empty means no group types defined, **but only once you have confirmed the sync is not paused**: this mirror can sit paused and return zero rows silently while `group_types_total` on the usage report is nonzero. Read the resolver warning and cross-check that field before calling it zero. Group Analytics is a cumulative add-on: switching it on bills every identified event at the group rate from then on. So "add-on paid, no group types defined" is a concrete cost cut, and this query plus `event_count_with_groups_in_period` from the usage report is the pair that proves it. `eu_postgres_posthog_grouptypemapping` is unreadable, so on EU count group types on the direct connection instead (`SELECT group_type_index, count() FROM groups WHERE team_id IN (<TEAM_IDS>) GROUP BY group_type_index LIMIT 20`), which answers everything but the display names.
 ```sql
 SELECT t.name AS project_name, gtm.group_type, gtm.group_type_index, gtm.name_singular, gtm.name_plural
 FROM postgres.posthog_grouptypemapping gtm JOIN postgres.posthog_team t ON gtm.team_id = t.id
@@ -509,7 +531,7 @@ No per-org web analytics volume source exists in project 2, in either region (th
 
 ## Logs
 
-**Usage report fields** (org+team): `logs_records_in_period` (records/day), `logs_bytes_in_period` and `logs_mb_in_period` (volume/day), `logs_retention_14d_mb_in_period` / `logs_retention_30d_mb_in_period` / `logs_retention_90d_mb_in_period` (MB/day split by retention tier, so a retention downgrade is a costed recommendation), and the per-SDK `<sdk>_logs_records_in_period` keys (enumerate live). Log capture never lands in `events` (the rule in `SKILL.md`).
+**Usage report fields** (org+team): `logs_records_in_period` (records/day), `logs_bytes_in_period` and `logs_mb_in_period` (volume/day), `logs_retention_14d_mb_in_period` / `logs_retention_30d_mb_in_period` / `logs_retention_90d_mb_in_period` (MB/day split by retention tier, so a retention downgrade is a costed recommendation), and the per-SDK `<sdk>_logs_records_in_period` keys (enumerate live). Log capture never lands in `events` ("Traps" in `data-rules.md`).
 
 ## Product analytics (insights, dashboards, actions, cohorts, properties)
 
@@ -532,6 +554,8 @@ WHERE event IN ('viewed dashboard','dashboard analyzed') AND timestamp >= now() 
 GROUP BY properties.dashboard_id, email, dashboard_items, other, dashboard_name ORDER BY views DESC LIMIT 50
 ```
 
+`dashboard_name` can come back blank: the event does not always carry it. Join `properties.dashboard_id` to `postgres.posthog_dashboard` (`eu_postgres_posthog_dashboard` on EU) for the name rather than reporting unnamed dashboards.
+
 ### insights-viewed
 
 Which insights each admin returns to, by query kind.
@@ -545,6 +569,8 @@ WHERE event IN ('insight analyzed','insight viewed') AND timestamp >= now() - IN
 GROUP BY person.properties.email, properties.query_kind ORDER BY views DESC LIMIT 50
 ```
 
+Insight names can come back blank the same way; take them from `postgres.posthog_dashboarditem` (`eu_postgres_posthog_dashboarditem` on EU) by `properties.insight_id`.
+
 ### actions-defined
 
 US only; zero actions + significant autocapture = waste. EU has no `posthog_action` in either project, so on EU this check is unmeasurable rather than zero (`data-rules.md`); the EU fallback signal is `autocapture_opt_out` in `team-config`.
@@ -555,7 +581,7 @@ WHERE t.organization_id = '<ORG_ID>' AND a.deleted = false ORDER BY a.name ASC L
 
 ### property-definitions
 
-US only; instrumentation breadth per project, and the event/person/group split. `posthog_propertydefinition` has no `deleted` column, so there is nothing to filter. `type` is 1 event, 2 person, 3 group. On EU, read the direct connection's `property_definitions` instead: `team_id` and `type` are Strings there, `is_numerical` does not exist (drop it from the SELECT), and rows repeat per (event, property), so `count()` overcounts; count `DISTINCT name`.
+US only; instrumentation breadth per project, and the event/person/group split. `posthog_propertydefinition` has no `deleted` column, so there is nothing to filter. `type` is 1 event, 2 person, 3 group. On EU, read the direct connection's `property_definitions` instead: `team_id` and `type` are Strings there, `is_numerical` does not exist (drop it from the SELECT), and rows repeat per (event, property), so `count()` overcounts; count `DISTINCT name`. That copy can lag months behind and stop short of newer projects, so compare the teams it returns with `resolve-teams` and name the ones it is missing.
 ```sql
 SELECT t.name AS project_name, count() AS property_definitions,
        countIf(pd.is_numerical) AS numerical,
@@ -587,11 +613,20 @@ FROM eu_posthog_cohortcalculationhistory cch JOIN eu_postgres_posthog_team t ON 
 WHERE t.organization_id = '<ORG_ID>' LIMIT 1
 ```
 
+**This snapshot can time out on every try** (three 504s in a row on one account, 16 October 2026, with or without the team join). Then count cohorts on the direct connection instead, which is live but sees only cohorts with someone in them, so say so:
+
+```sql
+SELECT team_id AS team, count(DISTINCT cohort_id) AS cohorts_with_members
+FROM cohortpeople
+WHERE team_id IN (<TEAM_IDS>)
+GROUP BY team LIMIT 50
+```
+
 ### dashboard-definitions
 
 `eu_postgres_posthog_dashboarditem` has no `last_viewed_at` (only `last_modified_at`); read view activity from `stale-dashboards`, never from the item mirror.
 
-On EU run the same read against `eu_postgres_posthog_dashboard`, which is readable, with one exception: `eu_postgres_posthog_dashboardtile.deleted` is NULL on live rows (deleted tiles carry true), so filter tiles with `deleted IS NULL OR deleted = false` or every live tile reads as missing. `created_last_90d` high with `pinned` low is a customer generating dashboards nobody curates.
+On EU run the same read against `eu_postgres_posthog_dashboard`, swapping `postgres.posthog_team` to `eu_postgres_posthog_team` in the same pass (the half-swap rule), and if you join tiles (the SQL below does not), `eu_postgres_posthog_dashboardtile.deleted` is NULL on live rows (deleted tiles carry true), so filter tiles with `deleted IS NULL OR deleted = false` or every live tile reads as missing. `created_last_90d` high with `pinned` low is a customer generating dashboards nobody curates.
 
 **A per-parent count of exactly zero across ALL parents is a join artifact until a direct count says otherwise.** A `LEFT JOIN` from `eu_postgres_posthog_dashboard` onto `eu_postgres_posthog_dashboardtile` can return `tiles = 0` for every dashboard with no error, and it does not reproduce on a rerun, so treat it as intermittent rather than a rule about joins. The check is cheap and the failure is expensive: zero tiles everywhere reads as "they built empty dashboards and abandoned them", a plausible sentence to ship to a customer. Confirm any all-zero with `SELECT ... WHERE dashboard_id IN (...)` on the child table before it becomes a finding.
 
@@ -608,7 +643,7 @@ GROUP BY t.name ORDER BY dashboards_total DESC LIMIT 20
 
 ### stale-dashboards
 
-Both regions; the built-and-abandoned check, and the shape to copy for other objects. `query_log_archive_us` / `_eu` carries `lc_org_id` as a String, so this scopes by org with no team join and no collision hazard. The same table carries `lc_insight_id`, `lc_cohort_id`, `lc_experiment_id`, `lc_access_method`, and `lc_product`, so the same defined-versus-touched shape extends to those objects. **Carry the `> 0` guard across with it.** Rows where the object id is unset store 0 rather than NULL, so `uniq(lc_<object>_id)` without it counts that 0 as a distinct object and overstates by exactly one on every object type, which is the difference between "they have a cohort nobody touches" and "they have none". A large gap between the two numbers is the abandoned-dashboards story, and it reads as an onboarding finding rather than a scolding: they built, then stopped returning.
+Both regions; the built-and-abandoned check, and the shape to copy for other objects. `query_log_archive_us` / `_eu` carries `lc_org_id` as a String, so this scopes by org with no team join and no collision hazard. The same table carries `lc_insight_id`, `lc_cohort_id`, `lc_experiment_id`, `lc_access_method`, and `lc_product`, so the same defined-versus-touched shape extends to those objects. **Carry the `> 0` guard across with it.** Rows where the object id is unset store 0 rather than NULL, so `uniq(lc_<object>_id)` without it counts that 0 as a distinct object and overstates by exactly one on every object type, which is the difference between "they have a cohort nobody touches" and "they have none". A large gap between the two numbers is the abandoned-dashboards story, and it reads as an onboarding finding rather than a scolding: they built, then stopped returning. **The query-log half often hits the execution ceiling**, while the defined count returns in seconds: after the one identical retry, take the touched side from `dashboard-views` and say it is the admins' own viewing rather than every read.
 US variant:
 ```sql
 SELECT
