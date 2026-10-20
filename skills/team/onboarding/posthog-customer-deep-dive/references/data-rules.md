@@ -248,7 +248,7 @@ Everything about the account, the team's own work on it and the automation runni
 | Column | Meaning |
 |---|---|
 | `onboarding_stage` | The `Onboarding Pipeline` property as a person or workflow wrote it. Null means the account never entered the pipeline |
-| `onboarding_eligibility`, `eligibility_blocker` | `Eligible`, `In progress`, `Done` or `Not eligible`, and the first gate that failed |
+| `onboarding_eligibility`, `eligibility_blocker` | `Eligible`, `In progress`, `Done` or `Not eligible`, and the first billing gate that fails today. v8 fills the blocker on every row, so on `In progress` and `Done` it only says why the account would not qualify now and blocks nothing |
 | `os_priority`, `priority_reason` | 0 to 100, null outside `Eligible` and `In progress`, 0 for 13 days after an onboarding email. The reason string says which signals fired |
 | `onboarding_last_email_at`, `days_since_onboarding_email` | The later of the team's Gmail-synced sends and the Workflows stamp. Payment emails never count |
 | `onboarding_outbound`, `onboarding_replied`, `onboarding_engagement` | What this team sent, whether the customer wrote back to it, and the kinds of engagement (`call_held`, `call_booked`, `call_purchased`, `email_reply`, or `none`) |
