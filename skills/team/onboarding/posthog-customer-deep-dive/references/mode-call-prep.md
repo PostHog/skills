@@ -69,7 +69,7 @@ Real cost and data-quality problems only. Each needs a source that reads their P
 An account brief (Step 3, route 5) uses this file's brief shape and skips the notebook prompt.
 
 
-Emit the notebook prompt (below in this file) unless the account has not consented to PostHog AI, `org-status` shows a signed BAA, or `ai_processing_approved` is false; then say it was skipped and why, and use the consent gap as the hook only where consent is the reason. Read consent from observed use (`posthog-ai-chat` / `query-usage`): real prompts mean consented; zero AI activity means check before assuming either way.
+Emit the notebook prompt (below in this file) unless the account has not consented to PostHog AI, `org-status` shows a signed BAA, or `ai_processing_approved` is false; then say it was skipped and why, and use the consent gap as the hook only where consent is the reason. `ai_processing_approved` decides, whatever the observed use: AI activity in `posthog-ai-chat` or `query-usage` beside a false flag means consent was turned off later or the activity came through a path that needs none, so report the disagreement and ask, and never call the account consented on activity alone.
 
 The brief is the deliverable, and everything in it, links and full numbers included, lands in chat as clean markdown the user can read on the call.
 
