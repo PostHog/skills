@@ -32,6 +32,14 @@ Copy any skill directory to `.claude/skills/` in your project:
 cp -r skills/team/customer-success/posthog-debugger .claude/skills/posthog-debugger
 ```
 
+## Install in Neotask
+
+The `posthog-all` plugin is on [Neotask Construct](https://construct.neotask.ai/p/posthog-all). Install it with the Neotask CLI, or from the Neotask desktop app under Agents > Skills > Add-ons:
+
+```
+neotask construct install posthog-all
+```
+
 ## Adding a skill to the marketplace
 
 Any directory under `skills/` that contains a `.claude-plugin/plugin.json` is automatically discovered and added to the marketplace catalog. To make your skill installable:
