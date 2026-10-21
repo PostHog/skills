@@ -61,7 +61,7 @@ The vantage warning used to sit here, scoped to "anything reading a customer's o
 
 Main resolves these once and **writes them to `<run scratchpad>/context.md`**; every brief points at that path instead of carrying a copy. **No gatherer re-resolves any of them.** A gatherer that needs one and does not have it reports the gap rather than querying for it.
 
-Org id, Customer Analytics account id (or `none`), region, team ids with their names and tokens, sibling orgs, domain, admin emails, and from `org-snapshot` the latest `teams_map`, `realm` and web-event count (batch 2a). Batch 3 adds the onboarding state (stage, eligibility, what onboarding sent and when the sequence wakes next, the forecast), the roster, and the free Salesforce firmographics `clay` reads (`salesforce-firmographics`). Round 1b adds `plans_map` and `custom_limits_map` from `account-state`.
+Org id, Customer Analytics account id (or `none`), region, team ids with their names and tokens, sibling orgs, domain, admin emails, and from `org-snapshot` the latest `teams_map`, `realm` and web-event count (batch 2a). Batch 3 adds the onboarding state (stage, eligibility, what onboarding sent and when the sequence wakes next, the forecast), the roster, and the free Salesforce firmographics `clay` reads (`salesforce-firmographics`). Round 1b adds `plans_map` and `custom_limits_map` from `account-state`, the products picked at signup from `signup-intent`, and engaged users, builders and products in use from `org-universe`.
 
 Everything through batch 3 is in the file before the launch; the Round 1b values are appended as they resolve, so a brief written early points at a file that fills in behind it. Write the file, then launch.
 
