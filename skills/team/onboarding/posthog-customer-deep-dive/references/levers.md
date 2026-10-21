@@ -43,6 +43,7 @@ Fits them, unused; lead with value, end with the first step. The When column is 
 | Custom events via the wizard | thin instrumentation | the wizard scans the codebase and instruments real flows; confirm the current command | posthog wizard |
 | PostHog AI + MCP | technical, MCP-curious | PostHog AI writes HogQL and builds insights from natural language; the MCP queries data and triages errors from the editor | model context protocol |
 | Web analytics, error tracking, surveys, CDP | fits them, unused | pitch the value plus the one-line adoption step | the product's own page |
+| Picked at signup, not in use | a product in `primary_picks` or `secondary_picks` (`signup-intent`) with no usage in `org-universe` | they already said they wanted it, so the email is the one setup step for that product, not a pitch; lead with the primary pick | the product's own page |
 | Self-driving | AI-native org, zero Inbox/Scout/`pr_created` | their data already generates signals: Scouts hunt findings on a cron, the Inbox clusters them, PostHog Code turns them into PRs. The flow is evolving fast, so read before pitching | self-driving |
 
 ## Disqualifiers: right numbers that are not findings

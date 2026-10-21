@@ -222,7 +222,8 @@ Map the org to its teams first with `all_posthog_team WHERE organization_id = '<
 | The query logs | what they actually use, and what is live vs stale | both |
 | The postgres mirror | names, keys, definitions, settings | US complete, EU partial |
 | Customer Analytics, `onboarding_accounts_v8`, the email sync | ownership, stage, money, conversations, what onboarding's own workflows did | both |
-| `events` filtered by `$group_0` | their team using the PostHog app, NEVER their product | both |
+| `org_universe` | one row per org across billing, usage, engagement, Salesforce and Growth enrichment, rebuilt daily (`org-universe`) | both |
+| `events` filtered by `$group_0` | their team using the PostHog app, NEVER their product; also what they picked at signup (`signup-intent`) | both |
 | The direct ClickHouse connection, `team_id` filtered | their product's raw events | both, contents differ |
 
 Counts from the usage report, activity from the query log, names from the mirror. The events row is the trap: an `$autocapture` or `$pageview` count there is the customer's team clicking around PostHog.

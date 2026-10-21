@@ -317,6 +317,56 @@ LIMIT 1
 - **A signed BAA rules out every AI-feature lever** until the live [HIPAA page](https://posthog.com/docs/privacy/hipaa-compliance.md) says otherwise: PostHog AI, Replay Vision and the other AI features have been outside the BAA, so re-read the page and quote it rather than pitching one. `is_hipaa` on the org table looks like the field to read and is null or false on every org, so never read it.
 - Empty columns mean the org is in neither table, which makes them unmeasured, not "active" or "not approved".
 
+## org-universe
+
+One row per org from `org_universe`, the cross-source org table Growth and RevOps maintain: engagement, products in use, usage momentum, billing risk, credits, Salesforce lead history and Growth's enrichment, in either region. Rebuilt daily. Read it for who on the account actually uses PostHog and whether that is growing, which nothing else here gives in one read.
+
+```sql
+SELECT universe_version, as_of, activity_as_of, usage_as_of,
+       primary_organization_id = organization_id AS is_main_org, primary_organization_id, company_domain,
+       engaged_users_7d, engaged_users_30d, engaged_users_prior_30d, builders_30d, engaged_days_30d, days_since_last_seen,
+       member_count, invites_30d, signups_30d,
+       products_activated_30d, products_used_30d, billable_events_momentum, billable_spend_ramp_7d, billable_rising_surfaces,
+       billing_limits, capped_products, credits_remaining, credit_runway_days, credits_expiring_at,
+       startup_plan_active, startup_plan_ends_at, trial_status,
+       last_lead_task_at, last_lead_task_source, sfdc_last_disqualification_reason, sfdc_use_cases,
+       icp_fit_status, icp_fit_score, enrichment_is_ai_native, enrichment_headcount, enrichment_headcount_engineering,
+       enrichment_funding_stage, enrichment_total_raised, is_yc_company
+FROM org_universe WHERE organization_id = '<ORG_ID>'
+```
+
+- **Read the column descriptions before quoting a column you have not used before** (`system.information_schema.columns WHERE table_name = 'org_universe'`). It has close to 400 columns, each documented, and `universe_version` changes whenever a meaning does.
+- **Engagement is the strongest column here, and it is PostHog-app use**: `engaged_users_30d` and `builders_30d` count their team querying, viewing and building in PostHog, staff excluded. `engaged_users_prior_30d` is NULL while the stored history is short, which means unknown, not zero.
+- **`capped_products` is not data loss.** It lists products whose billing limit sits at or below 1.2 times last month's spend, and billing's own defaults count, so a `posthog_ai` or `data_warehouse` entry is usually a limit nobody chose. Whether a limit actually cut data off is `org_quota_limited_until` (`quota-limits` in `queries-money.md`); who set it is `billing-limit-updates`.
+- **`products_activated_30d` carries four keys only** (`recordings`, `error_tracking`, `feature_flags`, `surveys`), with product analytics never among them. For LLM analytics, logs and the warehouse read `billable_ai_events_30d`, `billable_logs_mb_30d` and `billable_rows_synced_30d`.
+- **Growth's enrichment is thin on onboarding's accounts.** The ICP fit columns cover US orgs only and most new paying orgs have none, so an empty `icp_fit_score` or headcount means unscored, never small. Never rank or disqualify an account on it.
+- **Freshness is on the row**: each `*_as_of` column names when its source last landed, and a `built_at` older than a day means an input failed to build.
+- **The money columns here are cross-checks.** The forecast comes from `onboarding-state` and the last bill from `money-picture`, per `SKILL.md`.
+
+## signup-intent
+
+What the org said it came for when it signed up, and whether it finished setup. It comes from PostHog's own signup and onboarding events in project 2, which carry the org as `$group_0` in both regions. The primary product picked at signup is the best single line for what to open an email with, and a product picked but not in use is an adoption hook (`levers.md`).
+
+```sql
+SELECT event, count() AS n, min(timestamp) AS first_at, max(timestamp) AS last_at,
+       groupUniqArrayIf(5)(toString(properties.product_key), toString(properties.intent_context) = 'onboarding product selected - primary') AS primary_picks,
+       groupUniqArrayIf(10)(toString(properties.product_key), toString(properties.intent_context) = 'onboarding product selected - secondary') AS secondary_picks,
+       groupUniqArray(5)(toString(properties.use_case)) AS use_cases,
+       groupUniqArray(5)(toString(properties.path)) AS selection_paths,
+       groupUniqArrayIf(3)(left(toString(properties.referral_source_ai_prompt), 300), notEmpty(toString(properties.referral_source_ai_prompt))) AS ai_prompts
+FROM events
+WHERE $group_0 = '<ORG_ID>' AND timestamp >= now() - INTERVAL 730 DAY
+  AND event IN ('user showed product intent', 'onboarding product selection path', 'user signed up',
+                'setup wizard finished', 'wizard: agent started')
+GROUP BY event
+```
+
+- **Only the `onboarding product selected` contexts are intent.** Every other `user showed product intent` row is a page or panel the person happened to open (`endpoints_viewed` fires on almost every org), the same impression trap as a pay gate, so never quote one as what they want.
+- **Several people can sign up to one org**, each picking their own products, so `primary_picks` can hold more than one. Read it as what the team came for, not one person's choice, and check `first_at` against the org's age: a pick from a teammate who joined last week is not why the org signed up.
+- **`use_case`** (`see_user_behavior`, `fix_issues`, `launch_features`, `collect_feedback`, `monitor_ai`) mostly repeats the primary pick; it is the fallback when there is no pick.
+- **`setup wizard finished` carries the org; `wizard: started` never does**, because it fires before login, so no row for it means nothing. No `setup wizard finished` row means the wizard was not finished by anyone signed in, not that setup is missing: read the event mix before saying so.
+- **`ai_prompts` is the question they asked an AI assistant before signing up**, and only a few orgs have one. It is context for whoever writes, never a line to quote back to the customer.
+
 ## salesforce-firmographics
 
 The free company and contact fields `clay` reads before spending credits, and the domain the site scan should scan. Batch 3; both go into the context file. Zero rows is common (most self-serve orgs have no Salesforce account) and means Clay works from the domain alone.
