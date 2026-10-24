@@ -1,7 +1,7 @@
 # PostHog React with TanStack Router (code-based) Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/react-tanstack-router-code-based
+Path: example-apps/react-tanstack-router-code-based
 
 ---
 
@@ -492,7 +492,7 @@ function Home() {
     return (
       <div className="container">
         <h1>Welcome back, {user.username}!</h1>
-        <p>You are now logged in. Feel free to explore:</p>
+        <p>You are logged in. Feel free to explore:</p>
         <ul>
           <li>Consider the potential of burritos</li>
           <li>View your profile and statistics</li>
@@ -767,6 +767,16 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       proxy: {
+        '/ingest/static': {
+          target: 'https://us-assets.i.posthog.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/ingest/, ''),
+        },
+        '/ingest/array': {
+          target: 'https://us-assets.i.posthog.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/ingest/, ''),
+        },
         '/ingest': {
           target: env.VITE_PUBLIC_POSTHOG_HOST || 'https://us.i.posthog.com',
           changeOrigin: true,

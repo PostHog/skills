@@ -1,4 +1,10 @@
-# Node.js error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Node.js Error Tracking installation - Docs
+
+Copy page
+
+# Node.js Error Tracking installation - Docs
 
 1.  1
 
@@ -151,9 +157,9 @@
 
     [Upload source maps](/docs/error-tracking/upload-source-maps/node.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

@@ -7,22 +7,24 @@ description: >-
   installed.
 metadata:
   author: PostHog
-  version: 1.9.4
+  version: dev
 ---
 
 # Add PostHog error tracking
 
 Use this skill to add PostHog error tracking that captures and monitors exceptions in your application. Use it after implementing features or reviewing PRs to ensure errors are tracked with full stack traces and source maps. If PostHog is not yet installed, this skill also covers initial SDK setup. Supports any platform or language.
 
-Supported platforms: React, Next.js, Web (JavaScript), Node.js, Python, Ruby, Ruby on Rails, Go, Angular, Svelte, Nuxt, React Native, Flutter, Android, and Hono.
+Supported platforms: React, Next.js, Web (JavaScript), Node.js, Python, PHP, Ruby, Ruby on Rails, Go, Elixir, Angular, Svelte, Nuxt, React Native, Flutter, iOS, Android, and Hono.
 
 ## Instructions
 
 Follow these steps IN ORDER:
 
 STEP 1: Analyze the codebase and detect the platform.
-  - Look for dependency files (package.json, requirements.txt, go.mod, Gemfile, composer.json, etc.) to determine the language and framework.
-  - Look for lockfiles (pnpm-lock.yaml, package-lock.json, yarn.lock, bun.lockb) to determine the package manager.
+  -
+ Look for dependency files (package.json, pubspec.yaml, Podfile, Package.swift, requirements.txt, go.mod, Gemfile, composer.json, mix.exs, etc.) to determine the language and framework.
+  -
+ Look for lockfiles (pnpm-lock.yaml, package-lock.json, yarn.lock, bun.lockb, go.sum, pubspec.lock, Podfile.lock, Package.resolved, mix.lock) to determine the package manager.
   - Check for existing PostHog setup (SDK initialization, env vars, etc.). If PostHog is already installed and initialized, skip to STEP 4.
 
 STEP 2: Research instrumentation. (Skip if PostHog is already set up.)
@@ -31,7 +33,6 @@ STEP 2: Research instrumentation. (Skip if PostHog is already set up.)
 
 STEP 3: Install and initialize the PostHog SDK. (Skip if PostHog is already set up.)
   - Add the PostHog SDK package for the detected platform. Do not manually edit package.json — use the package manager's install command.
-  - Always install packages as a background task. Don't await completion; proceed with other work immediately after starting the installation.
   - Follow the framework reference for where and how to initialize.
 
 STEP 4: Enable exception autocapture.
@@ -48,13 +49,16 @@ STEP 6: Upload source maps (frontend/mobile only).
   - Follow the platform-specific reference for upload configuration (build plugins, CI scripts, etc.).
 
 STEP 7: Set up environment variables.
-  - If an env-file-tools MCP server is connected, use check_env_keys to see which keys already exist, then use set_env_values to create or update the PostHog API key and host.
+  - Check if the project already has PostHog environment variables configured (e.g. in `.env`, `.env.local`, or framework-specific env files). If valid values already exist, skip this step.
+  - If the PostHog project token is missing, use the PostHog MCP server's `projects-get` tool to retrieve the project's `api_token`. If multiple projects are returned, ask the user which project to use. If the MCP server is not connected or not authenticated, ask the user for their PostHog project token instead.
+  - For the PostHog host URL: check the `projects-get` MCP response for a `region` field — `US` maps to `https://us.i.posthog.com`, `EU` maps to `https://eu.i.posthog.com`. If the region is not available from the MCP response or from existing project configuration, ask the user: "Are you on PostHog US Cloud or EU Cloud?" Do not assume US Cloud.
+  - Write these values to the appropriate env file using the framework's naming convention.
   - Reference these environment variables in code instead of hardcoding them.
 
 STEP 8: Verify and clean up.
   - Check the project for errors. Look for type checking or build scripts in package.json.
   - Ensure any components created were actually used.
-  - Run any linter or prettier-like scripts found in the package.json.
+  - Run any linter or prettier-like scripts found in the package.json, but ONLY on the files you have edited or created during this session. Never run formatting or linting across the entire project's codebase.
 
 ## Reference files
 
@@ -63,14 +67,24 @@ STEP 8: Verify and clean up.
 - `references/nextjs.md` - Next.js error tracking installation - docs
 - `references/node.md` - Node.js error tracking installation - docs
 - `references/python.md` - Python error tracking installation - docs
+- `references/django.md` - Django - docs
+- `references/flask.md` - Flask - docs
+- `references/php.md` - Php error tracking installation - docs
+- `references/laravel.md` - Laravel - docs
 - `references/ruby.md` - Ruby error tracking installation - docs
 - `references/ruby-on-rails.md` - Ruby on rails error tracking installation - docs
+- `references/ruby-on-rails.md` - Ruby on rails - docs
 - `references/go.md` - Go error tracking installation - docs
+- `references/dotnet.md` - .net error tracking installation - docs
+- `references/dotnet.md` - .net - docs
+- `references/elixir.md` - Elixir error tracking installation - docs
 - `references/angular.md` - Angular error tracking installation - docs
 - `references/svelte.md` - Sveltekit error tracking installation - docs
-- `references/nuxt.md` - Nuxt error tracking installation (v3.7 and above) - docs
+- `references/nuxt-3-7.md` - Nuxt error tracking installation (v3.7 and above) - docs
+- `references/nuxt-3-6.md` - Nuxt error tracking installation (v3.6 and below) - docs
 - `references/react-native.md` - React native error tracking installation - docs
 - `references/flutter.md` - Flutter error tracking installation - docs
+- `references/ios.md` - Ios error tracking installation - docs
 - `references/android.md` - Android error tracking installation - docs
 - `references/hono.md` - Hono error tracking installation - docs
 - `references/fingerprints.md` - Fingerprints - docs
@@ -78,6 +92,7 @@ STEP 8: Verify and clean up.
 - `references/monitoring.md` - Monitor and search issues - docs
 - `references/assigning-issues.md` - Assign issues to teammates - docs
 - `references/upload-source-maps.md` - Upload source maps - docs
+- `references/COMMANDMENTS.md` - Framework-specific rules the integration must follow
 
 Each platform reference contains SDK-specific installation and manual capture patterns. Find the one matching the user's stack.
 
