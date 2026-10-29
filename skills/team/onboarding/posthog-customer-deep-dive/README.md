@@ -53,7 +53,7 @@ Optional sources set to `none` in `config.md` are skipped without erroring, and 
 
 ## Install
 
-This is a **Claude Code plugin**, published in the `PostHog/skills` GitHub repo. It is **not** in PostHog's in-app skills store, so `skill-list` over the PostHog MCP and the skill list at `us.posthog.com/project/2/skills` will both come back empty for it. Those are a different registry. A working PostHog MCP connection is what the skill queries through once it runs; it is not how you install it.
+This is a **Claude Code plugin**, published in the `PostHog/skills` GitHub repo, and the plugin is how you install it on your own machine. A copy also sits in PostHog's in-app skills store on project 2 (`us.posthog.com/project/2/skills`, or `skill-list` over the PostHog MCP), which is what PostHog's own cloud runs, like the `@PostHog` Slack app, use for that copy's owners. The store copy carries cloud-only config, so don't install from it locally. A working PostHog MCP connection is what the skill queries through once it runs; it is not how you install it.
 
 Pick **one** of the two routes below. Doing both leaves two copies competing to fire. Restart Claude Code when you are done either way.
 
