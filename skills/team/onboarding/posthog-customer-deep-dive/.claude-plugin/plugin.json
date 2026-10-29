@@ -1,7 +1,7 @@
 {
   "name": "posthog-customer-deep-dive",
   "description": "Research a PostHog customer account in Customer Analytics and the onboarding team's own workflows, then draft an outreach email, a reply, or a full call-prep brief with a notebook prompt",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "author": { "name": "PostHog" },
   "keywords": ["posthog", "onboarding", "customer-success", "account-research", "call-prep"]
 }
