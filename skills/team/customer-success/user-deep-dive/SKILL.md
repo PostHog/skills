@@ -1,9 +1,9 @@
 ---
 name: user-deep-dive
-description: Deep dive on a PostHog user by email address. Analyze what they do, where they spend time, and what products they use.
+description: "Analyse a PostHog user by email address — queries event history, maps product area usage, identifies feature adoption patterns, and cross-references Vitally CRM data to produce a structured profile with outreach angles. Use when preparing for a call with a specific user, investigating engagement changes, looking up user activity or behavior, doing an account review, or identifying power users and product gaps."
 ---
 
-Deep dive on a PostHog user by email address. Analyse what they do, where they spend time, and what products they use.
+Deep dive on a PostHog user by email address. Queries their event history, maps which product areas they use, identifies feature adoption patterns, and cross-references Vitally CRM data to produce a structured profile with outreach angles.
 
 **Input**: $ARGUMENTS (email address, e.g. `artis.conka@enlabs.com`)
 
@@ -21,105 +21,16 @@ If they don't respond or say "default", use **14 days**. Use their answer to set
 
 ### Step 1: Run queries in parallel
 
-Run all of the following queries simultaneously via the `query-run` MCP tool.
+Run all 7 queries from [references/queries.md](references/queries.md) simultaneously via the `query-run` MCP tool. Each query uses `{email}` and `{days}` as parameters.
 
-**1. Activity overview** — event breakdown (excluding PostHog internals):
-```sql
-SELECT event, count() as cnt
-FROM events
-WHERE person.properties.email = '{email}'
-  AND timestamp >= now() - interval {days} day
-  AND event NOT IN (
-    '$feature_flag_called',
-    '$ai_span',
-    '$ai_trace',
-    '$autocapture',
-    '$web_vitals',
-    'react_framerate',
-    'spinner_unloaded',
-    'replay_parse_timing',
-    '$dead_click'
-  )
-GROUP BY event
-ORDER BY cnt DESC
-LIMIT 30
-```
-
-**2. Page views** — where they spend their time:
-```sql
-SELECT properties.$current_url as url, count() as cnt
-FROM events
-WHERE person.properties.email = '{email}'
-  AND event = '$pageview'
-  AND timestamp >= now() - interval {days} day
-GROUP BY url
-ORDER BY cnt DESC
-LIMIT 25
-```
-
-**3. Insight details** — which insights/dashboards they view:
-```sql
-SELECT properties.insight as insight_type, properties.insight_name as name, count() as views
-FROM events
-WHERE person.properties.email = '{email}'
-  AND event = 'insight viewed'
-  AND timestamp >= now() - interval {days} day
-GROUP BY insight_type, name
-ORDER BY views DESC
-LIMIT 20
-```
-
-**4. Session replay views** — replays they've watched:
-```sql
-SELECT
-  properties.session_id as session_id,
-  properties.$current_url as url,
-  timestamp
-FROM events
-WHERE person.properties.email = '{email}'
-  AND event = '$recording_viewed'
-  AND timestamp >= now() - interval {days} day
-ORDER BY timestamp DESC
-LIMIT 20
-```
-
-**5. Error tracking usage** — how they interact with error tracking in PostHog:
-```sql
-SELECT event, properties.issue_id as issue_id, properties.issue_name as issue_name, count() as cnt
-FROM events
-WHERE person.properties.email = '{email}'
-  AND event IN ('error tracking issue viewed', 'error tracking issue resolved', 'error tracking issue assigned', 'error tracking issue suppressed', 'error tracking list viewed')
-  AND timestamp >= now() - interval {days} day
-GROUP BY event, issue_id, issue_name
-ORDER BY cnt DESC
-LIMIT 20
-```
-
-**6. PostHog AI usage** — Max and insight analysis counts:
-```sql
-SELECT event, count() as cnt
-FROM events
-WHERE person.properties.email = '{email}'
-  AND event IN ('$ai_generation', '$conversations_loaded', 'insight analyzed', 'chat with data opened')
-  AND timestamp >= now() - interval {days} day
-GROUP BY event
-ORDER BY cnt DESC
-```
-
-**7. Where they open Max** — which pages/contexts they use Max on:
-```sql
-SELECT
-  properties.$current_url as url,
-  count() as cnt
-FROM events
-WHERE person.properties.email = '{email}'
-  AND event = '$conversations_loaded'
-  AND timestamp >= now() - interval {days} day
-  AND properties.$current_url LIKE '%posthog.com/project%'
-GROUP BY url
-ORDER BY cnt DESC
-LIMIT 20
-```
+The queries cover:
+1. **Activity overview** — top events excluding PostHog internals
+2. **Page views** — most visited URLs for product area mapping
+3. **Insight details** — specific insights and dashboards viewed
+4. **Session replay views** — recordings watched with timestamps
+5. **Error tracking usage** — triaging activity vs browsing
+6. **PostHog AI usage** — Max opens, AI generations, insight analyses
+7. **Where they open Max** — pages and contexts for Max usage
 
 ### Step 2: Cross-reference with Vitally
 
@@ -161,7 +72,7 @@ Use Vitally tools to look up the user by email — get their role, title, accoun
 ### PostHog AI Usage
 - How often do they open Max (`$conversations_loaded` count) and make AI calls (`$ai_generation` count)?
 - Do they use insight analysis (`insight analyzed`)?
-- **Where do they open Max?** — Summarise the URLs from query 7. Extract the product area from each URL (e.g. `/dashboard/` → "dashboards", `/sql` → "SQL editor", `/insights/` → "insights", `/persons/` → "person profiles") and list the top contexts with counts. This tells us what they're trying to get help with.
+- Summarise the top contexts from query 7 where they open Max, with counts.
 - Are they looking at LLM Analytics?
 
 ### Outreach Angles
