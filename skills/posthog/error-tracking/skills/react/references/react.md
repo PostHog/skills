@@ -1,4 +1,10 @@
-# React error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# React Error Tracking installation - Docs
+
+Copy page
+
+# React Error Tracking installation - Docs
 
 1.  1
 
@@ -34,15 +40,15 @@
 
     Required
 
-    Add your PostHog project token and host to your environment variables. For Vite-based React apps, use the `VITE_PUBLIC_` prefix:
+    Add your PostHog project token and host to your environment variables. For Vite-based React apps, use the `VITE_` prefix to expose them to the client:
 
     .env
 
     PostHog AI
 
     ```bash
-    VITE_PUBLIC_POSTHOG_PROJECT_TOKEN=<ph_project_token>
-    VITE_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
+    VITE_POSTHOG_PROJECT_TOKEN=<ph_project_token>
+    VITE_POSTHOG_HOST=https://us.i.posthog.com
     ```
 
 3.  3
@@ -64,12 +70,12 @@
     import App from './App.jsx'
     import { PostHogProvider } from '@posthog/react'
     const options = {
-      api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
-      defaults: '2026-01-30',
+      api_host: import.meta.env.VITE_POSTHOG_HOST,
+      defaults: '2026-05-30',
     } as const
     createRoot(document.getElementById('root')).render(
       <StrictMode>
-        <PostHogProvider apiKey={import.meta.env.VITE_PUBLIC_POSTHOG_PROJECT_TOKEN} options={options}>
+        <PostHogProvider apiKey={import.meta.env.VITE_POSTHOG_PROJECT_TOKEN} options={options}>
           <App />
         </PostHogProvider>
       </StrictMode>
@@ -214,9 +220,9 @@
 
      [Upload source maps](/docs/error-tracking/upload-source-maps/react.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
