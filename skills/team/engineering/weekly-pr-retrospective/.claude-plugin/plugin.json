@@ -1,0 +1,7 @@
+{
+  "name": "weekly-pr-retrospective",
+  "description": "Weekly PR retrospective categorized against goals from a user-provided source (GitHub issue or website)",
+  "version": "1.0.0",
+  "author": { "name": "PostHog" },
+  "keywords": ["posthog", "engineering", "retrospective", "github", "pr-review"]
+}
