@@ -1,4 +1,10 @@
-# Android feature flags installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Android Feature Flags installation - Docs
+
+Copy page
+
+# Android Feature Flags installation - Docs
 
 1.  1
 
@@ -88,7 +94,7 @@
     if (isMyFlagEnabled) {
         // Do something differently for this user
         // Optional: fetch the payload
-        val matchedFlagPayload = PostHog.getFeatureFlagPayload("flag-key")
+        val matchedFlagPayload = PostHog.getFeatureFlagResult("flag-key")?.payload
     }
     ```
 
@@ -109,7 +115,7 @@
     if (enabledVariant == "variant-key") { // replace 'variant-key' with the key of your variant
         // Do something differently for this user
         // Optional: fetch the payload
-        val matchedFlagPayload = PostHog.getFeatureFlagPayload("flag-key")
+        val matchedFlagPayload = PostHog.getFeatureFlagResult("flag-key")?.payload
     }
     ```
 
@@ -137,9 +143,9 @@
     | [How to do a phased rollout](/tutorials/phased-rollout.md) | Gradually roll out features to minimize risk |
     | [More tutorials](/docs/feature-flags/tutorials.md) | Other real-world examples and use cases |
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

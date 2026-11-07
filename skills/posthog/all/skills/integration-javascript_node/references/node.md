@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Node.js - Docs
+
+Copy page
+
 # Node.js - Docs
 
 If you're working with Node.js (versions 20+), the official `posthog-node` library is the simplest way to integrate your software with PostHog. This library uses an internal queue to make calls fast and non-blocking. It also batches requests and flushes asynchronously, making it perfect to use in any part of your web app or other server-side application that needs performance. And in addition to event capture, [feature flags](/docs/feature-flags.md) are supported as well.
@@ -69,7 +75,8 @@ You can find your project token and instance address in the [project settings](h
 | requestTimeout | Timeout in milliseconds for any calls | 10000 |
 | maxCacheSize | Maximum size of cache that deduplicates $feature_flag_called calls per user. | 50000 |
 | disableGeoip | When true, disables automatic GeoIP resolution for events and feature flags. | true |
-| evaluation_contexts | Evaluation context tags that constrain which feature flags are evaluated. When set, only flags with matching evaluation context tags (or no evaluation context tags) will be returned. This helps reduce unnecessary flag evaluations and improves performance. See [evaluation contexts documentation](/docs/feature-flags/evaluation-contexts.md) for more details. Available in version 5.10.0+. The legacy parameter evaluation_environments (version 5.9.6+) is also supported for backward compatibility. | undefined |
+| isServer | Controls the $is_server event property. Keep the default for server-side events. Set to false when using posthog-node from a client-like runtime, CLI, or desktop app so device OS attribution is handled normally. | true |
+| evaluationContexts | Evaluation context tags that constrain which feature flags are evaluated. When set, only flags with matching evaluation context tags (or no evaluation context tags) will be returned. This helps reduce unnecessary flag evaluations and improves performance. See [evaluation contexts documentation](/docs/feature-flags/evaluation-contexts.md) for more details. Available in version 5.23.0+. The legacy parameter evaluationEnvironments (version 5.10.0+) is also supported for backward compatibility. | undefined |
 
 > **Note:** When using PostHog in an AWS Lambda function or a similar serverless function environment, make sure you set `flushAt` to `1` and `flushInterval` to `0`. Also, remember to always call `await posthog.shutdown()` at the end to flush and send all pending events.
 
@@ -147,6 +154,8 @@ client.capture({
 ```
 
 For more details on the difference between `$set` and `$set_once`, see our [person properties docs](/docs/data/user-properties.md#what-is-the-difference-between-set-and-set_once).
+
+You can also use helper methods to set or remove person properties without hand-building `$set`, `$set_once`, or `$unset` payloads. See [person properties](/docs/product-analytics/person-properties.md) for examples.
 
 To capture [anonymous events](/docs/data/anonymous-vs-identified-events.md) without person profiles, set the event's `$process_person_profile` property to `false`:
 
@@ -379,13 +388,63 @@ posthog.withContext(
 )
 ```
 
+## Add request context to Express
+
+> Requires `posthog-node` version >= 5.31.0.
+
+If you use Express, add request-scoped PostHog context with the built-in middleware helpers. Register `setupExpressRequestContext` before your routes so events captured during a request automatically use the incoming session and distinct ID headers. Register `setupExpressErrorHandler` after your routes if you want to send Express errors to PostHog Error Tracking.
+
+server.ts
+
+PostHog AI
+
+```typescript
+import express from 'express'
+import { PostHog, setupExpressRequestContext, setupExpressErrorHandler } from 'posthog-node'
+const app = express()
+const posthog = new PostHog('<ph_project_token>', {
+  host: 'https://us.i.posthog.com',
+})
+// Register before routes.
+setupExpressRequestContext(posthog, app)
+app.post('/checkout', (req, res) => {
+  posthog.capture({ event: 'checkout_started' })
+  res.json({ status: 'ok' })
+})
+// Optional: register after routes to capture Express errors.
+setupExpressErrorHandler(posthog, app)
+```
+
+The request context middleware reads the following incoming headers:
+
+| Header | Context property | Description |
+| --- | --- | --- |
+| x-posthog-session-id | sessionId | Links server events to a client session |
+| x-posthog-distinct-id | distinctId | Sets the event distinct ID |
+
+It also automatically adds request metadata as event properties:
+
+-   `$current_url` – the request URL
+-   `$request_method` – the HTTP method (GET, POST, etc.)
+-   `$request_path` – the request path
+-   `$user_agent` – the user agent string
+-   `$ip` – the client IP (parsed from `x-forwarded-for` if behind a proxy)
+
+Properties and `distinctId` passed directly to `capture` take precedence over request context. Tracing headers are client-controlled analytics context, not authentication or authorization. Pass an authenticated `distinctId` explicitly for security-sensitive server-side decisions.
+
+### Send headers from the client
+
+If you're using [PostHog JS](/docs/libraries/js.md) on the frontend, configure [`tracing_headers`](/docs/libraries/js/config.md#tracing-headers) for your Express backend hostname so browser requests include `X-POSTHOG-SESSION-ID` and `X-POSTHOG-DISTINCT-ID`, which the Express middleware reads automatically.
+
 ## Feature flags
 
 PostHog's [feature flags](/docs/feature-flags.md) enable you to safely deploy and roll back new features as well as target specific users and groups with them.
 
-There are 2 steps to implement feature flags in Node:
+There are two steps to implement feature flags in Node:
 
-### Step 1: Evaluate the feature flag value
+### Step 1: Evaluate flags once
+
+Call `client.evaluateFlags()` once for the user, then read values from the returned snapshot.
 
 #### Boolean feature flags
 
@@ -394,11 +453,11 @@ Node.js
 PostHog AI
 
 ```javascript
-const isFeatureFlagEnabled = await client.isFeatureEnabled('flag-key', 'distinct_id_of_your_user')
-if (isFeatureFlagEnabled) {
-    // Your code if the flag is enabled
+const flags = await client.evaluateFlags('distinct_id_of_your_user')
+if (flags.isEnabled('flag-key')) {
+    // Do something differently for this user
     // Optional: fetch the payload
-    const matchedFlagPayload = await client.getFeatureFlagPayload('flag-key', 'distinct_id_of_your_user', isFeatureFlagEnabled)
+    const matchedFlagPayload = flags.getFlagPayload('flag-key')
 }
 ```
 
@@ -409,13 +468,18 @@ Node.js
 PostHog AI
 
 ```javascript
-const enabledVariant = await client.getFeatureFlag('flag-key', 'distinct_id_of_your_user')
-if (enabledVariant === 'variant-key') {  // replace 'variant-key' with the key of your variant
+const flags = await client.evaluateFlags('distinct_id_of_your_user')
+const enabledVariant = flags.getFlag('flag-key')
+if (enabledVariant === 'variant-key') { // replace 'variant-key' with the key of your variant
     // Do something differently for this user
     // Optional: fetch the payload
-    const matchedFlagPayload = await client.getFeatureFlagPayload('flag-key', 'distinct_id_of_your_user', enabledVariant)
+    const matchedFlagPayload = flags.getFlagPayload('flag-key')
 }
 ```
+
+`flags.getFlag()` returns the variant string for multivariate flags, `true` for enabled boolean flags, `false` for disabled flags, and `undefined` when the flag wasn't returned by the evaluation.
+
+> **Note:** `client.isFeatureEnabled()`, `client.getFeatureFlag()`, `client.getFeatureFlagPayload()`, and `capture({ sendFeatureFlags: true })` still work during the migration period, but they're deprecated. Prefer `evaluateFlags()` for new code.
 
 ### Step 2: Include feature flag information when capturing events
 
@@ -425,7 +489,52 @@ If you want use your feature flag to breakdown or filter events in your [insight
 
 There are two methods you can use to include feature flag information in your events:
 
-#### Method 1: Include the `$feature/feature_flag_name` property
+#### Method 1: Pass the evaluated flags snapshot to `capture()`
+
+Pass the same `flags` object that you used for branching. This attaches the exact flag values from that evaluation and doesn't make another `/flags` request.
+
+Node.js
+
+PostHog AI
+
+```javascript
+const flags = await client.evaluateFlags('distinct_id_of_your_user')
+if (flags.isEnabled('flag-key')) {
+    // Do something differently for this user
+}
+client.capture({
+    distinctId: 'distinct_id_of_your_user',
+    event: 'event_name',
+    flags,
+})
+```
+
+By default, this attaches every flag in the snapshot using `$feature/<flag-key>` properties and `$active_feature_flags`.
+
+To reduce event property bloat, pass a filtered snapshot:
+
+Node.js
+
+PostHog AI
+
+```javascript
+// Attach only flags accessed with isEnabled() or getFlag() before this call
+client.capture({
+    distinctId: 'distinct_id_of_your_user',
+    event: 'event_name',
+    flags: flags.onlyAccessed(),
+})
+// Attach only specific flags
+client.capture({
+    distinctId: 'distinct_id_of_your_user',
+    event: 'event_name',
+    flags: flags.only(['checkout-flow', 'new-dashboard']),
+})
+```
+
+`onlyAccessed()` is order-dependent. If you call it before accessing any flags with `isEnabled()` or `getFlag()`, no feature flag properties are attached.
+
+#### Method 2: Include the `$feature/feature_flag_name` property manually
 
 In the event properties, include `$feature/feature_flag_name: variant_key`:
 
@@ -438,103 +547,33 @@ client.capture({
     distinctId: 'distinct_id_of_your_user',
     event: 'event_name',
     properties: {
-        '$feature/feature-flag-key': 'variant-key' // replace feature-flag-key with your flag key. Replace 'variant-key' with the key of your variant
+        // Replace feature-flag-key with your flag key and 'variant-key' with the key of your variant
+        '$feature/feature-flag-key': 'variant-key',
     },
 })
 ```
 
-#### Method 2: Set `sendFeatureFlags` to `true`
+### Evaluating only specific flags
 
-The `capture()` method has an optional argument `sendFeatureFlags`, which is set to `false` by default. This parameter controls whether feature flag information is sent with the event.
-
-#### Basic usage
-
-Setting `sendFeatureFlags` to `true` will include feature flag information with the event:
+By default, `evaluateFlags()` evaluates every flag for the user. If you only need a few flags, pass `flagKeys` to request only those flags:
 
 Node.js
 
 PostHog AI
 
 ```javascript
-client.capture({
-    distinctId: 'distinct_id_of_your_user',
-    event: 'event_name',
-    sendFeatureFlags: true,
+const flags = await client.evaluateFlags('distinct_id_of_your_user', {
+    flagKeys: ['checkout-flow', 'new-dashboard'],
 })
-```
-
-#### Advanced usage (v5.5.0+)
-
-As of version 5.5.0, `sendFeatureFlags` can also accept an options object for more granular control:
-
-Node.js
-
-PostHog AI
-
-```javascript
-client.capture({
-    distinctId: 'distinct_id_of_your_user',
-    event: 'event_name',
-    sendFeatureFlags: {
-        onlyEvaluateLocally: true,
-        personProperties: { plan: 'premium' },
-        groupProperties: { org: { tier: 'enterprise' } }
-    }
-})
-```
-
-#### Performance considerations
-
--   **With local evaluation**: When [local evaluation](/docs/feature-flags/local-evaluation.md) is configured, setting `sendFeatureFlags: true` will **not** make additional server requests. Instead, it uses the locally cached feature flags, and it provides an interface for including person and/or group properties needed to evaluate the flags in the context of the event, if required.
-
--   **Without local evaluation**: PostHog will make an additional request to fetch feature flag information before capturing the event, which adds delay.
-
-#### Breaking change in v5.5.0
-
-Prior to version 5.5.0, feature flags were automatically sent with events when using local evaluation, even when `sendFeatureFlags` was not explicitly set. This behavior has been **removed** in v5.5.0 to be more predictable and explicit.
-
-If you were relying on this automatic behavior, you must now explicitly set `sendFeatureFlags: true` to continue sending feature flags with your events.
-
-### Fetching all flags for a user
-
-You can fetch all flag values for a single user by calling `getAllFlags()` or `getAllFlagsAndPayloads()`.
-
-This is useful when you need to fetch multiple flag values and don't want to make multiple requests.
-
-Node.js
-
-PostHog AI
-
-```javascript
-await client.getAllFlags('distinct_id_of_your_user')
-await client.getAllFlagsAndPayloads('distinct_id_of_your_user')
 ```
 
 ### Sending `$feature_flag_called` events
 
-Capturing `$feature_flag_called` events enable PostHog to know when a flag was accessed by a user and thus provide [analytics and insights](/docs/product-analytics/insights.md) on the flag. By default, we send a these event when:
+Capturing `$feature_flag_called` events enables PostHog to know when a flag was accessed by a user and provide [analytics and insights](/docs/product-analytics/insights.md) on the flag. With `evaluateFlags()`, the SDK sends this event when you call `flags.isEnabled()` or `flags.getFlag()` for a flag.
 
-1.  You call `posthog.getFeatureFlag()` or `posthog.isFeatureEnabled()`, AND
-2.  It's a new user, or the value of the flag has changed.
+The SDK deduplicates these events per `(distinct_id, flag, value)` in a local cache. If you reinitialize the PostHog client, the cache resets and `$feature_flag_called` events may be sent again. PostHog handles duplicates, so duplicate `$feature_flag_called` events don't affect your analytics.
 
-> *Note:* Tracking whether it's a new user or if a flag value has changed happens in a local cache. This means that if you reinitialize the PostHog client, the cache resets as well – causing `$feature_flag_called` events to be sent again when calling `getFeatureFlag` or `isFeatureEnabled`. PostHog is built to handle this, and so duplicate `$feature_flag_called` events won't affect your analytics.
-
-You can disable automatically capturing `$feature_flag_called` events. For example, when you don't need the analytics, or it's being called at such a high volume that sending events slows things down.
-
-To disable it, set the `sendFeatureFlagEvents` argument in your function call, like so:
-
-Node.js
-
-PostHog AI
-
-```javascript
-const isFeatureFlagEnabled = await client.isFeatureEnabled(
-    'flag-key',
-    'distinct_id_of_your_user',
-    {
-        'sendFeatureFlagEvents': false
-    })
-```
+`flags.getFlagPayload()` doesn't send `$feature_flag_called` events and doesn't count as an access for `onlyAccessed()`.
 
 ### Advanced: Overriding server properties
 
@@ -549,27 +588,26 @@ Node.js
 PostHog AI
 
 ```javascript
-await client.getFeatureFlag(
-    'flag-key',
-    'distinct_id_of_the_user',
-    {
-        personProperties: {
-            'property_name': 'value'
+const flags = await client.evaluateFlags('distinct_id_of_the_user', {
+    personProperties: {
+        property_name: 'value',
+    },
+    groups: {
+        your_group_type: 'your_group_id',
+        another_group_type: 'your_group_id',
+    },
+    groupProperties: {
+        your_group_type: {
+            group_property_name: 'value',
         },
-        groups: {
-            "your_group_type": "your_group_id",
-            "another_group_type": "your_group_id",
+        another_group_type: {
+            group_property_name: 'value',
         },
-        groupProperties: {
-            'your_group_type': {
-                'group_property_name': 'value'
-            },
-            'another_group_type': {
-                'group_property_name': 'value'
-            }
-        },
-    }
-)
+    },
+})
+if (flags.isEnabled('flag-key')) {
+    // Do something differently for this user
+}
 ```
 
 ### Overriding GeoIP properties
@@ -601,7 +639,7 @@ Simply include any of these properties in the `person_properties` parameter alon
 
 ### Request timeout
 
-You can configure the `feature_flag_request_timeout_ms` parameter when initializing your PostHog client to set a flag request timeout. This helps prevent your code from being blocked in the case when PostHog's servers are too slow to respond. By default, this is set at 3 seconds.
+You can configure the `featureFlagsRequestTimeoutMs` parameter when initializing your PostHog client to set a flag request timeout. This helps prevent your code from being blocked if PostHog's servers are too slow to respond. By default, this is set to 3 seconds.
 
 JavaScript
 
@@ -609,46 +647,9 @@ PostHog AI
 
 ```javascript
 const client = new PostHog('<ph_project_token>', {
-        api_host: 'https://us.i.posthog.com',
-        feature_flag_request_timeout_ms: 3000 // Time in milliseconds. Default is 3000 (3 seconds).
-    }
-)
-```
-
-### Error handling
-
-When using the PostHog SDK, it's important to handle potential errors that may occur during feature flag operations. Here's an example of how to wrap PostHog SDK methods in an error handler:
-
-JavaScript
-
-PostHog AI
-
-```javascript
-async function handleFeatureFlag(client, flagKey, distinctId) {
-    try {
-        const isEnabled = await client.isFeatureEnabled(flagKey, distinctId);
-        console.log(`Feature flag '${flagKey}' for user '${distinctId}' is ${isEnabled ? 'enabled' : 'disabled'}`);
-        return isEnabled;
-    } catch (error) {
-        console.error(`Error fetching feature flag '${flagKey}': ${error.message}`);
-        // Optionally, you can return a default value or throw the error
-        // return false; // Default to disabled
-        throw error;
-    }
-}
-// Usage example
-try {
-    const flagEnabled = await handleFeatureFlag(client, 'new-feature', 'user-123');
-    if (flagEnabled) {
-        // Implement new feature logic
-    } else {
-        // Implement old feature logic
-    }
-} catch (error) {
-    // Handle the error at a higher level
-    console.error('Feature flag check failed, using default behavior');
-    // Implement fallback logic
-}
+    host: 'https://us.i.posthog.com',
+    featureFlagsRequestTimeoutMs: 3000, // Time in milliseconds. Defaults to 3000 (3 seconds).
+})
 ```
 
 > **Note:** For remote config flags, see the [remote config documentation](/docs/feature-flags/remote-config.md). Remote config requires the [Feature Flags secure API key](/docs/feature-flags/remote-config.md#step-1-find-your-feature-flags-secure-api-key) passed as the `personalApiKey` option.
@@ -666,7 +667,11 @@ Node.js
 PostHog AI
 
 ```javascript
-const flagValue = await client.getFeatureFlag('flag-key', 'user distinct id', {groups:{'organization': 'google'}, groupProperties:{'organization': {'is_authorized': True}})
+const flags = await client.evaluateFlags('user distinct id', {
+    groups: { organization: 'google' },
+    groupProperties: { organization: { is_authorized: true } },
+})
+const flagValue = flags.getFlag('flag-key')
 ```
 
 #### Reloading feature flags
@@ -688,16 +693,17 @@ In multi-worker or edge environments, you can implement custom caching for flag 
 
 ## Experiments (A/B tests)
 
-Since [experiments](/docs/experiments/manual.md) use feature flags, the code for running an experiment is very similar to the feature flags code:
+Since [experiments](/docs/experiments/start-here.md) use feature flags, the code for running an experiment is very similar to the feature flags code:
 
 Node.js
 
 PostHog AI
 
 ```javascript
-const variant = await client.getFeatureFlag('experiment-feature-flag-key', 'user_distinct_id')
+const flags = await client.evaluateFlags('user_distinct_id')
+const variant = flags.getFlag('experiment-feature-flag-key')
 if (variant === 'variant-name') {
-  // do something
+  // Do something
 }
 ```
 
@@ -863,9 +869,9 @@ export const handler() {
 
 This is also useful for shutting down a standard Node.js app.
 
-## LLM analytics
+## AI Observability
 
-You can capture LLM usage and performance data by combining the `posthog-node` and `@posthog/ai` libraries. These work with LLM providers like OpenAI and Vercel's AI SDKs. Learn more in our [LLM analytics docs](/docs/llm-analytics.md).
+You can capture LLM usage and performance data by combining the `posthog-node` and `@posthog/ai` libraries. These work with LLM providers like OpenAI and Vercel's AI SDKs. Learn more in our [AI Observability docs](/docs/ai-observability.md).
 
 ## Error tracking
 
@@ -882,9 +888,9 @@ With the release of V2, the API was kept mostly the same but with some small cha
 3.  The method signature for `isFeatureEnabled` and `getFeatureFlag` is slightly modified. See the above documentation for each method for more details.
 4.  For specific changes, [see the CHANGELOG](https://github.com/PostHog/posthog-js/blob/main/packages/node/CHANGELOG.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

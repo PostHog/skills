@@ -1,7 +1,7 @@
 # PostHog astro-view-transitions Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/astro-view-transitions
+Path: example-apps/astro-view-transitions
 
 ---
 
@@ -579,7 +579,7 @@ import PostHogLayout from '../layouts/PostHogLayout.astro';
   <div class="container">
     <div id="logged-in-view" style="display: none;">
       <h1>Welcome back, <span id="welcome-username"></span>!</h1>
-      <p>You are now logged in. Feel free to explore:</p>
+      <p>You are logged in. Feel free to explore:</p>
       <ul>
         <li>Consider the potential of burritos</li>
         <li>View your profile and statistics</li>

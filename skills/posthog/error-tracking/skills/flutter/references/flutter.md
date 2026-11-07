@@ -1,4 +1,10 @@
-# Flutter error tracking installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Flutter Error Tracking installation - Docs
+
+Copy page
+
+# Flutter Error Tracking installation - Docs
 
 1.  1
 
@@ -13,7 +19,7 @@
     PostHog AI
 
     ```yaml
-    posthog_flutter: ^5.0.0
+    posthog_flutter: ^5.24.0
     ```
 
 2.  2
@@ -35,7 +41,7 @@
       <activity>
         [...]
       </activity>
-      <meta-data android:name="com.posthog.posthog.API_KEY" android:value="<ph_project_token>" />
+      <meta-data android:name="com.posthog.posthog.PROJECT_TOKEN" android:value="<ph_project_token>" />
       <meta-data android:name="com.posthog.posthog.POSTHOG_HOST" android:value="https://us.i.posthog.com" />
       <meta-data android:name="com.posthog.posthog.TRACK_APPLICATION_LIFECYCLE_EVENTS" android:value="true" />
       <meta-data android:name="com.posthog.posthog.DEBUG" android:value="true" />
@@ -50,7 +56,7 @@
 
     ```groovy
     defaultConfig {
-      minSdkVersion 21
+      minSdkVersion 23
       // rest of your config
     }
     ```
@@ -66,7 +72,7 @@
     ```xml
     <dict>
       [...]
-      <key>com.posthog.posthog.API_KEY</key>
+      <key>com.posthog.posthog.PROJECT_TOKEN</key>
       <string><ph_project_token></string>
       <key>com.posthog.posthog.POSTHOG_HOST</key>
       <string>https://us.i.posthog.com</string>
@@ -102,10 +108,10 @@
       <head>
         ...
         <script>
-          !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group identify setPersonProperties setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags resetGroups onFeatureFlags addFeatureFlagsHandler onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+          !function(t,e){var o,n,p,r;e.__SV||(window.posthog && window.posthog.__loaded)||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}p||((p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",p.onerror=function(){p=null},(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r));var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once register_for_session unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group identify setPersonProperties setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags resetGroups onFeatureFlags addFeatureFlagsHandler onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey getNextSurveyStep".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
           posthog.init('<ph_project_token>', {
               api_host: 'https://us.i.posthog.com',
-              defaults: '2026-01-30',
+              defaults: '2026-05-30',
           })
         </script>
       </head>
@@ -159,6 +165,7 @@
     config.errorTrackingConfig.captureFlutterErrors = true;
     config.errorTrackingConfig.capturePlatformDispatcherErrors = true;
     config.errorTrackingConfig.captureIsolateErrors = true;
+    // Requires SDK version 5.22.0 or higher
     config.errorTrackingConfig.captureNativeExceptions = true;
     config.errorTrackingConfig.captureSilentFlutterErrors = false;
     await Posthog().setup(config);
@@ -171,7 +178,7 @@
     | captureFlutterErrors | Captures Flutter framework errors (FlutterError.onError) |
     | capturePlatformDispatcherErrors | Captures Dart runtime errors (PlatformDispatcher.onError). Web not supported. |
     | captureIsolateErrors | Captures errors from main isolate. Web not supported. |
-    | captureNativeExceptions | Captures native exceptions (Java/Kotlin exceptions). Android only. |
+    | captureNativeExceptions | Captures native exceptions. Android (Java/Kotlin) and Apple platforms (iOS, macOS, tvOS). |
     | captureSilentFlutterErrors | Captures Flutter errors that are marked as silent. Default: false. |
 
 5.  5
@@ -247,11 +254,11 @@
     We currently don't support the following features:
 
     -   No de-obfuscating stacktraces from obfuscated builds ([\--obfuscate](https://docs.flutter.dev/deployment/obfuscate) and [\--split-debug-info](https://docs.flutter.dev/deployment/obfuscate)) for Dart code
-    -   No de-obfuscating stacktraces when [isMinifyEnabled](https://developer.android.com/topic/performance/app-optimization/enable-app-optimization) is enabled for Java/Kotlin code
-    -   No [Source code context](/docs/error-tracking/stack-traces.md) associated with an exception
-    -   No native iOS exception capture
+    -   No [Source code context](/docs/error-tracking/stack-traces.md) associated with an exception (native Android Java/Kotlin errors and Flutter web only)
     -   No native C/C++ exception capture on Android (Java/Kotlin only)
     -   No background isolate error capture
+
+    For symbolicated stack traces on native platforms, see the [Flutter debug symbols guide](/docs/error-tracking/upload-source-maps/flutter.md).
 
     These features will be added in future releases. We recommend you stay up to date with the latest version of the PostHog Flutter SDK.
 
@@ -279,9 +286,9 @@
 
     [Upload source maps](/docs/error-tracking/upload-source-maps/flutter.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

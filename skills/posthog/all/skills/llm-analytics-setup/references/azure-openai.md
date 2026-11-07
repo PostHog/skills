@@ -1,12 +1,38 @@
-# Azure OpenAI LLM analytics installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Azure OpenAI observability installation - Docs
+
+Copy page
+
+# Azure OpenAI observability installation - Docs
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_9608fcca70)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_dark_a92b0e022d)
+
+Let AI instrument your LLM calls for you
+
+Skip the manual setup — run this in your project and the wizard installs the SDK and wires up AI Observability for you.
+
+`npx @posthog/wizard ai-observability`
+
+[Learn more](/wizard.md)
+
+![PostHog Wizard hedgehog](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)Let AI instrument your LLM calls for you
 
 1.  1
 
-    ## Install the SDKs
+    ## Install dependencies
 
     Required
 
-    Setting up analytics starts with installing the PostHog and OpenAI SDKs.
+    **Full working examples**
+
+    See the complete [Node.js](https://github.com/PostHog/posthog-js/tree/e08ff1be/examples/example-ai-azure-openai) and [Python](https://github.com/PostHog/posthog-python/tree/7223c52/examples/example-ai-azure-openai) examples on GitHub.
+
+    Install the PostHog SDK and the OpenAI SDK.
 
     PostHog AI
 
@@ -24,56 +50,42 @@
 
 2.  2
 
-    ## Initialize PostHog and Azure OpenAI client
+    ## Configure PostHog
 
     Required
 
-    We call Azure OpenAI through PostHog's AzureOpenAI wrapper to capture all the details of the call. Initialize PostHog with your PostHog project token and host from [your project settings](https://app.posthog.com/settings/project), then pass the PostHog client along with your Azure OpenAI config (the API key, API version, and endpoint) to our AzureOpenAI wrapper.
+    Create a PostHog client, then swap in PostHog's Azure OpenAI wrapper.
 
     PostHog AI
 
     ### Python
 
     ```python
-    from posthog.ai.openai import AzureOpenAI
     from posthog import Posthog
-    posthog = Posthog(
-        "<ph_project_token>",
-        host="https://us.i.posthog.com"
-    )
+    from posthog.ai.openai import AzureOpenAI
+    import time, uuid, json
+    posthog = Posthog("<ph_project_token>", host="https://us.i.posthog.com")
     client = AzureOpenAI(
         api_key="<azure_openai_api_key>",
         api_version="2024-10-21",
         azure_endpoint="https://<your-resource>.openai.azure.com",
-        posthog_client=posthog
+        posthog_client=posthog,
     )
     ```
 
     ### Node
 
     ```typescript
-    import { AzureOpenAI } from '@posthog/ai'
+    import { AzureOpenAI } from '@posthog/ai/openai'
     import { PostHog } from 'posthog-node'
-    const phClient = new PostHog(
-      '<ph_project_token>',
-      { host: 'https://us.i.posthog.com' }
-    );
+    const posthog = new PostHog('<ph_project_token>', { host: 'https://us.i.posthog.com' })
     const client = new AzureOpenAI({
       apiKey: '<azure_openai_api_key>',
       apiVersion: '2024-10-21',
       endpoint: 'https://<your-resource>.openai.azure.com',
-      posthog: phClient,
-    });
-    // ... your code here ...
-    // IMPORTANT: Shutdown the client when you're done to ensure all events are sent
-    phClient.shutdown()
+      posthog,
+    })
     ```
-
-    > **Note:** This also works with the `AsyncAzureOpenAI` client.
-
-    **Proxy note**
-
-    These SDKs **do not** proxy your calls. They only fire off an async call to PostHog in the background to send the data. You can also use LLM analytics with other SDKs or our API, but you will need to capture the data in the right format. See the schema in the [manual capture section](/docs/llm-analytics/installation/manual-capture.md) for more details.
 
 3.  3
 
@@ -81,48 +93,45 @@
 
     Required
 
-    Now, when you call Azure OpenAI, PostHog automatically captures an `$ai_generation` event. You can also capture or modify additional properties with the distinct ID, trace ID, properties, groups, and privacy mode parameters.
+    When you use the wrapped client to call Azure OpenAI, PostHog automatically captures an `$ai_generation` event.
 
     PostHog AI
 
     ### Python
 
     ```python
-    response = client.chat.completions.create(
+    trace_id = str(uuid.uuid4())
+    response = client.responses.create(
         model="<your-deployment-name>",
-        messages=[
-            {"role": "user", "content": "Tell me a fun fact about hedgehogs"}
-        ],
-        posthog_distinct_id="user_123", # optional
-        posthog_trace_id="trace_123", # optional
-        posthog_properties={"conversation_id": "abc123", "paid": True}, # optional
-        posthog_groups={"company": "company_id_in_your_db"},  # optional
-        posthog_privacy_mode=False # optional
+        input=[{"role": "user", "content": "What's the weather in Paris?"}],
+        tools=tools,
+        posthog_distinct_id="user_123",
+        posthog_trace_id=trace_id,
+        posthog_properties={
+            "$ai_session_id": "conversation-abc",
+            "$ai_provider": "azure",
+        },
     )
-    print(response.choices[0].message.content)
     ```
 
     ### Node
 
     ```typescript
-    const completion = await client.chat.completions.create({
-        model: "<your-deployment-name>",
-        messages: [{ role: "user", content: "Tell me a fun fact about hedgehogs" }],
-        posthogDistinctId: "user_123", // optional
-        posthogTraceId: "trace_123", // optional
-        posthogProperties: { conversation_id: "abc123", paid: true }, // optional
-        posthogGroups: { company: "company_id_in_your_db" }, // optional
-        posthogPrivacyMode: false // optional
-    });
-    console.log(completion.choices[0].message.content)
+    const traceId = crypto.randomUUID()
+    const response = await client.responses.create({
+      model: '<your-deployment-name>',
+      input: [{ role: 'user', content: "What's the weather in Paris?" }],
+      tools,
+      posthogDistinctId: 'user_123',
+      posthogTraceId: traceId,
+      posthogProperties: {
+        $ai_session_id: 'conversation-abc',
+        $ai_provider: 'azure',
+      },
+    })
     ```
 
-    > **Notes:**
-    >
-    > -   This works with responses where `stream=True`.
-    > -   If you want to capture LLM events anonymously, **don't** pass a distinct ID to the request.
-    >
-    > See our docs on [anonymous vs identified events](/docs/data/anonymous-vs-identified-events.md) to learn more.
+    > **Note:** If you want to capture LLM events anonymously, omit `posthog_distinct_id` from the call. See our docs on [anonymous vs identified events](/docs/data/anonymous-vs-identified-events.md) to learn more.
 
     You can expect captured `$ai_generation` events to have the following properties:
 
@@ -137,39 +146,178 @@
     | $ai_output_choices | List of response choices from the LLM |
     | $ai_output_tokens | The number of tokens in the output (often found in response.usage) |
     | $ai_total_cost_usd | The total cost in USD (input + output) |
-    | [[...]](/docs/llm-analytics/generations.md#event-properties) | See [full list](/docs/llm-analytics/generations.md#event-properties) of properties |
+    | [[...]](/docs/ai-observability/generations.md#event-properties) | See [full list](/docs/ai-observability/generations.md#event-properties) of properties |
 
-4.  ## Verify traces and generations
+4.  4
+
+    ## Capture tool calls as spans
+
+    Optional
+
+    For standard responses, the posthog client captures it as a generation. For all tool calls, you must manually capture them as `$ai_span` events.
+
+    PostHog AI
+
+    ### Python
+
+    ```python
+    for item in response.output:
+        if item.type != "function_call":
+            continue
+        start = time.time()
+        result = run_tool(item.name, json.loads(item.arguments))
+        posthog.capture(
+            distinct_id="user_123",
+            event="$ai_span",
+            properties={
+                "$ai_trace_id": trace_id,
+                "$ai_session_id": "conversation-abc",
+                "$ai_span_id": str(uuid.uuid4()),
+                "$ai_span_name": item.name,
+                "$ai_input_state": item.arguments,
+                "$ai_output_state": result,
+                "$ai_latency": time.time() - start,
+            },
+        )
+    ```
+
+    ### Node
+
+    ```typescript
+    for (const item of response.output) {
+      if (item.type !== 'function_call') continue
+      const start = Date.now()
+      const result = await runTool(item.name, JSON.parse(item.arguments))
+      posthog.capture({
+        distinctId: 'user_123',
+        event: '$ai_span',
+        properties: {
+          $ai_trace_id: traceId,
+          $ai_session_id: 'conversation-abc',
+          $ai_span_id: crypto.randomUUID(),
+          $ai_span_name: item.name,
+          $ai_input_state: item.arguments,
+          $ai_output_state: result,
+          $ai_latency: (Date.now() - start) / 1000,
+        },
+      })
+    }
+    ```
+
+    See [spans](/docs/ai-observability/spans.md) for the full list of span properties.
+
+5.  ## Verify traces and generations
 
     Recommended
 
     *Confirm LLM events are being sent to PostHog*
 
-    Let's make sure LLM events are being captured and sent to PostHog. Under **LLM analytics**, you should see rows of data appear in the **Traces** and **Generations** tabs.
+    Let's make sure LLM events are being captured and sent to PostHog. Under **AI Observability**, you should see rows of data appear in the **Traces** and **Generations** tabs.
 
     ![LLM generations in PostHog](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250807_syne_ecd0801880.png)![LLM generations in PostHog](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250807_syjm_5baab36590.png)
 
-    [Check for LLM events in PostHog](https://app.posthog.com/llm-analytics/generations)
+    [Check for LLM events in PostHog](https://app.posthog.com/ai-observability/generations)
 
-5.  4
+6.  5
 
     ## Next steps
 
     Recommended
 
-    Now that you're capturing AI conversations, continue with the resources below to learn what else LLM Analytics enables within the PostHog platform.
+    Now that you're capturing AI conversations, continue with the resources below to learn what else AI Observability enables within the PostHog platform.
 
     | Resource | Description |
     | --- | --- |
-    | [Basics](/docs/llm-analytics/basics.md) | Learn the basics of how LLM calls become events in PostHog. |
-    | [Generations](/docs/llm-analytics/generations.md) | Read about the $ai_generation event and its properties. |
-    | [Traces](/docs/llm-analytics/traces.md) | Explore the trace hierarchy and how to use it to debug LLM calls. |
-    | [Spans](/docs/llm-analytics/spans.md) | Review spans and their role in representing individual operations. |
-    | [Anaylze LLM performance](/docs/llm-analytics/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
+    | [Basics](/docs/ai-observability/basics.md) | Learn the basics of how LLM calls become events in PostHog. |
+    | [Generations](/docs/ai-observability/generations.md) | Read about the $ai_generation event and its properties. |
+    | [Traces](/docs/ai-observability/traces.md) | Explore the trace hierarchy and how to use it to debug LLM calls. |
+    | [Spans](/docs/ai-observability/spans.md) | Review spans and their role in representing individual operations. |
+    | [Anaylze LLM performance](/docs/ai-observability/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
 
-### Community questions
+## .NET support
 
-Ask a question
+`PostHog.AI` adds AI observability for .NET applications using Azure OpenAI. It is currently pre-release, so expect breaking changes before a stable release.
+
+Install the packages:
+
+Terminal
+
+PostHog AI
+
+```bash
+dotnet add package PostHog.AI
+dotnet add package Azure.AI.OpenAI
+```
+
+When using dependency injection, register PostHog first, then register an Azure OpenAI client with the PostHog handler:
+
+C#
+
+PostHog AI
+
+```csharp
+using System.ClientModel.Primitives;
+using Azure;
+using Azure.AI.OpenAI;
+using Microsoft.Extensions.DependencyInjection;
+using PostHog.AI;
+using PostHog.Config;
+var services = new ServiceCollection();
+services.AddPostHog(options =>
+{
+    options.PostConfigure(posthogOptions =>
+    {
+        posthogOptions.ProjectToken = "<ph_project_token>";
+        posthogOptions.HostUrl = new Uri("https://us.i.posthog.com");
+    });
+});
+services.AddPostHogAI();
+services
+    .AddHttpClient("PostHogAzureOpenAIClient")
+    .AddPostHogOpenAIHandler();
+services.AddSingleton<AzureOpenAIClient>(sp =>
+{
+    var httpClientFactory = sp.GetRequiredService<IHttpClientFactory>();
+    var httpClient = httpClientFactory.CreateClient("PostHogAzureOpenAIClient");
+    var options = new AzureOpenAIClientOptions
+    {
+        Transport = new HttpClientPipelineTransport(httpClient),
+    };
+    return new AzureOpenAIClient(
+        new Uri("<azure_openai_endpoint>"),
+        new AzureKeyCredential("<azure_openai_api_key>"),
+        options);
+});
+var serviceProvider = services.BuildServiceProvider();
+var azureOpenAIClient = serviceProvider.GetRequiredService<AzureOpenAIClient>();
+```
+
+Use `PostHogAIContext` to attach trace, session, span, and user context to AI calls made inside a scope:
+
+C#
+
+PostHog AI
+
+```csharp
+using PostHog.AI;
+using (PostHogAIContext.BeginScope(
+    distinctId: "user-123",
+    traceId: "trace-abc",
+    sessionId: "session-xyz",
+    spanId: "span-1",
+    spanName: "summarize_text",
+    parentId: null))
+{
+    var chatClient = azureOpenAIClient.GetChatClient("<deployment_name>");
+    await chatClient.CompleteChatAsync("Summarize this text");
+}
+```
+
+The integration captures `$ai_generation` and `$ai_embedding` events with model, latency, token, error, trace, session, and span properties. For more .NET SDK details, see the [.NET library docs](/docs/libraries/dotnet.md#ai-observability).
+
+### Still have questions?
+
+Ask PostHog AI
 
 ### Was this page useful?
 

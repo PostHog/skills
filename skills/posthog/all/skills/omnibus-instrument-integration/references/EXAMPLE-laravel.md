@@ -1,7 +1,7 @@
 # PostHog laravel Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/laravel
+Path: example-apps/laravel
 
 ---
 
@@ -802,13 +802,8 @@ class PostHogService
 
         $eventId = uniqid('error_', true);
 
-        $this->capture($distinctId, '$exception', [
+        PostHog::captureException($exception, $distinctId, [
             'error_id' => $eventId,
-            'exception_type' => get_class($exception),
-            'exception_message' => $exception->getMessage(),
-            'exception_file' => $exception->getFile(),
-            'exception_line' => $exception->getLine(),
-            'stack_trace' => $exception->getTraceAsString(),
         ]);
 
         return $eventId;
@@ -2074,7 +2069,7 @@ public function considerBurrito(PostHogService $posthog)
                 Capture Error in PostHog
             </button>
             <button wire:click="testErrorWithoutCapture" class="btn" style="background: #c82333; color: white;">
-                Skip PostHog Capture
+                Skip Capture in PostHog
             </button>
         </div>
 
@@ -2177,7 +2172,7 @@ $featureConfig = $posthog->getFeatureFlagPayload(
                 Capture Error in PostHog
             </button>
             <button wire:click="testErrorWithoutCapture" class="btn" style="background: #c82333; color: white;">
-                Skip PostHog Capture
+                Skip Capture in PostHog
             </button>
         </div>
 
