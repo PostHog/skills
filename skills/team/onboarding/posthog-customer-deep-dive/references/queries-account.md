@@ -716,7 +716,7 @@ Four ways this has misled:
 
 - **A change a person made fires on that person's own `distinct_id`**, not the account's, which is why the filter also matches `account_external_id`. Never narrow it to the account `distinct_id` alone.
 - **`send_email_1` to `send_email_4` are the four sequence emails**; `send_email` alone is Payment Failed, which is billing and never counts as onboarding outreach. A `$workflows_email_delivered` row exists per recipient, the onboarding bcc mailbox included, and is incomplete, so count sends on `$workflows_email_sent` only.
-- **Opens and clicks stopped on 15 October 2026**, when tracking went off on every onboarding send, so their absence after that date says nothing.
+- **Opens and clicks are missing from 15 to 23 October 2026**, when tracking was off on every onboarding send, so their absence in that window says nothing. Outside it, count clicks rather than opens (scanners and image proxies open within seconds), and the PostHog AI prompt links never log a click because they carry `data-ph-no-track`.
 - **There is no reply event.** Whether they wrote back is in `conversation-history`.
 
 Where the account sits in `Onboarding:: Email sequence` now, and when it wakes next, is in the run: `workflows-list-invocations` with the sequence's id (`01a0c9f0-60a6-0000-af22-9cd658e27d6c`) and `distinct_id` set to `account:<CA_ACCOUNT_ID>`, then `workflows-logs` with that invocation's `instance_id`; the last `Workflow will pause until` line is the next wake, in UTC. A run that ended has no wake, and the timeline above says why.
