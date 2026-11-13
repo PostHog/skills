@@ -1,4 +1,10 @@
-# Datadog logs installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Datadog Logs installation - Docs
+
+Copy page
+
+# Datadog Logs installation - Docs
 
 If you're already using Datadog to collect logs, you can forward them to PostHog by configuring your existing Datadog log exporters (like the Datadog Agent) to send logs to PostHog's Datadog-compatible endpoint.
 
@@ -75,7 +81,7 @@ If you're already using Datadog to collect logs, you can forward them to PostHog
 
     1.  Restart the Datadog Agent (or your log forwarder) to apply the configuration
     2.  Generate some log entries in your application
-    3.  Check the PostHog logs interface for your log entries
+    3.  Check the PostHog Logs interface for your log entries
     4.  Verify the logs appear in your project
 
     [View your logs in PostHog](https://app.posthog.com/logs)
@@ -92,13 +98,14 @@ If you're already using Datadog to collect logs, you can forward them to PostHog
     | [Search logs](/docs/logs/search.md) | Use the search interface to find specific log entries |
     | Filter by level | Filter by INFO, WARN, ERROR, etc. |
     | [Link session replay](/docs/logs/link-session-replay.md) | Connect logs to users and session replays by passing posthogDistinctId and sessionId |
+    | [Link logs to a person](/docs/logs/link-person.md) | Surface every log emitted on behalf of a user on their PostHog person profile |
     | [Logging best practices](/docs/logs/best-practices.md) | Learn what to log, how to structure logs, and patterns that make logs useful in production |
 
     [Troubleshoot common issues](/docs/logs/troubleshooting.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
