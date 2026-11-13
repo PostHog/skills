@@ -802,13 +802,20 @@ An open `Consider referring to sales`, `Check in after the meeting`, `Review onb
 What anyone at the org answered on PostHog's in-app surveys (product NPS, the post-onboarding survey and the rest), newest first. Each response is keyed by question, so read the survey name beside it before reading a number as an NPS score.
 
 ```sql
-SELECT timestamp, toString(properties.$survey_name) AS survey, person.properties.email AS email,
+SELECT timestamp, toString(properties.$survey_name) AS survey,
+       coalesce(person.properties.email,
+                nullIf(JSONExtractString(toString(properties), '$survey_response_3ffcb0c4-0d63-40cf-9d40-8e2bc3da7993'), '')) AS email,
        arrayStringConcat(arrayMap(k -> concat(replaceOne(k, '$survey_response', 'q'), '=', substring(JSONExtractRaw(toString(properties), k), 1, 300)),
                                   arrayFilter(k -> startsWith(k, '$survey_response'), JSONExtractKeys(assumeNotNull(toString(properties))))), ' | ') AS responses
 FROM events
-WHERE event = 'survey sent' AND $group_0 = '<ORG_ID>' AND timestamp >= now() - INTERVAL 365 DAY
+WHERE event = 'survey sent' AND timestamp >= now() - INTERVAL 365 DAY
+  AND ($group_0 = '<ORG_ID>'
+       OR (properties.$survey_id = '019c523d-0d90-0000-65ba-4b976e24c83e'
+           AND lower(JSONExtractString(toString(properties), '$survey_response_3ffcb0c4-0d63-40cf-9d40-8e2bc3da7993')) LIKE '%@<DOMAIN>'))
 ORDER BY timestamp DESC
 LIMIT 30
 ```
+
+The post-onboarding survey is a hosted page, so its responses carry no org and the `$group_0` branch never finds them: the second branch matches them by the domain of the typed answer to its first question ("Your work email"). Skip that branch on a public email domain (gmail.com, outlook.com), where it matches strangers, and match the exact address instead.
 
 No row means nobody at the org answered a survey in a year, never that they are neutral.
