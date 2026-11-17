@@ -1,6 +1,8 @@
 # Community skills
 
-Community skills now live in [PostHog/community-skills](https://github.com/PostHog/community-skills). Please don't add new skills to this folder.
+Community skills now live in a separate repo: [PostHog/community-skills](https://github.com/PostHog/community-skills).
+
+Please don't add new skills to `skills/community/` in this repo (`PostHog/skills`). Add them to `PostHog/community-skills` instead.
 
 To share a skill with the PostHog community, either:
 
