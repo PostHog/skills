@@ -34,6 +34,8 @@ cp -r skills/team/customer-success/posthog-debugger .claude/skills/posthog-debug
 
 ## Adding a skill to the marketplace
 
+> **Not on the PostHog team?** Share your skill in [PostHog/community-skills](https://github.com/PostHog/community-skills) instead. This repo holds PostHog's official and team skills.
+
 Any directory under `skills/` that contains a `.claude-plugin/plugin.json` is automatically discovered and added to the marketplace catalog. To make your skill installable:
 
 1. Create your skill directory under the appropriate category in `skills/`
@@ -66,7 +68,7 @@ Skills for small teams at PostHog.
 
 ### Community skills
 
-Skills made by users.
+Skills made by users live in [PostHog/community-skills](https://github.com/PostHog/community-skills). You can browse and install them from the community skills store in PostHog.
 
 ### .meta skills
 
