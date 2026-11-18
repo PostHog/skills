@@ -148,25 +148,25 @@ Install `posthog-node` using your package manager:
 ### npm
 
 ```bash
-npm install posthog-node@5 --save
+npm install posthog-node@6 --save
 ```
 
 ### Yarn
 
 ```bash
-yarn add posthog-node@5
+yarn add posthog-node@6
 ```
 
 ### pnpm
 
 ```bash
-pnpm add posthog-node@5
+pnpm add posthog-node@6
 ```
 
 ### Bun
 
 ```bash
-bun add posthog-node@5
+bun add posthog-node@6
 ```
 
 Create one client in a server-only module. Import this client from your server hooks, load functions, and tracing setup:
@@ -248,7 +248,10 @@ export async function handle({ event, resolve }) {
 }
 
 export function handleError({ error, event, message }) {
-  posthog.captureException(error, event.locals.posthogError?.distinctId, event.locals.posthogError?.properties);
+  posthog.captureException(error, {
+    distinctId: event.locals.posthogError?.distinctId,
+    properties: event.locals.posthogError?.properties,
+  });
   return { message };
 }
 ```
@@ -304,7 +307,7 @@ export async function load() {
 }
 ```
 
-See our [JavaScript Web](https://posthog.com/docs/libraries/js/usage.md#feature-flags) and [Node](https://posthog.com/docs/libraries/node.md#feature-flags) docs for more details.
+See our [JavaScript Web](https://posthog.com/docs/libraries/js/usage.md#feature-flags) and [Node](https://posthog.com/docs/libraries/node/reference.md#get-feature-flag) docs for more details.
 
 ## Configuring session replay for server-side rendered apps
 

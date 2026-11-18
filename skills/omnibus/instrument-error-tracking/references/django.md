@@ -31,7 +31,7 @@ Or set it up manually by following the rest of this guide.
 
 ## Installation
 
-To start, run `pip install "posthog<8"` to install PostHog’s Python SDK.
+To start, run `pip install "posthog>=8,<9"` to install PostHog’s Python SDK.
 
 Then, configure PostHog in your app config so it's initialized when Django starts:
 
@@ -78,7 +78,7 @@ def some_request(request):
         posthog.capture('event_name')
 ```
 
-Events captured without a context or explicit `distinct_id` are sent as [anonymous events](https://posthog.com/docs/data/anonymous-vs-identified-events.md) with an auto-generated `distinct_id`. See the [Python SDK docs](https://posthog.com/docs/libraries/python.md#person-profiles-and-properties) for more details.
+Events captured without a context or explicit `distinct_id` are sent as [anonymous events](https://posthog.com/docs/data/anonymous-vs-identified-events.md) with an auto-generated `distinct_id`. See the [Python SDK docs](https://posthog.com/docs/libraries/python/reference.md#identify) for more details.
 
 ## Identifying users
 
@@ -101,7 +101,7 @@ Events captured without a context or explicit `distinct_id` are sent as [anonymo
 
 ## Django contexts middleware
 
-The Python SDK provides a Django middleware that automatically wraps all requests with a [context](https://posthog.com/docs/libraries/python.md#contexts). This middleware extracts session and user information from each request and adds relevant properties to events captured during that request.
+The Python SDK provides a Django middleware that automatically wraps all requests with a [context](https://posthog.com/docs/libraries/python/reference.md#posthognew_context). This middleware extracts session and user information from each request and adds relevant properties to events captured during that request.
 
 ### Basic setup
 
@@ -341,8 +341,10 @@ Alternatively, the following tutorials can help you get started:
 
 ## Supported versions
 
-These docs cover version `7.x` of the PostHog Python SDK, which requires Python 3.10 or higher. Python 3.9 is no longer supported on `7.x.x` and higher — pin to the 6.x line with `pip install 'posthog<7'`, where `6.9.3` is the final release.
+These docs cover version `8.x.x` of the PostHog Python SDK, which requires Python 3.10 or higher. Python 3.9 is no longer supported on `7.x.x` and higher. Pin to the `6.x.x` line with `pip install 'posthog<7'`, where `6.9.3` is the final release.
 
-Everything on this page works the same way on `6.9.3`. Event capture, the context API (`new_context`, `identify_context`, `set_context_session`), and `PosthogContextMiddleware` are identical on `6.9.3` and `7.0.0` — `7.0.0` only dropped Python 3.9 and bumped the optional LLM provider SDKs. That includes the middleware identifying the request context from the `X-POSTHOG-DISTINCT-ID` header and falling back to the authenticated user, which behaves the same across both lines.
+Version `8.0.0` and later send events with [capture v1](https://posthog.com/docs/api/capture-v1.md) and add event options, such as `options={"process_person_profile": False}`. Earlier versions don't take `options`. Read the [`7.x.x` to `8.0.0` migration guide](https://posthog.com/docs/libraries/python/migration.md) before you upgrade.
+
+Event capture, the context API (`new_context`, `identify_context`, `set_context_session`), and `PosthogContextMiddleware` are identical on `6.9.3` and `7.0.0`: `7.0.0` only dropped Python 3.9 and bumped the optional LLM provider SDKs. That includes the middleware identifying the request context from the `X-POSTHOG-DISTINCT-ID` header and falling back to the authenticated user, which behaves the same across both lines.
 
 Later `7.x` releases add what the 6.x line does not receive, such as the Celery integration, tracing header sanitization, and `set_context_device_id`. They also changed the middleware's own captured properties: `7.x` sends the request IP as `$ip`, where `6.9.3` sends it as `$ip_address`, and `7.x` additionally captures `$request_path`, `$raw_user_agent`, and the authenticated user's `email`.

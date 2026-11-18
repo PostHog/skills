@@ -27,7 +27,7 @@ The [posthog-node](https://posthog.com/docs/libraries/node.md) SDK includes the 
     Required
 
     ```bash
-    npm install posthog-node@5
+    npm install posthog-node@6
     ```
 
     Metrics requires `posthog-node@5.43.0` or later, so upgrade if you're on an older release.

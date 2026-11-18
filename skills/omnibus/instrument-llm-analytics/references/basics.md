@@ -34,7 +34,9 @@ PostHog processes every `$ai_` event as an AI Observability event rather than a 
 -   The full event, including large properties like `$ai_input` and `$ai_output`, is kept for 30 days. After that, only a copy without those properties remains. See [data retention](https://posthog.com/docs/ai-observability/data-retention.md).
 -   It's billed as an AI Observability event, not as a Product Analytics event.
 
-Don't use the `$ai_` prefix for events that need person profiles or Product Analytics pricing.
+PostHog owns the `$ai_` prefix. Don't use it for your own events, and don't use it for events that need person profiles or Product Analytics pricing.
+
+On [capture v1 SDKs](https://posthog.com/docs/libraries.md#sdk-versions-and-capture-v1), send `$ai_` events with the SDK's AI capture method, such as `capture_ai`, and send every other event with `capture`. See [capture v1](https://posthog.com/docs/api/capture-v1.md#send-each-event-to-its-own-endpoint) for how each endpoint handles events sent to the wrong one.
 
 ## Generation properties
 

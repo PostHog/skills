@@ -38,25 +38,25 @@ Both routes send OTLP spans to the same endpoint, so you can start with one and 
     ### npm
 
     ```bash
-    npm install posthog-node@5 --save
+    npm install posthog-node@6 --save
     ```
 
     ### Yarn
 
     ```bash
-    yarn add posthog-node@5
+    yarn add posthog-node@6
     ```
 
     ### pnpm
 
     ```bash
-    pnpm add posthog-node@5
+    pnpm add posthog-node@6
     ```
 
     ### Bun
 
     ```bash
-    bun add posthog-node@5
+    bun add posthog-node@6
     ```
 
 2.  2
@@ -88,7 +88,7 @@ Both routes send OTLP spans to the same endpoint, so you can start with one and 
 
     Use your **project token** (the same one you use for capturing events), not a [personal API key](https://posthog.com/docs/api.md#authentication).
 
-    See the [Node.js SDK docs](https://posthog.com/docs/libraries/node.md#configuration) for batching, queue, and span-limit options, and [`beforeSpanSend`](https://posthog.com/docs/libraries/node.md#scrubbing-and-dropping-spans) for scrubbing attributes or dropping spans before they're exported.
+    See the [Node.js SDK docs](https://posthog.com/docs/libraries/node/reference.md#tracesconfig) for batching, queue, and span-limit options, and [`beforeSpanSend`](https://posthog.com/docs/libraries/node/reference.md#beforespansendfn) for scrubbing attributes or dropping spans before they're exported.
 
 3.  3
 
@@ -113,7 +113,7 @@ Both routes send OTLP spans to the same endpoint, so you can start with one and 
 
     Span names should be low-cardinality operation names – `GET /users/:id`, not `GET /users/123`. Variable values belong in attributes.
 
-    For work that can't wrap a callback, `startSpan` returns a span you end yourself. See the [Node.js SDK docs](https://posthog.com/docs/libraries/node.md#distributed-tracing) for the full span API and for continuing a trace across services with W3C `traceparent` headers.
+    For work that can't wrap a callback, `startSpan` returns a span you end yourself. See the [Node.js SDK docs](https://posthog.com/docs/libraries/node/reference.md#traces) for the full span API and for continuing a trace across services with W3C `traceparent` headers.
 
 4.  4
 
@@ -129,7 +129,7 @@ Both routes send OTLP spans to the same endpoint, so you can start with one and 
     })
     ```
 
-    If you use Express, the [PostHog middleware](https://posthog.com/docs/libraries/node.md#add-request-context-to-express) sets this up for every request, and reads the `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID` headers that [`tracing_headers`](https://posthog.com/docs/libraries/js/config.md#tracing-headers) sends from the browser.
+    If you use Express, the [PostHog middleware](https://posthog.com/docs/libraries/node/reference.md#setupexpressrequestcontext) sets this up for every request, and reads the `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID` headers that [`tracing_headers`](https://posthog.com/docs/libraries/js/config.md#tracing-headers) sends from the browser.
 
 5.  5
 
@@ -265,7 +265,7 @@ Both routes send OTLP spans to the same endpoint, so you can start with one and 
 
     Use this configuration in place of the provider configuration above. Keep your existing exporter and sampler. Register the processor before requests start.
 
-    For Express, put [`setupExpressRequestContext`](https://posthog.com/docs/libraries/node.md#add-request-context-to-express) before your routes. It reads the browser tracing headers and adds missing `posthogDistinctId` and `sessionId` attributes to the active request span. The processor adds the same attributes to child spans when they start. Configure [`tracing_headers`](https://posthog.com/docs/libraries/js/config.md#tracing-headers) for your backend hostname in the browser SDK.
+    For Express, put [`setupExpressRequestContext`](https://posthog.com/docs/libraries/node/reference.md#setupexpressrequestcontext) before your routes. It reads the browser tracing headers and adds missing `posthogDistinctId` and `sessionId` attributes to the active request span. The processor adds the same attributes to child spans when they start. Configure [`tracing_headers`](https://posthog.com/docs/libraries/js/config.md#tracing-headers) for your backend hostname in the browser SDK.
 
     For a custom integration, call `enrichCurrentSpan(posthog)` from `posthog-node/otel` after you set the IDs inside `posthog.withContext()`. The helper is also exported from the main `posthog-node` entry without loading OpenTelemetry. It requires the registered processor. It does not manage another framework's request lifetime.
 

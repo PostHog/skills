@@ -31,7 +31,7 @@ Or set it up manually by following the rest of this guide.
     Install the [PostHog Go SDK](https://posthog.com/docs/libraries/go.md):
 
     ```bash
-    go get github.com/posthog/posthog-go
+    go get github.com/posthog/posthog-go/v2
     ```
 
     **Debug symbol uploads**
@@ -48,7 +48,7 @@ Or set it up manually by following the rest of this guide.
     package main
     
     import (
-        "github.com/posthog/posthog-go"
+        "github.com/posthog/posthog-go/v2"
     )
     
     func main() {
@@ -77,7 +77,7 @@ Or set it up manually by following the rest of this guide.
     ```go
     import (
         "time"
-        "github.com/posthog/posthog-go"
+        "github.com/posthog/posthog-go/v2"
     )
     
     exception := posthog.NewDefaultException(
@@ -94,7 +94,7 @@ Or set it up manually by following the rest of this guide.
     ```go
     import (
         "time"
-        "github.com/posthog/posthog-go"
+        "github.com/posthog/posthog-go/v2"
     )
     
     handled := true
@@ -117,7 +117,7 @@ Or set it up manually by following the rest of this guide.
     client.Enqueue(exception)
     ```
 
-    To see how `net/http` services can automatically associate backend exceptions with frontend users, view the [Go request context documentation](https://posthog.com/docs/libraries/go.md#request-context).
+    To see how `net/http` services can automatically associate backend exceptions with frontend users, view the [Go request context documentation](https://posthog.com/docs/libraries/go/reference.md#posthognewrequestcontextmiddleware).
 
     ### Option B: Automatic capture with slog
 
@@ -132,7 +132,7 @@ Or set it up manually by following the rest of this guide.
         "log/slog"
         "os"
     
-        "github.com/posthog/posthog-go"
+        "github.com/posthog/posthog-go/v2"
     )
     
     client, _ := posthog.NewWithConfig(
