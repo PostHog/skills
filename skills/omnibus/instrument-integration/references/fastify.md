@@ -24,10 +24,10 @@ Use the [PostHog Node.js SDK](https://posthog.com/docs/libraries/node.md) to cap
 Install the SDK in your Fastify app:
 
 ```bash
-pnpm add posthog-node@5
+pnpm add posthog-node@6
 ```
 
-This guide uses Fastify 5 and `posthog-node` 5.52.1 on Node.js. Get your project token and API host from your [project settings](https://us.posthog.com/settings/project).
+This guide uses Fastify 5 and `posthog-node` 6 on Node.js. Get your project token and API host from your [project settings](https://us.posthog.com/settings/project).
 
 ## Set up PostHog
 
@@ -69,9 +69,11 @@ app.setErrorHandler((error, request, reply) => {
 
     // Optional application policy: capture server errors only.
     if (statusCode >= 500) {
-        posthog.captureException(error, undefined, {
-            $response_status_code: statusCode,
-            $request_path: request.routeOptions.url,
+        posthog.captureException(error, {
+            properties: {
+                $response_status_code: statusCode,
+                $request_path: request.routeOptions.url,
+            },
         })
     }
 
@@ -92,7 +94,7 @@ await app.listen({ port: 3000, host: "127.0.0.1" })
 
 ## Request context and identity
 
-Keep `onRequest` callback-based, not `async`. Calling `done` inside [`withContext`](https://posthog.com/docs/libraries/node.md#contexts) continues the request in that context. `{ fresh: true }` prevents inheritance from an outer context.
+Keep `onRequest` callback-based, not `async`. Calling `done` inside [`withContext`](https://posthog.com/docs/libraries/node/reference.md#posthogwithcontext) continues the request in that context. `{ fresh: true }` prevents inheritance from an outer context.
 
 `request.user` belongs to your application. It is not a built-in Fastify identity. Populate it with a verified user and a string `id` in an earlier authentication hook. Without authentication, this example captures exceptions without creating person profiles.
 
@@ -102,7 +104,7 @@ Do not use `x-posthog-distinct-id` as proof of identity. Tracing headers are cli
 
 ## Trace context
 
-This optional setup requires the Node SDK release with `posthog-node/otel`. The base SDK version stated above does not include these APIs.
+This optional setup uses the `posthog-node/otel` entry point.
 
 To add browser session and person IDs to application spans, register the [optional Node context processor](https://posthog.com/docs/distributed-tracing/installation/nodejs.md#with-opentelemetry) on your existing OpenTelemetry provider before requests start. Reuse the `posthog` client above and keep the existing exporter and sampler.
 
@@ -149,7 +151,7 @@ app.get("/hello", async (request) => {
 })
 ```
 
-See the [Node.js capture documentation](https://posthog.com/docs/libraries/node.md#capturing-events) for more event options.
+See the [Node.js capture documentation](https://posthog.com/docs/libraries/node/reference.md#capture) for more event options.
 
 ## Error handling
 

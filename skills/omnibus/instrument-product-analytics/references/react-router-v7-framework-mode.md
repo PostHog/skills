@@ -348,25 +348,25 @@ This guide walks you through setting up PostHog for React Router V7 in framework
     ### npm
 
     ```bash
-    npm install posthog-node@5 --save
+    npm install posthog-node@6 --save
     ```
 
     ### Yarn
 
     ```bash
-    yarn add posthog-node@5
+    yarn add posthog-node@6
     ```
 
     ### pnpm
 
     ```bash
-    pnpm add posthog-node@5
+    pnpm add posthog-node@6
     ```
 
     ### Bun
 
     ```bash
-    bun add posthog-node@5
+    bun add posthog-node@6
     ```
 
 10.  9
@@ -453,8 +453,10 @@ This guide walks you through setting up PostHog for React Router V7 in framework
      
      export const handleError: HandleErrorFunction = (error, { context }) => {
        const saved = context.get(posthogErrorContext);
-       posthog.captureException(error, saved?.distinctId,
-         saved?.sessionId ? { $session_id: saved.sessionId } : undefined);
+       posthog.captureException(error, {
+         distinctId: saved?.distinctId,
+         properties: saved?.sessionId ? { $session_id: saved.sessionId } : undefined,
+       });
      };
      ```
 

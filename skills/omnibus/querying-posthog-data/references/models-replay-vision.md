@@ -20,7 +20,6 @@ Column | Type | Nullable | Description
 `scanner_config` | JSON | NOT NULL | Type-specific JSON config; always includes the prompt.
 `query` | JSON | NOT NULL | JSON RecordingsQuery selecting the sessions the scanner watches.
 `sampling_rate` | Float | NOT NULL | Random share of matching sessions scanned, 0 to 1.
-`sampling_mode` | String | NOT NULL | Quality pre-filter: focused, balanced or comprehensive.
 `model` | String | NOT NULL | LLM model that scans each session; sets the price.
 `enabled` | Integer | NOT NULL | 1 when the scanner sweeps new recordings on schedule, 0 otherwise.
 `emits_signals` | Integer | NOT NULL | 1 when findings are also pushed into the Signals inbox, 0 otherwise.

@@ -129,7 +129,7 @@ STEP 7: Verify and clean up.
 - `references/angular.md` - Angular
 - `references/js.md` - JavaScript web
 - `references/posthog-js.md` - PostHog JavaScript web SDK
-- `references/node.md` - Node.js
+- `references/node.md` - PostHog Node.js SDK
 - `references/nestjs.md` - Nestjs
 - `references/fastify.md` - Fastify
 - `references/hono.md` - Hono
@@ -139,14 +139,14 @@ STEP 7: Verify and clean up.
 - `references/posthog-node.md` - PostHog Node.js SDK
 - `references/django.md` - Django
 - `references/flask.md` - Flask
-- `references/python.md` - Python
+- `references/python.md` - PostHog python SDK
 - `references/posthog-python.md` - PostHog python SDK
 - `references/dotnet.md` - .net
 - `references/elixir.md` - Elixir
 - `references/phoenix.md` - Phoenix
-- `references/go.md` - Go
+- `references/go.md` - PostHog go SDK
 - `references/java.md` - Java
-- `references/rust.md` - Rust
+- `references/rust.md` - PostHog rust SDK
 - `references/laravel.md` - Laravel
 - `references/php.md` - Php
 - `references/wordpress.md` - How to set up wordpress analytics with PostHog

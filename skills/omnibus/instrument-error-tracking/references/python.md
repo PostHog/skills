@@ -245,4 +245,4 @@ The Python SDK includes request context and error tracking integrations for comm
 
 -   [Django and Django REST Framework](https://posthog.com/docs/libraries/django.md#capture-django-rest-framework-exceptions)
 -   [Flask](https://posthog.com/docs/libraries/flask.md#request-contexts)
--   [ASGI frameworks such as FastAPI, Starlette, and Litestar](https://posthog.com/docs/libraries/python.md#asgi-request-middleware)
+-   [ASGI frameworks such as FastAPI, Starlette, and Litestar](https://posthog.com/docs/libraries/python/reference.md#posthogintegrationsasgiposthogasgimiddleware)

@@ -310,25 +310,25 @@ First, install the `posthog-node` package to run on the server side.
 ### npm
 
 ```bash
-npm install posthog-node@5 --save
+npm install posthog-node@6 --save
 ```
 
 ### Yarn
 
 ```bash
-yarn add posthog-node@5
+yarn add posthog-node@6
 ```
 
 ### pnpm
 
 ```bash
-pnpm add posthog-node@5
+pnpm add posthog-node@6
 ```
 
 ### Bun
 
 ```bash
-bun add posthog-node@5
+bun add posthog-node@6
 ```
 
 Then, add the following code to the `server.ts` file:

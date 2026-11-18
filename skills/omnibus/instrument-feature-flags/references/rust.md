@@ -12,30 +12,30 @@ Run this command in your project directory to add PostHog to your Rust project. 
 
 Or set it up manually by following the rest of this guide.
 
-Install the `posthog-rs` crate by adding it to your `Cargo.toml`.
+Install the `posthog` crate by adding it to your `Cargo.toml`.
 
 Cargo.toml
 
 ```toml
 [dependencies]
-posthog-rs = "0.31"
+posthog = "1"
 ```
 
 Next, set up the client with your PostHog project key.
 
 ```rust
-let client = posthog_rs::client("<ph_project_token>").await;
+let client = posthog::client("<ph_project_token>").await;
 ```
 
 ### Blocking client
 
 Our Rust SDK supports both blocking and async clients. The async client is the default and is recommended for most use cases.
 
-If you need to use a synchronous client instead – like we do in our [CLI](https://github.com/PostHog/posthog/tree/master/cli) –, you can opt into it by disabling the asynchronous feature on your `Cargo.toml` file.
+If you need to use a synchronous client instead, like we do in our [CLI](https://github.com/PostHog/posthog/tree/master/cli), you can opt into it by turning off the default features in your `Cargo.toml` file. This also turns off TLS, so turn the `tls` feature back on to send events over HTTPS.
 
 ```toml
 [dependencies]
-posthog-rs = { version = "0.31", default-features = false }
+posthog = { version = "1", default-features = false, features = ["tls"] }
 ```
 
 With the blocking client, the same methods are available without `.await`. Either way, `capture` is non-blocking: it hands the event to a background worker that batches and sends it, so it returns immediately instead of waiting on the network. Because delivery happens in the background, call `flush()` or `shutdown()` before your program exits, or buffered events may be lost.
@@ -51,7 +51,7 @@ Call `client.evaluate_flags()` once for the user, then read values from the retu
 #### Boolean feature flags
 
 ```rust
-use posthog_rs::EvaluateFlagsOptions;
+use posthog::EvaluateFlagsOptions;
 
 let flags = client.evaluate_flags(
     "distinct_id_of_your_user",
@@ -68,7 +68,7 @@ if flags.is_enabled("flag-key") {
 #### Multivariate feature flags
 
 ```rust
-use posthog_rs::{EvaluateFlagsOptions, FlagValue};
+use posthog::{EvaluateFlagsOptions, FlagValue};
 
 let flags = client.evaluate_flags(
     "distinct_id_of_your_user",
@@ -87,8 +87,6 @@ match flags.get_flag("flag-key") {
 
 `flags.get_flag()` returns `Some(FlagValue::String(...))` for multivariate flags, `Some(FlagValue::Boolean(true))` for enabled boolean flags, `Some(FlagValue::Boolean(false))` for disabled flags, and `None` when the flag wasn't returned by the evaluation.
 
-> **Note:** `client.is_feature_enabled()`, `client.get_feature_flag()`, `client.get_feature_flag_payload()`, and `client.get_feature_flags()` still work during the migration period, but they're deprecated. Prefer `evaluate_flags()` for new code.
-
 ### Step 2: Include feature flag information when capturing events
 
 If you want use your feature flag to breakdown or filter events in your [insights](https://posthog.com/docs/product-analytics/insights.md), you'll need to include feature flag information in those events. This ensures that the feature flag value is attributed correctly to the event.
@@ -102,7 +100,7 @@ There are two methods you can use to include feature flag information in your ev
 Pass the same `flags` object that you used for branching. This attaches the exact flag values from that evaluation and doesn't make another `/flags` request.
 
 ```rust
-use posthog_rs::{EvaluateFlagsOptions, Event};
+use posthog::{EvaluateFlagsOptions, Event};
 
 let flags = client.evaluate_flags(
     "distinct_id_of_your_user",
@@ -141,7 +139,7 @@ client.capture(event);
 In the event properties, include `$feature/feature_flag_name: variant_key`:
 
 ```rust
-use posthog_rs::Event;
+use posthog::Event;
 
 let mut event = Event::new("event_name", "distinct_id_of_your_user");
 event.insert_prop("$feature/feature-flag-key", "variant-key").unwrap();
@@ -153,15 +151,12 @@ client.capture(event);
 By default, `evaluate_flags()` evaluates every flag for the user. If you only need a few flags, pass `flag_keys` to request only those flags:
 
 ```rust
-use posthog_rs::EvaluateFlagsOptions;
+use posthog::EvaluateFlagsOptions;
 
-let flags = client.evaluate_flags(
-    "distinct_id_of_your_user",
-    EvaluateFlagsOptions {
-        flag_keys: Some(vec!["checkout-flow".to_string(), "new-dashboard".to_string()]),
-        ..Default::default()
-    },
-).await.unwrap();
+let mut options = EvaluateFlagsOptions::default();
+options.flag_keys = Some(vec!["checkout-flow".to_string(), "new-dashboard".to_string()]);
+
+let flags = client.evaluate_flags("distinct_id_of_your_user", options).await.unwrap();
 ```
 
 ### Sending `$feature_flag_called` events
@@ -177,7 +172,7 @@ The SDK deduplicates these events per `(distinct_id, flag, value)` in a local ca
 If you're using the blocking client (with `default-features = false`), the API is the same but without `.await`:
 
 ```rust
-use posthog_rs::EvaluateFlagsOptions;
+use posthog::EvaluateFlagsOptions;
 
 let flags = client.evaluate_flags(
     "distinct_id_of_your_user",

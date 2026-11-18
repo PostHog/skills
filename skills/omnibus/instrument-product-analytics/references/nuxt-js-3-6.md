@@ -180,25 +180,25 @@ Install `posthog-node` using your package manager:
 ### npm
 
 ```bash
-npm install posthog-node@5 --save
+npm install posthog-node@6 --save
 ```
 
 ### Yarn
 
 ```bash
-yarn add posthog-node@5
+yarn add posthog-node@6
 ```
 
 ### pnpm
 
 ```bash
-pnpm add posthog-node@5
+pnpm add posthog-node@6
 ```
 
 ### Bun
 
 ```bash
-bun add posthog-node@5
+bun add posthog-node@6
 ```
 
 Add your PostHog API key and host to your `nuxt.config.js` file, reading them from environment variables. If you've already done this when adding PostHog to the client side, you can skip this step.
@@ -249,8 +249,8 @@ server/api/example.js
 
 See the [Node SDK docs](https://posthog.com/docs/libraries/node.md) for all usable functions, such as:
 
--   [Capture custom event capture, identify users, and more.](https://posthog.com/docs/libraries/node.md#capturing-events)
--   [Feature flags including variants and payloads.](https://posthog.com/docs/libraries/node.md#feature-flags)
+-   [Capture custom event capture, identify users, and more.](https://posthog.com/docs/libraries/node/reference.md#capture)
+-   [Feature flags including variants and payloads.](https://posthog.com/docs/libraries/node/reference.md#get-feature-flag)
 
 ## Next steps
 

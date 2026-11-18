@@ -478,7 +478,7 @@ Skip the manual setup — run this in your project and the wizard installs the S
 
 For large events, use the dedicated AI ingestion path – see [capturing large AI events](https://posthog.com/docs/ai-observability/large-events.md).
 
-In Python, `capture()` drops events over 900 KiB. Call `capture_ai()` instead, with the same arguments, to send events up to 8MB:
+In Python, large events sent with `capture()` are dropped: posthog-python `7.x.x` drops events over 900 KiB, and on `8.0.0` and later PostHog drops events over [the 1MB event limit](https://posthog.com/docs/data/ingestion-warnings.md#discarded-event-exceeding-1mb-limit). Call `capture_ai()` instead, with the same arguments, to send events up to 8MB:
 
 ```python
 posthog.capture_ai("$ai_generation", distinct_id="user_123", properties={...})
