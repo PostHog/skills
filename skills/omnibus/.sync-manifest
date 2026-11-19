@@ -145,6 +145,7 @@ signals
 signals-scout-ai-observability
 signals-scout-anomaly-detection
 signals-scout-apm
+signals-scout-billing
 signals-scout-conversations
 signals-scout-csp-violations
 signals-scout-customer-analytics
