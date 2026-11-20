@@ -102,7 +102,7 @@ Column | Type | Nullable | Description
 `distinct_id` | String | NOT NULL | Identifier of the user/device the flag was evaluated for.
 `created_at` | DateTime | NOT NULL | When PostHog ingested the event (server timestamp); differs from `timestamp`.
 `inserted_at` | DateTime | NOT NULL | When the row was written to ClickHouse; later than `created_at` by the ingestion lag.
-`flag_evaluation_person_id` | UUID | NOT NULL | The person written onto the row at ingestion time, before any later identify or merge. Unlike `person_id` it is a stored column, so filtering on it can use the table's index; it stays stale until the person-overrides squash rewrites it.
+`flag_evaluation_person_id` | UUID | NOT NULL | The person written onto the row at ingestion time, before any later identify or merge. It is a stored column, so filtering on it can use the table's index. It stays stale until the person-overrides squash rewrites it.
 `person_id` | UUID | NOT NULL | The person the evaluation is attributed to, corrected for any later identify or merge, so `uniq(person_id)` counts a merged person once.
 `flag_key` | String | NOT NULL | Key of the flag that was evaluated; the typed copy of `properties.$feature_flag`.
 `response` | String | NULL | What the flag returned: 'true', 'false', or a variant key. NULL when the flag returned null or the SDK sent no response, as on events. A variant named 'null' also reads NULL. `JSONHas(properties, '$feature_flag_response')` tells a null response from a missing one.

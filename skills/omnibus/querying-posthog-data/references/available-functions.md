@@ -309,6 +309,7 @@ groupArrayInsertAt
 groupArrayMovingAvg
 groupArrayMovingSum
 groupArraySample
+groupArraySorted
 groupBitAnd
 groupBitmap
 groupBitmapAnd
