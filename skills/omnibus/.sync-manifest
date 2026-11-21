@@ -19,6 +19,7 @@ building-a-dashboard
 building-canvases
 building-html-canvases
 building-loops
+building-notebook-apps
 building-react-quill-canvases
 building-workflows
 checking-deploy-timing
@@ -152,6 +153,7 @@ signals-scout-customer-analytics
 signals-scout-customer-analytics-billing-and-usage
 signals-scout-data-pipelines
 signals-scout-data-warehouse
+signals-scout-dreaming
 signals-scout-error-tracking
 signals-scout-experiments
 signals-scout-feature-flags
