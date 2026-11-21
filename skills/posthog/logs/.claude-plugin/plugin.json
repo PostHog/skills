@@ -1,7 +1,7 @@
 {
   "name": "posthog-logs",
   "description": "Skills for setting up PostHog log capture",
-  "version": "1.9.4",
+  "version": "dev",
   "author": {
     "name": "PostHog"
   },

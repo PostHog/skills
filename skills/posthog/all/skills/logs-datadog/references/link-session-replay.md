@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Link session replay - Docs
+
+Copy page
+
 # Link session replay - Docs
 
 Connecting your backend logs to frontend session replays provides complete visibility into the user journey, helping you understand the full context around issues in your application.
@@ -14,8 +20,10 @@ By including session IDs and user identity in your logs, you can:
 ## Prerequisites
 
 -   A [logging client installed](/docs/logs/installation.md) on your backend
--   The [PostHog JavaScript SDK](/docs/libraries/js.md) on your frontend
+-   The [PostHog JavaScript SDK](/docs/libraries/js.md) on your web frontend, or the [React Native SDK](/docs/libraries/react-native.md) in your mobile app
 -   [Session replay enabled](/docs/session-replay/installation.md) if you want to link to replays (you can still pass `posthogDistinctId` without session replay to link logs to a user profile)
+
+> **Logs captured client-side:** When you call `posthog.captureLog` / `posthog.logger.*` directly from the JavaScript web SDK or React Native SDK, the current `distinct_id` and `session_id` are attached to every log record automatically. You only need the manual setup below when your backend emits the logs.
 
 ## Implementation
 
@@ -25,15 +33,14 @@ To link logs to session replays, you need to pass the session ID and user identi
 
 In your frontend code, retrieve the current session ID and send it with your API requests:
 
-JavaScript
-
 PostHog AI
 
+### JavaScript
+
 ```javascript
-// In your frontend code
 import posthog from 'posthog-js'
 // Get the current session ID
-const sessionId = posthog.getSessionId()
+const sessionId = posthog.get_session_id()
 // Send it with your API request
 const response = await fetch('/api/chat', {
   method: 'POST',
@@ -42,6 +49,23 @@ const response = await fetch('/api/chat', {
     message: userInput,
     sessionId: sessionId  // Include session ID
   })
+})
+```
+
+### "React
+
+```jsx
+import { posthog } from './posthog'
+// Get the current session ID
+const sessionId = posthog.get_session_id()
+// Send it with your API request
+const response = await fetch('https://api.example.com/chat', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    message: userInput,
+    sessionId,  // Include session ID
+  }),
 })
 ```
 
@@ -102,13 +126,17 @@ def chat():
 
 Once you've set up session linking, you can navigate from logs to their corresponding session replays:
 
-1.  In the [logs view](https://app.posthog.com/logs), click on the log entry you're interested in to open **log details**
-2.  In the log details view, click the **View recording** button to open the session replay
-3.  Watch the user's interaction in context alongside the backend logs
+**From the logs list:**
 
-You can only view recordings for log entries that have an associated session ID.
+1.  Hover over a log entry in the [logs view](https://app.posthog.com/logs)
+2.  Click the **View recording** button in the floating action menu to open the session replay at the log timestamp
 
-This linking helps you correlate backend log events with actual frontend user behavior, enabling faster debugging and better understanding of issues as they occur in your application.
+**From log details:**
+
+1.  Click on a log entry to open **log details**
+2.  Click the **View recording** button to open the session replay
+
+The recording button only appears for log entries that have an associated session ID.
 
 ## View related errors
 
@@ -120,14 +148,15 @@ If no session ID is found in the log entry, the tab displays a message prompting
 
 ## See also
 
+-   [Link logs to a person](/docs/logs/link-person.md): same `posthogDistinctId` attribute, surfaced on the person profile's Logs tab.
 -   [Session replay installation](/docs/session-replay/installation.md)
 -   [Logs installation](/docs/logs/installation.md)
 -   [Search logs](/docs/logs/search.md)
 -   [Error Tracking](/docs/error-tracking.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Supported ClickHouse functions - Docs
+
+Copy page
+
 # Supported ClickHouse functions - Docs
 
 This is an [ever-expanding](https://github.com/posthog/posthog/blob/master/posthog/hogql/functions/mapping.py) list of enabled ClickHouse functions.
@@ -137,6 +143,8 @@ Most of the type conversion functions are safer versions of the equivalent Click
 -   `parseDateTimeBestEffort`
 -   `cityHash64`
 -   `UUIDv7ToDateTime`
+-   `toNullableString`
+-   `toUUIDOrDefault`
 
 ## Dates and times
 
@@ -148,6 +156,7 @@ Most of the type conversion functions are safer versions of the equivalent Click
 -   `toTimeZone`
 -   `timeZoneOf`
 -   `timeZoneOffset`
+-   `timezone`
 -   `toYear`
 -   `toQuarter`
 -   `toMonth`
@@ -159,6 +168,7 @@ Most of the type conversion functions are safer versions of the equivalent Click
 -   `toSecond`
 -   `toUnixTimestamp`
 -   `toUnixTimestamp64Milli`
+-   `fromUnixTimestamp64Milli`
 -   `toStartOfInterval`
 -   `toStartOfYear`
 -   `toStartOfISOYear`
@@ -240,7 +250,11 @@ Most of the type conversion functions are safer versions of the equivalent Click
 -   `date_subtract`
 -   `date_diff`
 -   `make_interval`
--   `make_timestampz`
+-   `make_timestamptz`
+-   `make_date`
+-   `to_char`
+-   `to_date`
+-   `to_timestamp`
 
 ## Strings
 
@@ -362,6 +376,7 @@ Most of the type conversion functions are safer versions of the equivalent Click
 
 -   `if`
 -   `multiIf`
+-   `throwIf`
 
 ## Mathematical
 
@@ -403,6 +418,7 @@ Most of the type conversion functions are safer versions of the equivalent Click
 -   `radians`
 -   `factorial`
 -   `width_bucket`
+-   `rand`
 
 ## Rounding
 
@@ -439,6 +455,7 @@ Most of the type conversion functions are safer versions of the equivalent Click
 -   `splitByRegexp`
 -   `splitByWhitespace`
 -   `splitByNonAlpha`
+-   `split_part`
 -   `alphaTokens`
 -   `extractAllGroups`
 -   `ngrams`
@@ -506,6 +523,7 @@ Most of the type conversion functions are safer versions of the equivalent Click
 -   `URLPathHierarchy`
 -   `encodeURLComponent`
 -   `decodeURLComponent`
+-   `tryDecodeURLComponent`
 -   `encodeURLFormComponent`
 -   `decodeURLFormComponent`
 -   `netloc`
@@ -527,8 +545,9 @@ Most of the type conversion functions are safer versions of the equivalent Click
 -   `JSONExtractFloat`
 -   `JSONExtractBool`
 -   `JSONExtractString`
--   `JSONExtractKey`
+-   `JSONExtract`
 -   `JSONExtractKeys`
+-   `JSONExtractKeysAndValues`
 -   `JSONExtractRaw`
 -   `JSONExtractArrayRaw`
 -   `JSONExtractKeysAndValuesRaw`
@@ -542,6 +561,7 @@ Most of the type conversion functions are safer versions of the equivalent Click
 -   `pointInEllipses`
 -   `pointInPolygon`
 -   `geohashDecode`
+-   `geohashEncode`
 -   `geohashesInBox`
 -   `h3IsValid`
 -   `h3GetResolution`
@@ -660,10 +680,13 @@ Most of the type conversion functions are safer versions of the equivalent Click
 -   `formatReadableSize`
 -   `formatReadableQuantity`
 -   `formatReadableTimeDelta`
+-   `greatest`
+-   `least`
+-   `languageCodeToName`
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

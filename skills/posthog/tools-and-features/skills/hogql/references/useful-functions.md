@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Useful SQL functions - Docs
+
+Copy page
+
 # Useful SQL functions - Docs
 
 Our SQL flavor includes many functions to aggregate and manipulate queried data. Below are some examples of some of the most popular SQL functions you can use in your insights.
@@ -101,12 +107,25 @@ You can access nested data in JSON and objects directly.
 
 SQL
 
-[Run in PostHog](https://us.posthog.com/sql?open_query=select+properties.%24set.%24geoip_country_name%0Afrom+events)
+[Run in PostHog](https://us.posthog.com/sql?open_query=select+properties.cart.total%0Afrom+events)
 
 PostHog AI
 
 ```sql
-select properties.$set.$geoip_country_name
+select properties.cart.total
+from events
+```
+
+Person properties live on the `person` table rather than nested inside event properties, so read them directly:
+
+SQL
+
+[Run in PostHog](https://us.posthog.com/sql?open_query=select+person.properties.%24geoip_country_name%0Afrom+events)
+
+PostHog AI
+
+```sql
+select person.properties.$geoip_country_name
 from events
 ```
 
@@ -114,15 +133,15 @@ You can parse JSON with `JSONExtractRaw()` to return a value.
 
 SQL
 
-[Run in PostHog](https://us.posthog.com/sql?open_query=SELECT%0A++JSONExtractRaw%28properties.%24set%29+as+set_properties%0AFROM+events%0AWHERE+properties.%24set+IS+NOT+NULL)
+[Run in PostHog](https://us.posthog.com/sql?open_query=SELECT%0A++JSONExtractRaw%28properties.cart%29+as+cart%0AFROM+events%0AWHERE+properties.cart+IS+NOT+NULL)
 
 PostHog AI
 
 ```sql
 SELECT
-  JSONExtractRaw(properties.$set) as set_properties
+  JSONExtractRaw(properties.cart) as cart
 FROM events
-WHERE properties.$set IS NOT NULL
+WHERE properties.cart IS NOT NULL
 ```
 
 Specialized `JSONExtract` functions exist for different data types including:
@@ -325,9 +344,9 @@ select
 from events
 ```
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

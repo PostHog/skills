@@ -1,10 +1,26 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Upload source maps - Docs
+
+Copy page
+
 # Upload source maps - Docs
 
 If you serve compiled or minified code, PostHog requires source maps to generate accurate stack traces.
 
 If your source maps are not publicly hosted, you will need to upload them during your build process to see unminified code in your stack traces.
 
-Choose your platform to view specific instructions.
+## AI wizard
+
+If you're using a JavaScript or TypeScript framework, set up source map uploading automatically with our wizard by running this command in your project directory with your terminal (it also works for [LLM coding agents](/blog/envoy-wizard-llm-agent.md) like Cursor and Bolt):
+
+`npx @posthog/wizard upload-source-maps`
+
+[Learn more](/wizard.md)
+
+Otherwise, choose your platform below for manual instructions.
+
+## Platforms
 
 -   [![](https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/contents/images/docs/integrate/js.svg)Web](/docs/error-tracking/upload-source-maps/web.md)
 
@@ -24,7 +40,13 @@ Choose your platform to view specific instructions.
 
 -   [![](https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/contents/images/docs/integrate/flutter.svg)Flutter](/docs/error-tracking/upload-source-maps/flutter.md)
 
+-   [![](https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/contents/images/docs/integrate/go.svg)Go](/docs/error-tracking/upload-source-maps/go.md)
+
 -   [![](https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/contents/images/docs/integrate/ios.svg)iOS](/docs/error-tracking/upload-source-maps/ios.md)
+
+-   [![](https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/contents/images/docs/integrate/kmp.svg)Kotlin Multiplatform](/docs/error-tracking/upload-debug-symbols/kmp.md)
+
+-   [![](https://res.cloudinary.com/dmukukwp6/image/upload/posthog.com/contents/images/docs/integrate/rust.svg)Rust](/docs/error-tracking/upload-source-maps/rust.md)
 
 -   [![](https://res.cloudinary.com/dmukukwp6/image/upload/Rollup_js_c306a2fde3.svg)Rollup](/docs/error-tracking/upload-source-maps/rollup.md)
 
@@ -36,9 +58,9 @@ Choose your platform to view specific instructions.
 
 -   [![](https://res.cloudinary.com/dmukukwp6/image/upload/github_mark_903e35d471.svg)GitHub Action](/docs/error-tracking/upload-source-maps/github-actions.md)
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 
