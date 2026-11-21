@@ -96,7 +96,7 @@ Column | Type | Nullable | Description
 --- | --- | --- | ---
 `uuid` | UUID | NOT NULL | Unique identifier of this row.
 `event` | String | NOT NULL | Always '$feature_flag_called'.
-`properties` | JSON | NOT NULL | JSON map of the event's properties. Access nested keys with `properties.$lib` etc. Prefer the `flag_key`, `response`, `session_id`, `request_id` and `$group_0`..`$group_4` columns where they cover what you need: reading the same value out of this JSON scans far more data. A property that holds an empty string reads as '' here, where `events` can return NULL. A value with an escaped character, such as a quote, can also read differently than on `events`.
+`properties` | JSON | NOT NULL | JSON map of the event's properties. Access nested keys with `properties.$lib` etc. Prefer the `flag_key`, `response`, `session_id`, `request_id` and `$group_0`..`$group_4` columns where they cover what you need: reading the same value out of this JSON scans far more data. `properties.$feature_flag`, `$feature_flag_response` and `$session_id` read those columns, so an empty string or the text 'null' reads as NULL, as on `events`, unless materialization is disabled. Any other property that holds an empty string reads as '' here, where `events` can return NULL. A value with an escaped character, such as a quote, can also read differently than on `events`.
 `timestamp` | DateTime | NOT NULL | When the flag was evaluated (client timestamp, in UTC).
 `team_id` | Integer | NOT NULL |
 `distinct_id` | String | NOT NULL | Identifier of the user/device the flag was evaluated for.
