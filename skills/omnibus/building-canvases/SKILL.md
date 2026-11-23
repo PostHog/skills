@@ -31,19 +31,19 @@ implementation companions below.
 ## Resolve the target canvas
 
 - If the task names a canvas id (canvas-initiated tasks do), that is the target. Do not create another.
-- Otherwise use the space the user asked for. If the user did not ask for a space, use their
-  personal space (`#me`), even when the task started in another space. Do not ask the user to
-  choose a space just to create a canvas. The canvas tools call spaces channels: use `channel-list`
-  to resolve the personal space or the space the user named to its id.
+- Otherwise use the space the task is in, as named in the `channel_context` block or the
+  generation instructions. Use another space only when the user explicitly asks for it.
+  Do not ask the user to choose a space when the task's space is known. The canvas tools call
+  spaces channels: use `channel-list` only to resolve a space the user named to its id.
 - List that space's canvases with `canvas-list` (scope with `channel`). If one is clearly what
   the request refers to — an earlier iteration of the same board or tool — build on it instead
-  of creating a near-duplicate, and say
-  so in your reply so the user knows where the result landed.
+  of creating a near-duplicate, and say so in your reply so the user knows where the result landed.
 - Only when nothing existing fits, create one with `canvas-create` in that same space, named
   with a short descriptive title drawn from the request — never "Untitled canvas".
-- Do not choose another space from the list. If the space the user asked for is unclear or
-  unavailable, ask which space they mean. A canvas in personal space is private; a request to
-  create a canvas does not by itself mean the user wants to share it.
+- Do not choose another space from the list or default to personal space (`#me`) unless that
+  is the task's space. If the task has no space context and the user did not name a space, ask
+  which space to use. If the space the user asked for is unclear or unavailable, ask which
+  space they mean.
 
 ## Load the companion skills for the implementation
 
