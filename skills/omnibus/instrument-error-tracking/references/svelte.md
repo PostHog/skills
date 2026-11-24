@@ -103,25 +103,25 @@ Or set it up manually by following the rest of this guide.
     ### npm
 
     ```bash
-    npm install posthog-node@5 --save
+    npm install posthog-node@6 --save
     ```
 
     ### yarn
 
     ```bash
-    yarn add posthog-node@5
+    yarn add posthog-node@6
     ```
 
     ### pnpm
 
     ```bash
-    pnpm add posthog-node@5
+    pnpm add posthog-node@6
     ```
 
     ### bun
 
     ```bash
-    bun add posthog-node@5
+    bun add posthog-node@6
     ```
 
     Then, initialize the PostHog Node client where you'd like to use it on the server side. For example, in a load function:

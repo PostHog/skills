@@ -31,8 +31,8 @@ Canonical URL: https://posthog.com/docs/libraries/android
 - [Offline behavior](#offline-behavior)
 - [Debug mode](#debug-mode)
 - [All configuration options](#all-configuration-options)
-- [What Android API level is required?](#what-android-api-level-is-required)
-- [Do I need to declare permissions in the AndroidManifest.xml?](#do-i-need-to-declare-permissions-in-the-androidmanifestxml)
+- [Push notifications](#push-notifications)
+- [FAQ](#faq)
 
 It uses an internal queue to make calls fast and non-blocking. It also batches requests and flushes asynchronously, making it perfect to use in any part of your mobile app.
 
@@ -54,7 +54,7 @@ All you need to do is add the `posthog-android` module to your App's `build.grad
 
 ```gradle
 dependencies {
-  implementation 'com.posthog:posthog-android:3.+'
+  implementation 'com.posthog:posthog-android:4.+'
 }
 ```
 
@@ -62,7 +62,7 @@ dependencies {
 
 ```kotlin
 dependencies {
-  implementation("com.posthog:posthog-android:3.+")
+  implementation("com.posthog:posthog-android:4.+")
 }
 ```
 
@@ -78,7 +78,7 @@ import com.posthog.android.PostHogAndroidConfig
 class SampleApp : Application() {
 
     companion object {
-        const val POSTHOG_API_KEY = "<ph_project_token>"
+        const val POSTHOG_PROJECT_TOKEN = "<ph_project_token>"
         // usually 'https://us.i.posthog.com' or 'https://eu.i.posthog.com'
         const val POSTHOG_HOST = "https://us.i.posthog.com"
     }
@@ -87,13 +87,15 @@ class SampleApp : Application() {
         super.onCreate()
 
         val config = PostHogAndroidConfig(
-            apiKey = POSTHOG_API_KEY,
+            projectToken = POSTHOG_PROJECT_TOKEN,
             host = POSTHOG_HOST
         )
         PostHogAndroid.setup(this, config)
     }
 }
 ```
+
+Upgrading from version 3? See the [posthog-android 4.0 migration guide](https://github.com/PostHog/posthog-android/blob/main/MIGRATION.md). Versions before 3.72.0 take `apiKey` instead of `projectToken`.
 
 ## Capturing events
 
@@ -213,7 +215,7 @@ import com.posthog.android.PostHogAndroidConfig
 import okhttp3.OkHttpClient
 
 val config = PostHogAndroidConfig(
-    apiKey = POSTHOG_API_KEY,
+    projectToken = POSTHOG_PROJECT_TOKEN,
     host = POSTHOG_HOST,
 ).apply {
     tracingHeaders = listOf("api.example.com")
@@ -271,17 +273,17 @@ Under the hood, the key difference between identified and anonymous events is th
 
 The Android SDK captures anonymous events by default. However, this may change depending on your `personProfiles` [config](https://posthog.com/docs/libraries/android.md#all-configuration-options) when initializing PostHog:
 
-1.  `personProfiles = PersonProfiles.IDENTIFIED_ONLY` *(recommended)* *(default)* - Anonymous events are captured by default. PostHog only captures identified events for users where [person profiles](https://posthog.com/docs/data/persons.md) have already been created.
+1.  `personProfiles = PersonProfiles.IDENTIFIED_ONLY` *(recommended)* *(default)* – Anonymous events are captured by default. PostHog only captures identified events for users where [person profiles](https://posthog.com/docs/data/persons.md) have already been created.
 
-2.  `personProfiles = PersonProfiles.ALWAYS` - Capture identified events for all events.
+2.  `personProfiles = PersonProfiles.ALWAYS` – Capture identified events for all events.
 
-3.  `personProfiles = PersonProfiles.NEVER` - Capture anonymous events for all events.
+3.  `personProfiles = PersonProfiles.NEVER` – Capture anonymous events for all events.
 
 For example:
 
 ```kotlin
 val config = PostHogAndroidConfig(
-   apiKey = POSTHOG_API_KEY,
+   projectToken = POSTHOG_PROJECT_TOKEN,
    host = POSTHOG_HOST,
 ).apply {
    personProfiles = PersonProfiles.IDENTIFIED_ONLY
@@ -374,7 +376,7 @@ You can completely opt-out users from data capture. To do this, there are two op
 
 ```kotlin
 val config = PostHogAndroidConfig(
-    apiKey = "<ph_project_token>",
+    projectToken = "<ph_project_token>",
     host = "https://us.i.posthog.com"
 )
 config.optOut = true
@@ -408,7 +410,7 @@ You can also configure the flush interval with `flushIntervalSeconds` (default `
 ```kotlin
 import com.posthog.android.PostHogAndroidConfig
 
-val config = PostHogAndroidConfig(apiKey = POSTHOG_API_KEY, host = POSTHOG_HOST).apply {
+val config = PostHogAndroidConfig(projectToken = POSTHOG_PROJECT_TOKEN, host = POSTHOG_HOST).apply {
     flushAt = 20
     flushIntervalSeconds = 30
 }
@@ -484,29 +486,40 @@ Every time a user opens the app, we send a request in the background to fetch th
 
 This means that for most screens, the feature flags are available immediately – **except for the first time a user visits**.
 
-To handle this, you can use the `onFeatureFlags` callback to wait for the feature flag request to finish:
+To handle this, register a listener with `PostHog.onFeatureFlags()` before you set up the SDK, so it also gets the first load:
 
 ```kotlin
 import com.posthog.PostHog
+import com.posthog.android.PostHogAndroid
 import com.posthog.android.PostHogAndroidConfig
-import com.posthog.PostHogOnFeatureFlags
 
-// During SDK initialization
-val config = PostHogAndroidConfig(apiKey = "<ph_project_token>").apply {
-    onFeatureFlags = PostHogOnFeatureFlags {
-        if (PostHog.isFeatureEnabled("flag-key")) {
-            // do something
-        }
+// Before setup
+val subscription = PostHog.onFeatureFlags { loaded ->
+    if (!loaded.errorsLoading && PostHog.getFeatureFlag("flag-key") == "test") {
+        // do something
     }
 }
 
+PostHogAndroid.setup(context, PostHogAndroidConfig(projectToken = "<ph_project_token>"))
+
+// Later, stop listening
+subscription.unsubscribe()
+
 // And/or after the SDK is initialized
-PostHog.reloadFeatureFlags {
-    if (PostHog.isFeatureEnabled("flag-key")) {
+PostHog.reloadFeatureFlags { loaded ->
+    if (!loaded.errorsLoading && PostHog.isFeatureEnabled("flag-key")) {
         // do something
     }
 }
 ```
+
+Both callbacks also run when loading fails. `loaded` is a `PostHogFeatureFlagsLoaded` with `flags` (the keys of the enabled flags), `variants` (their values), and `errorsLoading` (whether the load failed, in which case the values are the last known ones).
+
+The listener runs on the main thread after every flag load, and it also gets the current values if flags have already loaded. The `reloadFeatureFlags()` callback runs on a background thread, so switch to the main thread before touching UI.
+
+Read the value with `getFeatureFlag` when you act on it. It captures `$feature_flag_called`, which experiments use to record exposure, and reading `loaded.variants` doesn't.
+
+`PostHog.onFeatureFlags()` and the `loaded` argument require version 4.0 or later. On 3.x, set `onFeatureFlags = PostHogOnFeatureFlags { … }` on the config instead, and the callbacks take no arguments.
 
 ### Reloading feature flags
 
@@ -540,7 +553,7 @@ Set `config.bootstrap` before calling `setup()` to seed identity and flag values
 ```kotlin
 import com.posthog.PostHogBootstrapConfig
 
-val config = PostHogAndroidConfig(apiKey = POSTHOG_API_KEY, host = POSTHOG_HOST)
+val config = PostHogAndroidConfig(projectToken = POSTHOG_PROJECT_TOKEN, host = POSTHOG_HOST)
 config.bootstrap = PostHogBootstrapConfig(
     distinctId = "distinct_id_of_your_user",
     isIdentifiedId = true,
@@ -641,7 +654,7 @@ If you're not seeing the expected events being captured, the feature flags being
 You can enable debug mode by setting the `debug` option to `true` in the `PostHogAndroidConfig` object. This will enable verbose logs about the inner workings of the SDK.
 
 ```kotlin
-val config = PostHogAndroidConfig(apiKey = POSTHOG_API_KEY, host = POSTHOG_HOST).apply {
+val config = PostHogAndroidConfig(projectToken = POSTHOG_PROJECT_TOKEN, host = POSTHOG_HOST).apply {
     debug = true
     // ... other config options
 }
@@ -656,7 +669,7 @@ import com.posthog.PersonProfiles
 import com.posthog.android.PostHogAndroidConfig
 
 val config = PostHogAndroidConfig(
-    apiKey = POSTHOG_API_KEY,
+    projectToken = POSTHOG_PROJECT_TOKEN,
     host = POSTHOG_HOST
 ).apply {
     captureApplicationLifecycleEvents = true
@@ -666,7 +679,7 @@ val config = PostHogAndroidConfig(
     flushAt = 20
     maxQueueSize = 1000
     maxBatchSize = 50
-    maxRetries = 3
+    pushNotificationSubscriptionMaxRetries = 3
     flushIntervalSeconds = 30
 
     debug = false
@@ -703,7 +716,7 @@ val config = PostHogAndroidConfig(
 | `flushAt` | `20` | Number of queued events that triggers a flush. |
 | `maxQueueSize` | `1000` | Maximum number of events kept across memory and disk before FIFO eviction. |
 | `maxBatchSize` | `50` | Maximum number of events sent in one batch request. |
-| `maxRetries` | `3` | Maximum retry attempts for push-subscription registration failures. It does not apply to event, session recording, or log ingestion. |
+| `pushNotificationSubscriptionMaxRetries` | `3` | Maximum retry attempts for push-subscription registration failures. Called `maxRetries` before version 4.0. It does not apply to event, session recording, or log ingestion. |
 | `flushIntervalSeconds` | `30` | Maximum delay before queued data is flushed. |
 | `encryption` | `null` | Optional `PostHogEncryption` implementation for encrypting persisted queued events. |
 | `proxy` | `null` | Optional `java.net.Proxy` for PostHog API requests. |
@@ -721,18 +734,17 @@ val config = PostHogAndroidConfig(
 | `sendFeatureFlagEvent` | `true` | Sends `$feature_flag_called` when a feature flag is evaluated. |
 | `featureFlagCalledCacheSize` | `1000` | Number of feature flag calls cached for deduplicating `$feature_flag_called` events. |
 | `preloadFeatureFlags` | `true` | Fetches feature flags automatically during setup. |
-| `evaluationContexts` | `null` | Context tags that constrain which feature flags are evaluated. Available in version 3.29.1+. The legacy `evaluationEnvironments` option is available in version 3.24.0+. |
-| `onFeatureFlags` | `null` | Callback invoked when feature flags are loaded. |
+| `evaluationContexts` | `null` | Context tags that constrain which feature flags are evaluated. Available in version 3.29.1+. The legacy `evaluationEnvironments` option was available in version 3.24.0+ and removed in 4.0. |
 
 ### Product configuration objects
 
 | Option | Default | Description |
 | --- | --- | --- |
 | `sessionReplay` | `false` | Enables session replay when project settings also allow recording. |
-| `sessionReplayConfig` | `PostHogSessionReplayConfig()` | Configures masking, screenshots, Logcat capture, sampling, and custom drawable conversion. |
+| `sessionReplayConfig` | `PostHogSessionReplayConfig()` | Configures masking, screenshot settings, Logcat capture, and sampling. |
 | `logs` | `PostHogLogsConfig()` | Configures [Android logs](https://posthog.com/docs/logs/installation/android.md). |
 | `errorTrackingConfig` | `PostHogErrorTrackingConfig()` | Configures error tracking. `autoCapture` defaults to `false`; set it to `true` to autocapture uncaught exceptions when project settings also enable error tracking. |
-| `surveys` | `false` | Internal/experimental native Android survey support. Native Android survey UI is not fully supported or documented yet. |
+| `surveys` | `true` | Shows surveys when the app depends on `posthog-android-surveys-compose` or sets `surveysConfig.surveysDelegate`. Defaults to `false` before version 4.0. |
 | `surveysConfig` | `PostHogSurveysConfig()` | Internal/experimental survey display delegate configuration, primarily for hybrid SDKs. |
 | `bootstrap` | `null` | Seeds identity (`distinctId`, `isIdentifiedId`) and feature-flag state (`featureFlags`, `featureFlagPayloads`) before the first `/flags` response. Bootstrapped identity applies to the first session; only enabled flags are served, until the first `/flags` response replaces them. See [SDK bootstrapping](https://posthog.com/docs/libraries/bootstrapping.md#behavior-on-mobile-sdks). |
 
@@ -777,10 +789,10 @@ The Android SDK can register a device for [Workflows](https://posthog.com/docs/w
 
 ## FAQ
 
-## What Android API level is required?
+### What Android API level is required?
 
 The Android SDK supports Android API 23 and newer.
 
-## Do I need to declare permissions in the AndroidManifest.xml?
+### Do I need to declare permissions in the AndroidManifest.xml?
 
 Usually, no. The SDK declares `android.permission.INTERNET` and `android.permission.ACCESS_NETWORK_STATE`, and Android's manifest merger adds them to your app. The SDK does not declare or require an Android `Service`.

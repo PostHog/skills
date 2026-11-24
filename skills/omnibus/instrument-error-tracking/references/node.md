@@ -36,25 +36,25 @@ Or set it up manually by following the rest of this guide.
     ### npm
 
     ```bash
-    npm install posthog-node@5
+    npm install posthog-node@6
     ```
 
     ### yarn
 
     ```bash
-    yarn add posthog-node@5
+    yarn add posthog-node@6
     ```
 
     ### pnpm
 
     ```bash
-    pnpm add posthog-node@5
+    pnpm add posthog-node@6
     ```
 
     ### bun
 
     ```bash
-    bun add posthog-node@5
+    bun add posthog-node@6
     ```
 
 2.  2
@@ -147,7 +147,7 @@ Or set it up manually by following the rest of this guide.
     Node.js
 
     ```javascript
-    posthog.captureException(e, 'user_distinct_id', additionalProperties)
+    posthog.captureException(e, { distinctId: 'user_distinct_id', properties: additionalProperties })
     ```
 
     This is helpful if you've built your own error handling logic or want to capture exceptions normally handled by the framework.

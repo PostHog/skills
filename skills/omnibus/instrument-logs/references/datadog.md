@@ -10,6 +10,7 @@ Canonical URL: https://posthog.com/docs/logs/installation/datadog
 
 - [Get your project token](#get-your-project-token)
 - [Configure Datadog Agent](#configure-datadog-agent)
+- [Dual-ship to Datadog and PostHog](#dual-ship-to-datadog-and-posthog)
 - [Other Datadog log exporters](#other-datadog-log-exporters)
 - [Test your setup](#test-your-setup)
 - [Next steps](#next-steps)
@@ -55,6 +56,33 @@ If you're already using Datadog to collect logs, you can forward them to PostHog
 
 3.  3
 
+    ## Dual-ship to Datadog and PostHog
+
+    Optional
+
+    To compare PostHog and Datadog side by side, send the same logs to both at the same time. Keep `logs_dd_url` set to PostHog as shown in the previous step, then add Datadog as an additional endpoint, as described in Datadog's [dual shipping docs](https://docs.datadoghq.com/agent/configuration/dual-shipping/?tab=helm#logs):
+
+    datadog.yaml
+
+    ```yaml
+    logs_config:
+      logs_dd_url: "https://us.i.posthog.com/i/v1/logs/datadog/<ph_project_token>"
+      force_use_http: true
+      additional_endpoints:
+        - api_key: "<YOUR_DATADOG_API_KEY>"
+          Host: "agent-http-intake.logs.<YOUR_DATADOG_SITE>" # For example, datadoghq.com
+          Port: 443
+          is_reliable: true
+    ```
+
+    With `is_reliable: true`, the Agent treats both endpoints equally. If one is unavailable, logs keep flowing to the other.
+
+    **Get a discounted trial while you test**
+
+    Dual-shipping means you pay for the same logs twice while you compare. [Contact sales](https://posthog.com/talk-to-a-human.md) to get a discounted trial period for the time you're testing.
+
+4.  4
+
     ## Other Datadog log exporters
 
     Optional
@@ -67,7 +95,7 @@ If you're already using Datadog to collect logs, you can forward them to PostHog
 
     The endpoint accepts logs in the standard Datadog log format, so existing integrations should work without additional changes.
 
-4.  4
+5.  5
 
     ## Test your setup
 
@@ -82,7 +110,7 @@ If you're already using Datadog to collect logs, you can forward them to PostHog
 
     [View your logs in PostHog](https://app.posthog.com/logs)
 
-6.  ## Next steps
+7.  ## Next steps
 
     Checkpoint
 

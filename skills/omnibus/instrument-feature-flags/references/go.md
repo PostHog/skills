@@ -38,7 +38,7 @@ Or set it up manually by following the rest of this guide.
     Terminal
 
     ```bash
-    go get "github.com/posthog/posthog-go"
+    go get github.com/posthog/posthog-go/v2
     ```
 
 2.  2
@@ -55,7 +55,7 @@ Or set it up manually by following the rest of this guide.
     package main
     
     import (
-        "github.com/posthog/posthog-go"
+        "github.com/posthog/posthog-go/v2"
     )
     
     func main() {
@@ -145,7 +145,7 @@ Or set it up manually by following the rest of this guide.
     client.Enqueue(posthog.Capture{
         DistinctId: "distinct_id_of_your_user",
         Event:      "event_name",
-        SendFeatureFlags: true,
+        SendFeatureFlags: posthog.SendFeatureFlags(true),
     })
     ```
 

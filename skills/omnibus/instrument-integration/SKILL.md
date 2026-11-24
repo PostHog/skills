@@ -153,9 +153,9 @@ STEP 7: Verify and clean up.
 - `references/ruby-on-rails.md` - Ruby on rails
 - `references/ruby.md` - Ruby
 - `references/android.md` - Android
-- `references/ios.md` - Ios
-- `references/usage.md` - Ios SDK usage
-- `references/configuration.md` - Ios SDK configuration
+- `references/ios.md` - PostHog ios SDK
+- `references/usage.md` - PostHog ios SDK
+- `references/configuration.md` - PostHog ios SDK
 - `references/flutter.md` - Flutter
 - `references/kmp.md` - Kotlin multiplatform
 - `references/react-native.md` - React native

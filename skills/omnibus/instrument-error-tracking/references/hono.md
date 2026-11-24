@@ -26,25 +26,25 @@ Canonical URL: https://posthog.com/docs/error-tracking/installation/hono
     ### npm
 
     ```bash
-    npm install posthog-node@5
+    npm install posthog-node@6
     ```
 
     ### yarn
 
     ```bash
-    yarn add posthog-node@5
+    yarn add posthog-node@6
     ```
 
     ### pnpm
 
     ```bash
-    pnpm add posthog-node@5
+    pnpm add posthog-node@6
     ```
 
     ### bun
 
     ```bash
-    bun add posthog-node@5
+    bun add posthog-node@6
     ```
 
 2.  2
@@ -108,14 +108,17 @@ Canonical URL: https://posthog.com/docs/error-tracking/installation/hono
 
     ```typescript
     import { PostHog } from 'posthog-node'
-    const posthog = new PostHog(process.env.POSTHOG_TOKEN, { host: 'https://us.i.posthog.com' })
+    const posthog = new PostHog(process.env.POSTHOG_TOKEN!, { host: 'https://us.i.posthog.com' })
     app.onError(async (err, c) => {
-      posthog.captureException(err, 'user_distinct_id_with_err_rethrow', {
-        path: c.req.path,
-        method: c.req.method,
-        url: c.req.url,
-        headers: c.req.header(),
-        // ... other properties
+      posthog.captureException(err, {
+        distinctId: 'user_distinct_id_with_err_rethrow',
+        properties: {
+          path: c.req.path,
+          method: c.req.method,
+          url: c.req.url,
+          headers: c.req.header(),
+          // ... other properties
+        },
       })
       await posthog.flush()
       // other error handling logic

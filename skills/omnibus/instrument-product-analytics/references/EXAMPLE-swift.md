@@ -143,8 +143,8 @@ PostHogSDK.shared.reset()
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/PostHog/posthog-ios",
       "state" : {
-        "revision" : "835f624c2618d72d73650d0ed0029325232f5b0a",
-        "version" : "3.92.0"
+        "revision" : "4a6940a043a452db3ff397874ab654a10e63a7c0",
+        "version" : "4.0.2"
       }
     }
   ],

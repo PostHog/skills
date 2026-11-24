@@ -45,13 +45,13 @@ Skip the manual setup — run this in your project and the wizard installs the S
     ### Python
 
     ```bash
-    pip install "posthog<8" google-genai
+    pip install posthog~=8.0 google-genai
     ```
 
     ### Node
 
     ```bash
-    npm install @posthog/ai@8 posthog-node@5 @google/genai
+    npm install @posthog/ai@8 posthog-node@6 @google/genai
     ```
 
     ### Go

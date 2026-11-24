@@ -171,6 +171,6 @@ This setup was verified for HTTP on both adapters. WebSocket, GraphQL, and custo
 
 To read more about how to integrate specific PostHog features into NestJS, have a look at our [Node SDK docs](https://posthog.com/docs/libraries/node.md) for concepts such as:
 
--   [Capturing custom events, setting properties, and more.](https://posthog.com/docs/libraries/node/reference.md#capture)
--   [Setting up Feature Flags including variants and payloads.](https://posthog.com/docs/libraries/node/reference.md#get-feature-flag)
--   [Using contexts for per-request state management.](https://posthog.com/docs/libraries/node/reference.md#posthogwithcontext)
+-   [Capturing custom events, setting properties, and more.](https://posthog.com/docs/libraries/node.md#capture)
+-   [Setting up Feature Flags including variants and payloads.](https://posthog.com/docs/libraries/node.md#get-feature-flag)
+-   [Using contexts for per-request state management.](https://posthog.com/docs/libraries/node.md#posthogwithcontext)

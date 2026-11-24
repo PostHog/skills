@@ -27,7 +27,7 @@ Run this command in your project directory to add PostHog to your Django project
 
 Or set it up manually by following the rest of this guide.
 
-> These docs cover version `7.x` of the Python SDK, which requires Python 3.10 or higher. On Python 3.9? See [supported versions](#supported-versions).
+> These docs cover version `8.x.x` of the Python SDK, which requires Python 3.10 or higher. On Python 3.9? See [supported versions](#supported-versions).
 
 ## Installation
 
@@ -78,7 +78,7 @@ def some_request(request):
         posthog.capture('event_name')
 ```
 
-Events captured without a context or explicit `distinct_id` are sent as [anonymous events](https://posthog.com/docs/data/anonymous-vs-identified-events.md) with an auto-generated `distinct_id`. See the [Python SDK docs](https://posthog.com/docs/libraries/python/reference.md#identify) for more details.
+Events captured without a context or explicit `distinct_id` are sent as [anonymous events](https://posthog.com/docs/data/anonymous-vs-identified-events.md) with an auto-generated `distinct_id`. See the [Python SDK docs](https://posthog.com/docs/libraries/python.md#identify) for more details.
 
 ## Identifying users
 
@@ -101,7 +101,7 @@ Events captured without a context or explicit `distinct_id` are sent as [anonymo
 
 ## Django contexts middleware
 
-The Python SDK provides a Django middleware that automatically wraps all requests with a [context](https://posthog.com/docs/libraries/python/reference.md#posthognew_context). This middleware extracts session and user information from each request and adds relevant properties to events captured during that request.
+The Python SDK provides a Django middleware that automatically wraps all requests with a [context](https://posthog.com/docs/libraries/python.md#posthognew_context). This middleware extracts session and user information from each request and adds relevant properties to events captured during that request.
 
 ### Basic setup
 

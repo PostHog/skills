@@ -37,7 +37,7 @@ Or set it up manually by following the rest of this guide.
 
     ```kotlin
     dependencies {
-        implementation("com.posthog:posthog-android:3.+")
+        implementation("com.posthog:posthog-android:4.+")
     }
     ```
 
@@ -64,7 +64,7 @@ Or set it up manually by following the rest of this guide.
     
             // Create a PostHog Config with the given project token and host
             val config = PostHogAndroidConfig(
-                apiKey = POSTHOG_PROJECT_TOKEN,
+                projectToken = POSTHOG_PROJECT_TOKEN,
                 host = POSTHOG_HOST
             )
     

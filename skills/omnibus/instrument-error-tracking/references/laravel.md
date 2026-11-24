@@ -109,6 +109,16 @@ You can omit `distinctId` to use the current request identity. Without an identi
 
 For [local evaluation](https://posthog.com/docs/feature-flags/local-evaluation.md), set `POSTHOG_SECRET_KEY` to your feature flags secure API key. Keep it on the server. In production, enable `flag_cache.enabled` and select a shared Laravel cache store with `flag_cache.store` in `config/posthog.php`.
 
+#### Remote config
+
+To read the payload of a [remote config](https://posthog.com/docs/feature-flags/remote-config.md) flag, call `getRemoteConfigPayload` with the flag key. It needs no distinct ID, and it requires `POSTHOG_SECRET_KEY` and `posthog/posthog-laravel` 0.5.0 or later:
+
+```php
+use PostHog\Laravel\Facades\PostHog;
+
+$config = PostHog::getRemoteConfigPayload("landing-page-config");
+```
+
 ### Laravel Pennant
 
 The SDK includes an optional read-only Pennant store. Install Pennant and select the PostHog store:

@@ -66,7 +66,7 @@ Click the map
     ### Python
 
     ```bash
-    pip install "posthog[otel]<8"
+    pip install "posthog[otel]~=8.0"
     ```
 
     ### Node
@@ -78,7 +78,7 @@ Click the map
     ### Go
 
     ```bash
-    go get github.com/posthog/posthog-go/otel go.opentelemetry.io/otel go.opentelemetry.io/otel/sdk
+    go get github.com/posthog/posthog-go/otel/v2 go.opentelemetry.io/otel go.opentelemetry.io/otel/sdk
     ```
 
     ### Java
@@ -181,7 +181,7 @@ Click the map
     
         "github.com/anthropics/anthropic-sdk-go"
         "github.com/anthropics/anthropic-sdk-go/option"
-        posthogotel "github.com/posthog/posthog-go/otel"
+        posthogotel "github.com/posthog/posthog-go/otel/v2"
         "go.opentelemetry.io/otel"
         "go.opentelemetry.io/otel/attribute"
         "go.opentelemetry.io/otel/propagation"
@@ -426,8 +426,8 @@ Click the map
     ### Go
 
     ```go
-    // Requires github.com/posthog/posthog-go/otel v1.35.0 or later
-    import "github.com/posthog/posthog-go"
+    // Requires github.com/posthog/posthog-go/otel/v2
+    import "github.com/posthog/posthog-go/v2"
     
     ctx = posthog.WithRequestContext(ctx, posthog.RequestContext{
         DistinctId: userID,
@@ -525,13 +525,13 @@ Skip the manual setup — run this in your project and the wizard installs the S
     ### Python
 
     ```bash
-    pip install "posthog<8" anthropic
+    pip install posthog~=8.0 anthropic
     ```
 
     ### Node
 
     ```bash
-    npm install @posthog/ai@8 posthog-node@5 @anthropic-ai/sdk
+    npm install @posthog/ai@8 posthog-node@6 @anthropic-ai/sdk
     ```
 
     ### Go

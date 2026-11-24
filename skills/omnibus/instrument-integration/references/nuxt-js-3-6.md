@@ -249,8 +249,8 @@ server/api/example.js
 
 See the [Node SDK docs](https://posthog.com/docs/libraries/node.md) for all usable functions, such as:
 
--   [Capture custom event capture, identify users, and more.](https://posthog.com/docs/libraries/node/reference.md#capture)
--   [Feature flags including variants and payloads.](https://posthog.com/docs/libraries/node/reference.md#get-feature-flag)
+-   [Capture custom event capture, identify users, and more.](https://posthog.com/docs/libraries/node.md#capture)
+-   [Feature flags including variants and payloads.](https://posthog.com/docs/libraries/node.md#get-feature-flag)
 
 ## Next steps
 
