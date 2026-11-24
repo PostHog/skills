@@ -307,7 +307,7 @@ export async function load() {
 }
 ```
 
-See our [JavaScript Web](https://posthog.com/docs/libraries/js/usage.md#feature-flags) and [Node](https://posthog.com/docs/libraries/node/reference.md#get-feature-flag) docs for more details.
+See our [JavaScript Web](https://posthog.com/docs/libraries/js/usage.md#feature-flags) and [Node](https://posthog.com/docs/libraries/node.md#get-feature-flag) docs for more details.
 
 ## Configuring session replay for server-side rendered apps
 

@@ -28,7 +28,7 @@ So the PostHog SPM dependency lives in `project.yml`:
 packages:
   PostHog:
     url: https://github.com/PostHog/posthog-ios
-    from: 3.64.1   # check github.com/PostHog/posthog-ios/releases for the latest
+    from: 4.0.0   # check github.com/PostHog/posthog-ios/releases for the latest
 
 targets:
   BurritoStand:
@@ -45,6 +45,8 @@ enough — `project.yml` is a generic name), and typically no committed
 `.xcodeproj`.
 
 ## Getting started
+
+Requires Xcode 26 or later, which posthog-ios 4.x needs.
 
 ### 1. Generate the Xcode project
 
@@ -203,7 +205,7 @@ options:
 packages:
   PostHog:
     url: https://github.com/PostHog/posthog-ios
-    from: 3.64.1
+    from: 4.0.0
 
 targets:
   BurritoStand:

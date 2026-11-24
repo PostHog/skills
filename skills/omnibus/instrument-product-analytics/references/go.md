@@ -2,7 +2,7 @@
 
 # PostHog Go SDK
 
-Canonical URL: https://posthog.com/docs/libraries/go/reference
+Canonical URL: https://posthog.com/docs/libraries/go
 
 > **Cloud region:** This page uses US Cloud hosts. For an EU Cloud project, use `https://eu.i.posthog.com` instead of `https://us.i.posthog.com` (ingestion host).
 
@@ -13,6 +13,7 @@ Canonical URL: https://posthog.com/docs/libraries/go/reference
 - [Capture](#capture)
 - [Identify](#identify)
 - [Alias](#alias)
+- [Capture AI](#capture-ai)
 - [Capture exception](#capture-exception)
 - [Emails](#emails)
 - [Flush](#flush)
@@ -41,7 +42,7 @@ The client queues events and sends them in batches, so call `Close` before your 
 Install the module (Go 1.21 or later):
 
 ```bash
-go get github.com/posthog/posthog-go
+go get github.com/posthog/posthog-go/v2
 ```
 
 Create a client with your project API key, send an event, and close the client to flush the queue:
@@ -49,7 +50,7 @@ Create a client with your project API key, send an event, and close the client t
 ```go
 package main
 
-import "github.com/posthog/posthog-go"
+import "github.com/posthog/posthog-go/v2"
 
 func main() {
 	client, _ := posthog.NewWithConfig("<ph_project_api_key>", posthog.Config{
@@ -91,9 +92,16 @@ type Config struct {
 	// Deprecated: use SecretKey instead.
 	PersonalApiKey string
 
+	// Disabled makes NewWithConfig return a client that sends nothing: its
+	// methods return default values and ErrSDKDisabled. Use it in tests and
+	// local development.
+	Disabled bool
+
 	// DisableGeoIP controls whether event and feature flag requests include
 	// $geoip_disable/geoip_disable. Nil defaults to true because this SDK usually
-	// runs server-side; set Ptr(false) to allow GeoIP lookup.
+	// runs server-side; set Ptr(false) to allow GeoIP lookup. On events it is a
+	// default: a $geoip_disable value in the event, the RequestContext or
+	// DefaultEventProperties wins.
 	DisableGeoIP *bool
 
 	// IsServer controls whether events include the $is_server property.
@@ -103,7 +111,9 @@ type Config struct {
 	//
 	// Set Ptr(false) when using posthog-go as a CLI or client so the event is
 	// not flagged as server-side and the device OS is attributed normally. When
-	// resolved to false, $is_server is omitted from every event entirely.
+	// resolved to false, the SDK does not add $is_server. Like DisableGeoIP, it
+	// is a default: a $is_server value in the event, the RequestContext or
+	// DefaultEventProperties wins.
 	//
 	//	// CLI/client usage
 	//	config := posthog.Config{IsServer: posthog.Ptr(false)}
@@ -157,24 +167,84 @@ type Config struct {
 	// operations. If nil, the client logs to os.Stderr with the standard logger.
 	Logger Logger
 
-	// DefaultEventProperties are merged into every Capture event before sending.
-	// They are useful for common metadata like service name or app version. On key
-	// conflicts, values from DefaultEventProperties overwrite event properties,
-	// except that an explicit $process_person_profile=false remains false.
+	// DefaultEventProperties are added to the event properties of every Capture,
+	// Exception, Identify, Alias and GroupIdentify event. They are useful for
+	// common metadata like service name or app version. They never go into the
+	// $set or $group_set person and group properties.
+	//
+	// They fill in before BeforeSend, only for keys that the event and the
+	// request context left unset. A key with a nil value counts as set. $set,
+	// $set_once, $groups and $group_set fill one level deep when both values are
+	// maps. BeforeSend sees the filled values and can change or remove them. On
+	// Identify, Alias and GroupIdentify they fill EventProperties. A
+	// $process_person_profile in them never reaches an identify-style event;
+	// see Options.
 	DefaultEventProperties Properties
 
+	// DefaultEventOptions are added to the options of every Capture, Exception,
+	// Identify, Alias and GroupIdentify event, such as process_person_profile or
+	// cookieless_mode. They never set process_person_profile on an
+	// identify-style event whose distinct ID the SDK did not generate; see
+	// Options.
+	//
+	// They fill in before BeforeSend, only for options that the event and the
+	// request context left missing or nil. BeforeSend sees the filled options and
+	// can change them. Set an option to false on the event to turn a default off.
+	// They win over the personless default.
+	DefaultEventOptions Options
+
 	// Callback receives success or failure notifications for messages sent to the
-	// PostHog batch API.
+	// PostHog capture API. The message for an Alias does not include its
+	// EventProperties or the DefaultEventProperties filled into them.
 	Callback Callback
 
 	// BeforeSend is called after SDK enrichment and before messages are serialized.
 	// Return the message to send a modified version, or nil to drop it.
+	//
+	// The hook sees the event's own values and the values filled from
+	// RequestContext, DefaultEventProperties, DefaultEventOptions, the
+	// process_person_profile option the SDK sets on identify-style and
+	// personless events, and the SDK: $is_server, $geoip_disable, system
+	// context and feature flag properties. The SDK fills only keys the caller
+	// left unset. Its changes are final. To change an option, set it in Options.
 	BeforeSend BeforeSendFunc
 
 	// BatchSize is the maximum number of messages sent in one batch API call.
 	// Messages are sent when BatchSize is reached or when Interval fires. If zero,
-	// it defaults to DefaultBatchSize. The API still enforces a 500KB request limit.
+	// it defaults to DefaultBatchSize. MaxBatchBytes targets the combined event size.
 	BatchSize int
+
+	// MaxEventBytes optionally caps the serialized size of a single event. A
+	// larger event is rejected through Callback.Failure with ErrMessageTooBig
+	// rather than being sent. Zero disables the SDK's per-event cap. Backend
+	// request limits still apply; events processed within those limits can be
+	// rejected individually.
+	MaxEventBytes int
+
+	// MaxBatchBytes bounds the combined serialized size of the events in one
+	// capture request, independently of BatchSize, which bounds event count. A
+	// batch is flushed early when the next event would exceed it. The request
+	// envelope adds a small fixed overhead on top, so it is a target rather than
+	// a hard wire limit. An event larger than MaxBatchBytes is sent alone.
+	// When MaxEventBytes is set, MaxBatchBytes must be at least MaxEventBytes.
+	// If zero, it defaults to DefaultMaxBatchBytes.
+	MaxBatchBytes int
+
+	// CaptureAICompression selects the compression mode for EnqueueAI request
+	// bodies, independently of Compression. If zero, AI bodies are sent
+	// uncompressed. CompressionZstd is a good choice: AI events are large JSON.
+	CaptureAICompression CompressionMode
+
+	// CaptureAIBatchUploadTimeout is the timeout for uploading one AI batch. AI
+	// events are far larger than analytics events, so the lane gets its own
+	// budget. If zero, it defaults to DefaultCaptureAIBatchUploadTimeout.
+	CaptureAIBatchUploadTimeout time.Duration
+
+	// CaptureAIMaxQueueSize is the maximum number of AI messages buffered in
+	// memory. It is lower than MaxQueueSize by default because AI events can be
+	// multi-megabyte, so the same count would pin far more memory. If zero, it
+	// defaults to DefaultCaptureAIMaxQueueSize.
+	CaptureAIMaxQueueSize int
 
 	// MaxQueueSize is the maximum number of messages buffered in memory waiting to
 	// be batched and sent. If zero, it defaults to DefaultMaxQueueSize. It is
@@ -192,18 +262,26 @@ type Config struct {
 	Verbose bool
 
 	// RetryAfter returns the delay before retrying a failed batch upload. The int
-	// argument is the retry attempt number. If nil, DefaultBackoff().Duration is used.
+	// argument is the retry attempt number. If nil, the SDK uses DefaultBackoff's
+	// policy (with ±25% jitter), capped at MaxRetryBackoff. A custom RetryAfter
+	// is used as given, with no jitter added.
 	RetryAfter func(int) time.Duration
 
 	// MaxRetries is the maximum number of retries after the first send attempt.
 	// It must be in [0,9]. If nil, it defaults to 3 retries (4 total attempts).
 	MaxRetries *int
 
+	// MaxRetryBackoff caps how long a single retry waits. It bounds the default
+	// exponential backoff and clamps a server Retry-After to the same value, so
+	// a large or hostile header cannot park a batch. If zero, it defaults to
+	// DefaultMaxRetryBackoff. A custom RetryAfter is used as given.
+	MaxRetryBackoff time.Duration
+
 	// ShutdownTimeout is the maximum time Close waits for in-flight messages to be
 	// sent. If zero or negative, Close waits indefinitely for backward compatibility.
 	ShutdownTimeout time.Duration
 
-	// BatchUploadTimeout is the timeout for uploading one batch to the /batch/
+	// BatchUploadTimeout is the timeout for uploading one batch to the capture
 	// endpoint. If zero, it defaults to DefaultBatchUploadTimeout.
 	BatchUploadTimeout time.Duration
 
@@ -219,14 +297,9 @@ type Config struct {
 	MaxEnqueuedRequests int
 
 	// Compression selects the compression mode for batch payloads. CompressionGzip
-	// compresses payloads and adds the appropriate headers/query params. If zero,
+	// compresses payloads and sets the matching Content-Encoding header. If zero,
 	// it defaults to CompressionNone.
 	Compression CompressionMode
-
-	// CaptureMode selects the capture wire protocol. It defaults to
-	// CaptureModeLegacy (POST /batch/). Set CaptureModeAnalyticsV1 to opt into
-	// POST /i/v1/analytics/events.
-	CaptureMode CaptureMode
 
 	// AppHost is the PostHog app host that Client.Emails sends to, such as
 	// https://posthog.example.com for a self-hosted instance. If empty, a
@@ -296,12 +369,12 @@ Validate verifies that fields that don't have zero-values are set to valid value
 ### `posthog.New`
 
 ```go
-func New(apiKey string) Client
+func New(apiKey string) (Client, error)
 ```
 
 New creates a Client with the default Config and the provided PostHog project API key.
 
-The apiKey parameter is trimmed before use. If it is empty, New returns a no-op client whose methods return default values and ErrSDKDisabled where applicable.
+The apiKey parameter is trimmed before use. A missing or personal API key gives a disabled client, as described on NewWithConfig.
 
 ### `posthog.NewWithConfig`
 
@@ -311,7 +384,9 @@ func NewWithConfig(apiKey string, config Config) (cli Client, err error)
 
 NewWithConfig creates a Client with the provided PostHog project API key and Config.
 
-The apiKey, Config.Endpoint, Config.SecretKey, and Config.PersonalApiKey values are trimmed before use. It returns a ConfigError when config contains invalid values such as negative intervals or out-of-range retry settings; in that case the returned Client is nil. If apiKey is empty after trimming, NewWithConfig returns a no-op client and nil error.
+The apiKey, Config.Endpoint, Config.SecretKey, and Config.PersonalApiKey values are trimmed before use. It returns a ConfigError when config contains invalid values such as negative intervals or out-of-range retry settings; in that case the returned Client is nil.
+
+A disabled client sends nothing; its methods return default values and ErrSDKDisabled. NewWithConfig returns one with a nil error when Config.Disabled is set, or when apiKey is empty or a personal API key (phx\_...). The last two log an error, so a missing key never stops the app.
 
 ## Capture
 
@@ -335,11 +410,20 @@ type Capture struct {
 	// Timestamp is the event timestamp. UTC is preferred; non-UTC values are
 	// converted to the equivalent UTC instant. If zero, Enqueue uses the current time.
 	Timestamp time.Time
-	// Properties are event properties. Enqueue merges request context properties
-	// and Config.DefaultEventProperties into this map before sending.
+	// Properties are event properties. They win over request-context properties
+	// and Config.DefaultEventProperties, which fill in before BeforeSend only for
+	// keys missing here. A key with a nil value blocks the fill. $set, $set_once,
+	// $groups and $group_set fill one level deep when both values are maps.
 	Properties Properties
-	// Groups associates the event with group analytics groups.
+	// Groups associates the event with group analytics groups. They win key by
+	// key over a $groups map in Properties.
 	Groups Groups
+	// Options are per-event capture options, sent unchanged. See Options. They
+	// win over request-context options, Config.DefaultEventOptions and the
+	// personless default, which fill in before BeforeSend only for options
+	// missing or nil here. An identify-style Event, such as $identify,
+	// defaults process_person_profile to true; see Options.
+	Options Options
 	// SendFeatureFlags requests legacy feature flag enrichment on this event.
 	// Deprecated: Prefer Client.EvaluateFlags and pass the returned snapshot via Flags.
 	// Flags writes the canonical $feature/<key> and $active_feature_flags properties.
@@ -351,19 +435,14 @@ type Capture struct {
 	// hidden /flags request on every capture. Flags takes precedence when
 	// both are set.
 	Flags *FeatureFlagEvaluations
-	// IsServer controls whether the event includes the $is_server property.
-	// Enqueue overwrites it from Config.GetIsServer.
+	// IsServer reports whether the event sets $is_server. Enqueue sets it from
+	// Config.GetIsServer, then from the $is_server value left after BeforeSend.
+	// To change $is_server, set the property.
 	IsServer bool
-	// Library, when non-empty, replaces SDKName as this event's $lib so an
-	// integration built on posthog-go is attributed to itself without
-	// relabelling the application's other events. $lib_version stays the
-	// posthog-go version. CaptureModeAnalyticsV1 ignores it, because the server takes
-	// $lib from the per-request PostHog-Sdk-Info header there.
-	Library string
 }
 ```
 
-Capture represents a custom event to send to PostHog. Enqueue validates Event and DistinctId (or obtains DistinctId from request context), fills Type, Uuid, and Timestamp, merges Config.DefaultEventProperties, and queues the event for a future batch upload.
+Capture represents a custom event to send to PostHog. Enqueue validates Event and DistinctId (or obtains DistinctId from request context), fills Type, Uuid, and Timestamp, fills request-context and default properties and options the event left unset, runs Config.BeforeSend, and queues the event for a future batch upload.
 
 #### `Capture.APIfy`
 
@@ -390,7 +469,10 @@ Enqueue(Message) error
 Enqueue queues a message to be sent by the client when the conditions for a batch upload are met. This is the main method you'll be using, a typical flow would look like this:
 
 ```go
-client := posthog.New(apiKey)
+client, err := posthog.New(apiKey)
+if err != nil {
+    return err
+}
 ...
 client.Enqueue(posthog.Capture{ ... })
 ...
@@ -408,6 +490,8 @@ func EnqueueWithContext(ctx context.Context, client EnqueueClient, msg Message) 
 ```
 
 EnqueueWithContext queues a message and applies any PostHog request context attached to ctx. Use this from HTTP handlers with r.Context() when NewRequestContextMiddleware is installed.
+
+A Capture or Exception with no distinct ID, on the message or in the request context, is sent as a personless event by default when ctx has a request context attached and client is a client from New or NewWithConfig. The SDK generates a UUID as the distinct ID and fills an unset process\_person\_profile option with false. Event options, request-context options and Config.DefaultEventOptions take precedence over this default, and BeforeSend can change it. Without a request context, an empty DistinctId returns an error, as it does from Enqueue. A custom EnqueueClient without EnqueueWithContext receives the message unchanged.
 
 ## Identify
 
@@ -429,11 +513,21 @@ type Identify struct {
 	Timestamp time.Time
 	// Properties are sent as the $set person properties for DistinctId.
 	Properties Properties
-	// DisableGeoIP controls whether this identify event disables GeoIP lookup.
-	// Enqueue overwrites it from Config.GetDisableGeoIP.
+	// EventProperties are properties of the $identify event itself, not of the
+	// person. Enqueue fills the keys they leave unset from the request context,
+	// then from Config.DefaultEventProperties, before BeforeSend. A $set in them is merged
+	// under Properties, which win key by key.
+	EventProperties Properties
+	// Options are per-event capture options, sent unchanged, except that
+	// process_person_profile defaults to true. See Options.
+	Options Options
+	// DisableGeoIP reports whether the event sets $geoip_disable. Enqueue sets
+	// it from Config.GetDisableGeoIP, then from the $geoip_disable value left
+	// after BeforeSend. To change $geoip_disable, set the property.
 	DisableGeoIP bool
-	// IsServer controls whether the event includes the $is_server property.
-	// Enqueue overwrites it from Config.GetIsServer.
+	// IsServer reports whether the event sets $is_server. Enqueue sets it from
+	// Config.GetIsServer, then from the $is_server value left after BeforeSend.
+	// To change $is_server, set the property.
 	IsServer bool
 }
 ```
@@ -476,11 +570,21 @@ type Alias struct {
 	// Timestamp is the event timestamp. UTC is preferred; non-UTC values are
 	// converted to the equivalent UTC instant. If zero, Enqueue uses the current time.
 	Timestamp time.Time
-	// DisableGeoIP controls whether this alias event disables GeoIP lookup.
-	// Enqueue overwrites it from Config.GetDisableGeoIP.
+	// EventProperties are properties of the $create_alias event. Enqueue fills
+	// the keys they leave unset from the request context, then from
+	// Config.DefaultEventProperties, before BeforeSend. The SDK's alias property wins over an "alias" key in them.
+	// The Config.Callback message does not include them.
+	EventProperties Properties
+	// Options are per-event capture options, sent unchanged, except that
+	// process_person_profile defaults to true. See Options.
+	Options Options
+	// DisableGeoIP reports whether the event sets $geoip_disable. Enqueue sets
+	// it from Config.GetDisableGeoIP, then from the $geoip_disable value left
+	// after BeforeSend. To change $geoip_disable, set the property.
 	DisableGeoIP bool
-	// IsServer controls whether the event includes the $is_server property.
-	// Enqueue overwrites it from Config.GetIsServer.
+	// IsServer reports whether the event sets $is_server. Enqueue sets it from
+	// Config.GetIsServer, then from the $is_server value left after BeforeSend.
+	// To change $is_server, set the property.
 	IsServer bool
 }
 ```
@@ -502,6 +606,30 @@ func (msg Alias) Validate() error
 ```
 
 Validate checks that the alias message has both DistinctId and Alias set.
+
+## Capture AI
+
+### `Client.EnqueueAI`
+
+```go
+EnqueueAI(Message) error
+```
+
+EnqueueAI queues a message for PostHog's dedicated AI capture endpoint instead of the analytics one. Use it for LLM observability events ($ai\_generation, $ai\_span, $ai\_trace and the rest).
+
+The two lanes are independent: the AI lane has its own queue, worker and retry state, so a multi-megabyte AI event cannot delay analytics events, and it is started on first use so clients that never call this pay nothing for it.
+
+EnqueueAI performs no routing check of its own. The server decides whether an event belongs on this lane and reports the verdict per event, so a misrouted event comes back as a terminal drop through Callback.Failure rather than being rejected locally. Enqueue likewise never reroutes AI-named events to this lane.
+
+It returns the same errors as Enqueue.
+
+### `posthog.EnqueueAIWithContext`
+
+```go
+func EnqueueAIWithContext(ctx context.Context, client Client, msg Message) error
+```
+
+EnqueueAIWithContext queues a message for the dedicated AI capture endpoint and applies any PostHog request context attached to ctx. It is EnqueueWithContext for the AI lane, and takes the full Client because only a real client has an AI lane -- an AI event must never silently fall back to the analytics endpoint.
 
 ## Capture exception
 
@@ -527,15 +655,16 @@ type Exception struct {
 	Timestamp time.Time
 	// Properties are custom event properties flattened into the exception event.
 	Properties Properties
-	// DisableGeoIP controls whether this exception event disables GeoIP lookup.
-	// Enqueue overwrites it from Config.GetDisableGeoIP.
+	// Options are per-event capture options, sent unchanged. See Options.
+	Options Options
+	// DisableGeoIP reports whether the event sets $geoip_disable. Enqueue sets
+	// it from Config.GetDisableGeoIP, then from the $geoip_disable value left
+	// after BeforeSend. To change $geoip_disable, set the property.
 	DisableGeoIP bool
-	// IsServer controls whether the event includes the $is_server property.
-	// Enqueue overwrites it from Config.GetIsServer.
+	// IsServer reports whether the event sets $is_server. Enqueue sets it from
+	// Config.GetIsServer, then from the $is_server value left after BeforeSend.
+	// To change $is_server, set the property.
 	IsServer bool
-	// Library, when non-empty, replaces SDKName as this event's $lib.
-	// See Capture.Library.
-	Library string
 
 	// ExceptionList is the list of exception items sent as $exception_list. It must be non-empty.
 	ExceptionList []ExceptionItem
@@ -616,7 +745,7 @@ Emails sends transactional email from PostHog email templates or from content yo
 Flush() error
 ```
 
-Flush sends queued messages and waits for the current delivery cycle without closing the client. Retryable failures end the cycle while the transport retains the events for its scheduled retry. Flush does not bypass retry backoff. Delivery failures use the existing retry policy and Callback.Failure; a nil result does not guarantee successful ingestion. Use FlushWithContext to bound the wait. Do not call a blocking Flush from a delivery callback, which is itself part of the delivery cycle.
+Flush sends queued messages and waits for the current delivery cycle without closing the client. It covers the AI lane once EnqueueAI has started it, and never starts that lane itself. Retryable failures end the cycle while the transport retains the events for its scheduled retry. Flush does not bypass retry backoff. Delivery failures use the existing retry policy and Callback.Failure; a nil result does not guarantee successful ingestion. Use FlushWithContext to bound the wait. Do not call a blocking Flush from a delivery callback, which is itself part of the delivery cycle.
 
 ### `Client.FlushWithContext`
 
@@ -735,18 +864,31 @@ type GroupIdentify struct {
 	// If set, it must be a valid UUID; invalid values are replaced with a generated UUID.
 	Uuid string
 
-	// DistinctId is accepted for compatibility but the wire payload uses a generated group distinct ID.
+	// DistinctId is the distinct ID the $groupidentify event is sent under. If
+	// empty, Enqueue uses the request context's distinct ID, then
+	// "$<Type>_<Key>".
 	DistinctId string
 	// Timestamp is the event timestamp. UTC is preferred; non-UTC values are
 	// converted to the equivalent UTC instant. If zero, Enqueue uses the current time.
 	Timestamp time.Time
 	// Properties are sent as the $group_set properties for the group.
 	Properties Properties
-	// DisableGeoIP controls whether this group-identify event disables GeoIP lookup.
-	// Enqueue overwrites it from Config.GetDisableGeoIP.
+	// EventProperties are properties of the $groupidentify event itself, not of
+	// the group. Enqueue fills the keys they leave unset from the request
+	// context (except its session ID), then from Config.DefaultEventProperties,
+	// before BeforeSend. A $group_set in them is
+	// merged under Properties, which win key by key.
+	EventProperties Properties
+	// Options are per-event capture options, sent unchanged, except that
+	// process_person_profile defaults to true. See Options.
+	Options Options
+	// DisableGeoIP reports whether the event sets $geoip_disable. Enqueue sets
+	// it from Config.GetDisableGeoIP, then from the $geoip_disable value left
+	// after BeforeSend. To change $geoip_disable, set the property.
 	DisableGeoIP bool
-	// IsServer controls whether the event includes the $is_server property.
-	// Enqueue overwrites it from Config.GetIsServer.
+	// IsServer reports whether the event sets $is_server. Enqueue sets it from
+	// Config.GetIsServer, then from the $is_server value left after BeforeSend.
+	// To change $is_server, set the property.
 	IsServer bool
 }
 ```
@@ -817,7 +959,7 @@ type BeforeSendFunc func(Message) Message
 
 BeforeSendFunc is called before a message is converted to the PostHog API format. It can return a modified message, or nil to drop the message. If the hook panics, returns an invalid message, or returns a different message type, the message is dropped.
 
-The SDK passes an isolated copy of SDK-owned mutable fields where practical: Properties and Groups clone common JSON-like maps and slices, and Exception clones its exception list, stack traces, mechanisms, fingerprint, and debug images. Arbitrary reference values stored inside Properties or Groups (for example, pointers or custom mutable structs held as interface{} values) are not deep-cloned and can still share state with the caller.
+The SDK passes an isolated copy of SDK-owned mutable fields where practical: Properties, Groups and Options clone common JSON-like maps and slices, and Exception clones its exception list, stack traces, mechanisms, fingerprint, and debug images. Arbitrary reference values stored inside Properties, Groups or Options (for example, pointers or custom mutable structs held as interface{} values) are not deep-cloned and can still share state with the caller. Options is never nil inside the hook, so the hook can call Set directly.
 
 ## SDK utils
 
@@ -837,7 +979,7 @@ func NewRequestContextMiddleware(next http.Handler, opts ...RequestContextOption
 
 NewRequestContextMiddleware wraps an http.Handler with PostHog request-context extraction.
 
-The middleware always attaches safe request metadata to r.Context(). By default it also reads X-PostHog-Distinct-Id and X-PostHog-Session-Id into request-scoped analytics context. Use EnqueueWithContext(r.Context(), ...) for captures inside the request so this metadata is applied.
+The middleware always attaches safe request metadata to r.Context(). By default it also reads X-PostHog-Distinct-Id and X-PostHog-Session-Id into request-scoped analytics context; WithCaptureTracingHeaders(false) turns that off. Use EnqueueWithContext(r.Context(), ...) for captures inside the request so this metadata is applied.
 
 ### `posthog.Ptr`
 
@@ -869,7 +1011,7 @@ WithFreshRequestContext returns a child context with PostHog request metadata at
 func WithRequestContext(ctx context.Context, requestContext RequestContext) context.Context
 ```
 
-WithRequestContext returns a child context with PostHog request metadata attached. Existing PostHog request context values are inherited: non-empty DistinctId and SessionId override the parent values, and Properties are merged with child properties taking precedence.
+WithRequestContext returns a child context with PostHog request metadata attached. Existing PostHog request context values are inherited: non-empty DistinctId and SessionId override the parent values, and Properties and Options are merged with child values taking precedence.
 
 ### Constants
 
@@ -895,12 +1037,12 @@ const (
 
 	// DefaultMaxAttempts is the total number of capture delivery attempts (1
 	// initial + retries) used when Config.MaxRetries is unset or out of range.
-	// Chosen to match the cross-SDK Capture V1 parity standard (posthog-rs
-	// defaults to the same envelope). Applies to both the v0 and v1 send paths.
+	// Chosen to match the cross-SDK capture parity standard (posthog-rs
+	// defaults to the same envelope).
 	DefaultMaxAttempts = 4
 
 	// DefaultBatchUploadTimeout is the default timeout for uploading batched
-	// events to the /batch/ endpoint.
+	// events to the capture endpoint.
 	DefaultBatchUploadTimeout = 10 * time.Second
 
 	// DefaultBatchSubmitTimeout is the default timeout for submitting batches
@@ -911,6 +1053,20 @@ const (
 	// DefaultMaxEnqueuedRequests is the default maximum number of batches that
 	// can be queued for sending.
 	DefaultMaxEnqueuedRequests = 1000
+
+	// DefaultMaxBatchBytes is the default maximum serialized size of one capture
+	// request, used when Config.MaxBatchBytes is zero.
+	DefaultMaxBatchBytes = 500000
+
+	// DefaultCaptureAIBatchUploadTimeout is the default AI-lane upload timeout,
+	// used when Config.CaptureAIBatchUploadTimeout is zero. Larger than
+	// DefaultBatchUploadTimeout because AI batches are far bigger.
+	DefaultCaptureAIBatchUploadTimeout = 30 * time.Second
+
+	// DefaultCaptureAIMaxQueueSize is the default AI-lane queue capacity, used
+	// when Config.CaptureAIMaxQueueSize is zero. Lower than DefaultMaxQueueSize
+	// because AI events can be multi-megabyte.
+	DefaultCaptureAIMaxQueueSize = 1000
 
 	// DefaultMaxQueueSize is the default in-memory message queue capacity used when
 	// Config.MaxQueueSize is zero. It matches the posthog-python, posthog-rs, and
@@ -985,13 +1141,22 @@ const (
 
 ```go
 const (
+	// DefaultMaxRetryBackoff is the default ceiling for a single retry wait,
+	// used when Config.MaxRetryBackoff is zero. Matches posthog-rs and
+	// posthog-python.
+	DefaultMaxRetryBackoff = 30 * time.Second
+)
+```
+
+```go
+const (
 	// LONG_SCALE is the denominator used to normalize feature flag hash values.
 	LONG_SCALE = 0xfffffffffffffff
 )
 ```
 
 ```go
-const Version = "1.44.1"
+const Version = "2.1.1"
 ```
 
 Version of the client.
@@ -1032,10 +1197,17 @@ var (
 	// reported only through this returned error, not through Callback.Failure.
 	ErrQueueFull = errors.New("the message queue is full, the message was dropped")
 
-	// ErrSDKDisabled is returned when the SDK is disabled because the project API key is missing.
-	ErrSDKDisabled = errors.New("posthog SDK is disabled because project API key is missing")
+	// ErrSDKDisabled is returned by every method of a disabled client: one built
+	// with Config.Disabled, or with an empty or personal (phx_) project API key.
+	ErrSDKDisabled = errors.New("posthog SDK is disabled")
 )
 ```
+
+```go
+var ErrFlagDefinitionsQuotaLimited = errors.New("feature flag definitions are quota limited")
+```
+
+ErrFlagDefinitionsQuotaLimited is returned by ReloadFeatureFlagsWithContext when PostHog answers the definitions request as quota limited; local flag definitions are cleared until a later reload succeeds. Use errors.Is(err, ErrFlagDefinitionsQuotaLimited) to check for this error.
 
 ```go
 var ErrFlagNotFound = errors.New("feature flag not found")
@@ -1167,9 +1339,9 @@ type AliasInApi struct {
 	Type string `json:"type"`
 	// Uuid is the valid event UUID sent to the batch API.
 	Uuid string `json:"uuid"`
-	// Library is the SDK name sent to the batch API.
+	// Library is the $lib the event is stored with.
 	Library string `json:"library"`
-	// LibraryVersion is the SDK version sent to the batch API.
+	// LibraryVersion is the $lib_version the event is stored with.
 	LibraryVersion string `json:"library_version"`
 	// Timestamp is the event timestamp sent to the batch API in UTC.
 	Timestamp time.Time `json:"timestamp"`
@@ -1192,9 +1364,9 @@ type AliasInApiProperties struct {
 	DistinctId string `json:"distinct_id"`
 	// Alias is the alternate distinct ID being linked to DistinctId.
 	Alias string `json:"alias"`
-	// Lib is the SDK name sent as $lib.
+	// Lib is the $lib the event is stored with.
 	Lib string `json:"$lib"`
-	// LibVersion is the SDK version sent as $lib_version.
+	// LibVersion is the $lib_version the event is stored with.
 	LibVersion string `json:"$lib_version"`
 	// IsServer marks the event as originating from a server-side SDK.
 	// Omitted entirely when nil (Config.IsServer resolved to false).
@@ -1257,7 +1429,7 @@ DefaultBackoff creates a Backoff with the SDK's default retry policy:
 ```text
 base: 100 milliseconds
 factor: 2
-jitter: 0
+jitter: 0.25 (each delay is scaled by a random factor in [0.75, 1.25])
 cap: 30 seconds
 ```
 
@@ -1267,7 +1439,7 @@ cap: 30 seconds
 func NewBackoff(base time.Duration, factor uint8, jitter float64, cap time.Duration) *Backoff
 ```
 
-NewBackoff creates a Backoff with the provided base duration, exponential factor, jitter ratio, and maximum cap duration.
+NewBackoff creates a Backoff with the provided base duration, exponential factor, jitter ratio, and maximum cap duration. A jitter ratio j scales each delay by a uniform random factor in \[1-j, 1+j\] before the cap applies.
 
 ### `Callback`
 
@@ -1301,10 +1473,13 @@ type CaptureEventError struct {
 	// Exhausted is true when the event was still retryable but the SDK ran out
 	// of attempts, false for a server-directed terminal drop.
 	Exhausted bool
+	// Endpoint is the capture path the event was sent to, so one Callback can
+	// tell the analytics and AI lanes apart.
+	Endpoint string
 }
 ```
 
-CaptureEventError is delivered to Callback.Failure for a single event that the capture-v1 endpoint rejected: either a terminal "drop" result, or an event still asking to "retry" once the attempt budget is exhausted. Callers can use errors.As to inspect the per-event outcome.
+CaptureEventError is delivered to Callback.Failure for a single event that the capture endpoint rejected: either a terminal "drop" result, or an event still asking to "retry" once the attempt budget is exhausted. Callers can use errors.As to inspect the per-event outcome.
 
 This error type is produced exclusively on the 200-with-partial-results path — when the batch-level HTTP exchange succeeds but individual events within the batch are rejected or not persisted. It is never returned for batch-level transport failures (use CaptureRequestError for those via errors.As).
 
@@ -1324,13 +1499,12 @@ type CaptureInApi struct {
 	Type string `json:"-"`
 	// Uuid is the valid event UUID sent to the batch API.
 	Uuid string `json:"uuid"`
-	// Library is the legacy top-level SDK name retained for callbacks.
-	// Deprecated: PostHog reads SDK identity from Properties["$lib"], so this
-	// top-level field is no longer serialized.
+	// Library is the $lib the event is stored with, for callbacks. It is not
+	// serialized: the wire carries $lib in Properties.
 	Library string `json:"-"`
-	// LibraryVersion is the legacy top-level SDK version retained for callbacks.
-	// Deprecated: PostHog reads SDK version from Properties["$lib_version"], so
-	// this top-level field is no longer serialized.
+	// LibraryVersion is the $lib_version the event is stored with, for
+	// callbacks. It is not serialized: the wire carries $lib_version in
+	// Properties.
 	LibraryVersion string `json:"-"`
 	// Timestamp is the event timestamp sent to the batch API in UTC.
 	Timestamp time.Time `json:"timestamp"`
@@ -1351,23 +1525,31 @@ type CaptureInApi struct {
 
 CaptureInApi is the wire-format payload produced from a Capture message.
 
-### `CaptureMode`
+### `CaptureLocalError`
 
 ```go
-type CaptureMode uint8
+type CaptureLocalError struct {
+	// Endpoint is the capture path the event was bound for.
+	Endpoint string
+	// Err is the underlying cause.
+	Err error
+}
 ```
 
-CaptureMode selects the capture wire protocol used for event ingestion.
+CaptureLocalError is delivered to Callback.Failure for an event the SDK refused itself, before any request: an oversized event, a full batch queue, a serialization failure, or a panic in the batch processor. It names the lane so one Callback can tell them apart, and unwraps to the cause, so errors.Is against ErrMessageTooBig and friends still works.
+
+A full in-memory queue is not reported here: Enqueue returns ErrQueueFull to the caller instead.
+
+#### `CaptureLocalError.Error`
 
 ```go
-const (
-	// CaptureModeLegacy sends events to the legacy POST /batch/ endpoint. This
-	// is the default, so upgrading is transparent to existing callers.
-	CaptureModeLegacy CaptureMode = 0
-	// CaptureModeAnalyticsV1 opts into POST /i/v1/analytics/events (Bearer auth,
-	// per-event results, partial retry).
-	CaptureModeAnalyticsV1 CaptureMode = 1
-)
+func (e *CaptureLocalError) Error() string
+```
+
+#### `CaptureLocalError.Unwrap`
+
+```go
+func (e *CaptureLocalError) Unwrap() error
 ```
 
 ### `CaptureRequestError`
@@ -1382,12 +1564,15 @@ type CaptureRequestError struct {
 	Description string
 	// Err is the underlying transport or body-parse error, if any.
 	Err error
+	// Endpoint is the capture path the request was sent to, so one Callback can
+	// tell the analytics and AI lanes apart.
+	Endpoint string
 }
 ```
 
-CaptureRequestError is delivered to Callback.Failure when an entire capture-v1 request fails: a non-2xx status, a transport error, or a malformed 2xx body. It carries the HTTP status and any structured error body the endpoint returned, and unwraps to the underlying transport/parse error when there is one.
+CaptureRequestError is delivered to Callback.Failure when an entire capture request fails: a non-2xx status, a transport error, or a malformed 2xx body. It carries the HTTP status and any structured error body the endpoint returned, and unwraps to the underlying transport/parse error when there is one.
 
-This error type covers batch-level failures — transport errors, terminal HTTP statuses (400/401/429/...), retryable statuses (5xx) whose retry budget is exhausted, and 2xx responses with unparseable bodies. For per-event failures within a successful batch response, see CaptureEventError.
+This error type covers batch-level failures — transport errors, terminal HTTP statuses (400/401/402/...), retryable statuses (429, 5xx, ...) whose retry budget is exhausted, and 2xx responses with unparseable bodies. For per-event failures within a successful batch response, see CaptureEventError.
 
 #### `CaptureRequestError.Error`
 
@@ -1505,17 +1690,15 @@ CompressionMode specifies the compression algorithm for batch payloads.
 const (
 	// CompressionNone disables compression (default).
 	CompressionNone CompressionMode = 0
-	// CompressionGzip enables GZIP compression for batch payloads. Valid on
-	// both capture modes.
+	// CompressionGzip enables GZIP compression for batch payloads.
 	CompressionGzip CompressionMode = 1
-	// CompressionZstd enables Zstandard compression. Requires
-	// CaptureModeAnalyticsV1 (the legacy /batch/ endpoint cannot decode it).
+	// CompressionZstd enables Zstandard compression.
 	CompressionZstd CompressionMode = 2
 	// CompressionDeflate enables zlib (RFC 1950) compression, sent as
-	// Content-Encoding: deflate. Requires CaptureModeAnalyticsV1.
+	// Content-Encoding: deflate.
 	CompressionDeflate CompressionMode = 3
 	// CompressionBrotli enables Brotli compression, sent as
-	// Content-Encoding: br. Requires CaptureModeAnalyticsV1.
+	// Content-Encoding: br.
 	CompressionBrotli CompressionMode = 4
 )
 ```
@@ -1526,7 +1709,7 @@ const (
 func (m CompressionMode) String() string
 ```
 
-String returns a human-readable codec name, used in config validation errors and debug logs. It is not the on-the-wire Content-Encoding token (brotli's token is "br"); see compressV1Body for wire tokens.
+String returns a human-readable codec name, used in config validation errors and debug logs. It is not the on-the-wire Content-Encoding token (brotli's token is "br"); see compressBody for wire tokens.
 
 ### `ConfigError`
 
@@ -1911,7 +2094,10 @@ type EnqueueClient interface {
 	// This is the main method you'll be using, a typical flow would look like
 	// this:
 	//
-	//	client := posthog.New(apiKey)
+	//	client, err := posthog.New(apiKey)
+	//	if err != nil {
+	//	    return err
+	//	}
 	//	...
 	//	client.Enqueue(posthog.Capture{ ... })
 	//	...
@@ -1964,9 +2150,9 @@ type ExceptionInApi struct {
 	Type string `json:"type"`
 	// Uuid is the valid event UUID sent to the batch API.
 	Uuid string `json:"uuid"`
-	// Library is the SDK name sent to the batch API.
+	// Library is the $lib the event is stored with.
 	Library string `json:"library"`
-	// LibraryVersion is the SDK version sent to the batch API.
+	// LibraryVersion is the $lib_version the event is stored with.
 	LibraryVersion string `json:"library_version"`
 	// Timestamp is the event timestamp sent to the batch API in UTC.
 	Timestamp time.Time `json:"timestamp"`
@@ -1983,9 +2169,9 @@ ExceptionInApi is the wire-format payload produced from an Exception message.
 
 ```go
 type ExceptionInApiProperties struct {
-	// Lib is the SDK name sent as $lib.
+	// Lib is the $lib the event is stored with.
 	Lib string `json:"$lib"`
-	// LibVersion is the SDK version sent as $lib_version.
+	// LibVersion is the $lib_version the event is stored with.
 	LibVersion string `json:"$lib_version"`
 	// IsServer marks the event as originating from a server-side SDK.
 	// Omitted entirely when nil (Config.IsServer resolved to false).
@@ -2455,6 +2641,25 @@ type FlagReason struct {
 
 FlagReason represents why a flag was enabled or disabled.
 
+### `FlagReloader`
+
+```go
+type FlagReloader interface {
+	// ReloadFeatureFlagsWithContext fetches local feature flag definitions now
+	// and returns once they are in use, or with the error that kept them from
+	// loading. ReloadFeatureFlags only schedules the fetch.
+	ReloadFeatureFlagsWithContext(ctx context.Context) error
+}
+```
+
+FlagReloader is implemented by clients that can reload local feature flag definitions and wait for the result. Assert a Client to it:
+
+```go
+if r, ok := client.(posthog.FlagReloader); ok {
+	err := r.ReloadFeatureFlagsWithContext(ctx)
+}
+```
+
 ### `FlagVariant`
 
 ```go
@@ -2543,16 +2748,16 @@ UnmarshalJSON implements custom unmarshaling to handle both v3 and v4 formats
 type GroupIdentifyInApi struct {
 	// Uuid is the valid event UUID sent to the batch API.
 	Uuid string `json:"uuid"`
-	// Library is the SDK name sent to the batch API.
+	// Library is the $lib the event is stored with.
 	Library string `json:"library"`
-	// LibraryVersion is the SDK version sent to the batch API.
+	// LibraryVersion is the $lib_version the event is stored with.
 	LibraryVersion string `json:"library_version"`
 	// Timestamp is the event timestamp sent to the batch API in UTC.
 	Timestamp time.Time `json:"timestamp"`
 
 	// Event is always $groupidentify for GroupIdentify messages.
 	Event string `json:"event"`
-	// DistinctId is the generated group distinct ID sent to PostHog.
+	// DistinctId is the distinct ID the event is sent under.
 	DistinctId string `json:"distinct_id"`
 	// Properties contains SDK metadata, group identifiers, and $group_set properties.
 	Properties Properties `json:"properties"`
@@ -2564,18 +2769,18 @@ GroupIdentifyInApi is the wire-format payload produced from a GroupIdentify mess
 ### `Groups`
 
 ```go
-type Groups map[string]interface{}
+type Groups map[string]string
 ```
 
-Groups is used to represent groups in messages that support it. It is a free-form object so the application can set any value it sees fit but a few helper methods are defined to make it easier to instantiate groups with common fields.
+Groups maps a group type, such as "company", to the key of the group an event or flag evaluation belongs to, such as "acme-inc". Convert a numeric group ID to its decimal string, for example with strconv.FormatInt, which buckets it for feature flags exactly as the number did.
 
 #### `Groups.Set`
 
 ```go
-func (p Groups) Set(name string, value interface{}) Groups
+func (p Groups) Set(name string, value string) Groups
 ```
 
-Set assigns a group type to a group key or ID and returns the receiver.
+Set assigns a group type to a group key and returns the receiver.
 
 #### `posthog.NewGroups`
 
@@ -2607,9 +2812,9 @@ type IdentifyInApi struct {
 	Type string `json:"type"`
 	// Uuid is the valid event UUID sent to the batch API.
 	Uuid string `json:"uuid"`
-	// Library is the SDK name sent to the batch API.
+	// Library is the $lib the event is stored with.
 	Library string `json:"library"`
-	// LibraryVersion is the SDK version sent to the batch API.
+	// LibraryVersion is the $lib_version the event is stored with.
 	LibraryVersion string `json:"library_version"`
 	// Timestamp is the event timestamp sent to the batch API in UTC.
 	Timestamp time.Time `json:"timestamp"`
@@ -2707,6 +2912,53 @@ Message represents a PostHog object that can be queued with Client.Enqueue.
 
 Built-in message types such as Capture, Identify, Alias, GroupIdentify, and Exception implement this interface. The unexported internal method prevents external packages from defining arbitrary message implementations.
 
+### `Options`
+
+```go
+type Options map[string]interface{}
+```
+
+Options holds per-event capture options, such as person profile processing. They are sent in the event's options object, next to its properties, on both Enqueue and EnqueueAI.
+
+Keys are strings and values are any JSON-serializable value. The SDK sends them unchanged, so an option that PostHog adds later needs no SDK upgrade. PostHog validates them: it ignores unknown keys, reads common forms of a known key's value (for a boolean, "yes", "off" or 0), and drops the event when a known key has a value it cannot read. That drop reaches Callback.Failure as a \*CaptureEventError whose Details is "invalid\_options".
+
+The options PostHog reads:
+
+```text
+process_person_profile   boolean
+cookieless_mode          boolean
+disable_skew_correction  boolean
+product_tour_id          string
+```
+
+The legacy properties $process\_person\_profile, $cookieless\_mode, $ignore\_sent\_at and $product\_tour\_id still work, but an option overrides its legacy property. Use options.
+
+An identify-style event ($identify, $create\_alias, $merge\_dangerously, $groupidentify, $set or $set\_once, sent by Identify, Alias, GroupIdentify or Capture) takes process\_person\_profile from the call alone: the option, else the legacy property, else true. Defaults and the request context do not reach it, because with person processing off PostHog drops these events or ignores their person update. The exception is a Capture whose distinct ID the SDK generates: it gets no true, so its value comes from the defaults and the request context, then the personless false. BeforeSend sees the option without a legacy property from a default or the request context, and can change it.
+
+```go
+posthog.Capture{
+	DistinctId: "0123456789",
+	Event:      "order completed",
+	Options:    posthog.NewOptions().Set("process_person_profile", false),
+}
+```
+
+#### `Options.Set`
+
+```go
+func (o Options) Set(name string, value interface{}) Options
+```
+
+Set assigns an option value and returns the receiver.
+
+#### `posthog.NewOptions`
+
+```go
+func NewOptions() Options
+```
+
+NewOptions creates an empty Options map for fluent construction.
+
 ### `Properties`
 
 ```go
@@ -2782,18 +3034,34 @@ PropertyGroup describes a nested property group used by cohorts and flag conditi
 
 ```go
 type RequestContext struct {
-	// DistinctId is the request-scoped user distinct ID.
+	// DistinctId is the request-scoped user distinct ID. It fills a missing
+	// DistinctId on Capture, Exception and GroupIdentify events. It never changes
+	// the ids of an Identify or an Alias.
 	DistinctId string
-	// SessionId is the request-scoped PostHog session ID.
+	// SessionId is the request-scoped PostHog session ID. It is set as the
+	// $session_id property of every event except GroupIdentify before
+	// BeforeSend, unless the event has its own. A $session_id in Properties
+	// wins over it.
 	SessionId string
-	// Properties are request-scoped properties merged into capture and exception events.
+	// Properties are request-scoped properties for every event type.
+	// They fill in before BeforeSend, only for keys the event left unset, so
+	// BeforeSend sees them and can change or remove them. They win over
+	// Config.DefaultEventProperties. A $process_person_profile in them never
+	// reaches an identify-style event; see Options.
 	Properties Properties
+	// Options are request-scoped capture options for every event type.
+	// They fill in before BeforeSend, only for options the event left missing or
+	// nil, so BeforeSend sees them and can change them. They win over
+	// Config.DefaultEventOptions. They never set process_person_profile on an
+	// identify-style event whose distinct ID the SDK did not generate; see
+	// Options.
+	Options Options
 }
 ```
 
-RequestContext carries request-scoped PostHog metadata that is applied to capture and exception events enqueued with EnqueueWithContext.
+RequestContext carries request-scoped PostHog metadata that is applied to events enqueued with EnqueueWithContext.
 
-DistinctId and SessionId usually come from PostHog tracing headers. Properties usually contain safe request metadata such as $current\_url, $request\_method, $request\_path, $user\_agent, and $ip.
+DistinctId and SessionId usually come from PostHog tracing headers (see WithCaptureTracingHeaders). Properties usually contain safe request metadata such as $current\_url, $request\_method, $request\_path, $user\_agent, and $ip.
 
 #### `posthog.ExtractRequestContext`
 
@@ -2841,7 +3109,9 @@ WithCaptureTracingHeaders configures whether request context middleware reads Po
 type RequestContextOptions struct {
 	// CaptureTracingHeaders controls whether X-PostHog-Distinct-Id and X-PostHog-Session-Id
 	// are read into request-scoped analytics context. It defaults to true in NewRequestContextMiddleware.
-	// When disabled, the middleware still attaches request metadata to the request context.
+	// Any client can set these headers, so they only fill a missing distinct ID or session ID and must
+	// never be used for authentication. When disabled, the middleware still attaches request metadata
+	// to the request context.
 	CaptureTracingHeaders bool
 
 	// CapturePanics controls whether NewRequestContextMiddleware captures downstream panics as
@@ -3064,7 +3334,7 @@ WithMinCaptureLevel sets the minimum slog level captured as a PostHog exception.
 func WithPropertiesFn(fn func(ctx context.Context, r slog.Record) Properties) SlogOption
 ```
 
-WithPropertiesFn sets a function that returns custom properties for captured exceptions. Built-in exception properties take precedence if keys collide.
+WithPropertiesFn sets a function that returns custom properties for captured exceptions. Built-in exception properties take precedence if keys collide. $lib and $lib\_version are SDK defaults, so a value it returns wins.
 
 #### `posthog.WithSkip`
 

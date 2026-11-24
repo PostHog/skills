@@ -20,7 +20,7 @@ The PostHog iOS SDK has built-in support for capturing structured Logs from iOS,
 
 > **Manual capture only.** Logs are emitted by your code. The SDK does not autocapture system log streams (`os_log`, `Logger`, `print`).
 
-> **Minimum version:** `posthog-ios@3.58.0` or later. Run `pod update PostHog` (CocoaPods) or update the package version in Xcode (Swift Package Manager).
+> **Minimum version:** `posthog-ios@3.58.0` or later. Update the package version in Xcode (Swift Package Manager). On version 3 with CocoaPods, run `pod update PostHog`.
 
 1.  1
 
@@ -30,15 +30,9 @@ The PostHog iOS SDK has built-in support for capturing structured Logs from iOS,
 
     If you haven't installed `posthog-ios` yet, follow the steps below. For full details, see the [iOS SDK guide](https://posthog.com/docs/libraries/ios.md).
 
-    PostHog is available through [CocoaPods](http://cocoapods.org) or you can add it as a Swift Package Manager based dependency.
+    PostHog is available as a Swift Package Manager based dependency. It requires Xcode 26 or later, and iOS 15, macOS 12, tvOS 15, watchOS 10, or visionOS 1 or later.
 
-    ### CocoaPods
-
-    Podfile
-
-    ```ruby
-    pod "PostHog", "~> 3.59.3"
-    ```
+    Version 4 is only available through Swift Package Manager. Version 3 stays on CocoaPods (`pod "PostHog", "~> 3.0"`) and supports iOS 13 and older toolchains, but [CocoaPods trunk becomes read-only on December 2, 2026](https://blog.cocoapods.org/CocoaPods-Specs-Repo/). After that, existing 3.x versions stay installable, but new releases only ship through Swift Package Manager. To move from CocoaPods, see the [iOS migration guide](https://posthog.com/docs/libraries/ios/migration.md).
 
     ### Swift Package Manager
 
@@ -50,7 +44,7 @@ The PostHog iOS SDK has built-in support for capturing structured Logs from iOS,
 
     ```swift
     dependencies: [
-      .package(url: "https://github.com/PostHog/posthog-ios.git", from: "3.59.3")
+      .package(url: "https://github.com/PostHog/posthog-ios.git", from: "4.0.0")
     ],
     ```
 
@@ -68,7 +62,7 @@ The PostHog iOS SDK has built-in support for capturing structured Logs from iOS,
 
     Configuration is done through the `PostHogConfig` object. Here's a basic configuration example to get you started.
 
-    You can find more advanced configuration options in the [configuration page](https://posthog.com/docs/libraries/ios/configuration.md).
+    You can find more advanced configuration options in the [configuration reference](https://posthog.com/docs/libraries/ios.md#posthogconfig).
 
     ## UIKit
 

@@ -36,7 +36,7 @@ Canonical URL: https://posthog.com/docs/libraries/kmp
 
 The PostHog Kotlin Multiplatform (KMP) SDK lets you capture analytics from shared Kotlin code that runs on Android, iOS, the web, and JVM desktop apps. It's a thin wrapper that delegates to the official PostHog SDKs on each target – [Android](https://posthog.com/docs/libraries/android.md), [iOS](https://posthog.com/docs/libraries/ios.md), [JavaScript](https://posthog.com/docs/libraries/js.md), and the [JVM core library](https://posthog.com/docs/libraries/java.md) on desktop – so you get native batching, queueing, and session replay behind a single common API.
 
-> **Early access:** This SDK is currently in a `0.x` pre-release. The API may change between minor versions until it stabilizes. We'd love your feedback on [GitHub](https://github.com/PostHog/posthog-kmp/issues).
+> **Note:** This SDK is currently in **beta**. The API may change between minor versions until it stabilizes. Please report any issues on [GitHub](https://github.com/PostHog/posthog-kmp/issues).
 
 ## Install with the wizard
 

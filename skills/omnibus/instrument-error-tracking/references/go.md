@@ -117,7 +117,7 @@ Or set it up manually by following the rest of this guide.
     client.Enqueue(exception)
     ```
 
-    To see how `net/http` services can automatically associate backend exceptions with frontend users, view the [Go request context documentation](https://posthog.com/docs/libraries/go/reference.md#posthognewrequestcontextmiddleware).
+    To see how `net/http` services can automatically associate backend exceptions with frontend users, view the [Go request context documentation](https://posthog.com/docs/libraries/go.md#posthognewrequestcontextmiddleware).
 
     ### Option B: Automatic capture with slog
 

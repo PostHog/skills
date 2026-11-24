@@ -94,7 +94,7 @@ await app.listen({ port: 3000, host: "127.0.0.1" })
 
 ## Request context and identity
 
-Keep `onRequest` callback-based, not `async`. Calling `done` inside [`withContext`](https://posthog.com/docs/libraries/node/reference.md#posthogwithcontext) continues the request in that context. `{ fresh: true }` prevents inheritance from an outer context.
+Keep `onRequest` callback-based, not `async`. Calling `done` inside [`withContext`](https://posthog.com/docs/libraries/node.md#posthogwithcontext) continues the request in that context. `{ fresh: true }` prevents inheritance from an outer context.
 
 `request.user` belongs to your application. It is not a built-in Fastify identity. Populate it with a verified user and a string `id` in an earlier authentication hook. Without authentication, this example captures exceptions without creating person profiles.
 
@@ -151,7 +151,7 @@ app.get("/hello", async (request) => {
 })
 ```
 
-See the [Node.js capture documentation](https://posthog.com/docs/libraries/node/reference.md#capture) for more event options.
+See the [Node.js capture documentation](https://posthog.com/docs/libraries/node.md#capture) for more event options.
 
 ## Error handling
 

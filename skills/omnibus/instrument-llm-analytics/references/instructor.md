@@ -44,7 +44,7 @@ Skip the manual setup — run this in your project and the wizard installs the S
     ### Python
 
     ```bash
-    pip install instructor openai opentelemetry-sdk "posthog[otel]<8" opentelemetry-instrumentation-openai-v2
+    pip install instructor openai opentelemetry-sdk "posthog[otel]~=8.0" opentelemetry-instrumentation-openai-v2
     ```
 
     ### Node

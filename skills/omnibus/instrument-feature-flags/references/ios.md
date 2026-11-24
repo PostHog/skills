@@ -31,23 +31,19 @@ Or set it up manually by following the rest of this guide.
 
     Required
 
-    Install via Swift Package Manager:
+    Install via Swift Package Manager. PostHog requires Xcode 26 or later, and iOS 15, macOS 12, tvOS 15, watchOS 10, or visionOS 1 or later.
 
     Package.swift
 
     ```swift
     dependencies: [
-      .package(url: "https://github.com/PostHog/posthog-ios.git", from: "3.56.0")
+      .package(url: "https://github.com/PostHog/posthog-ios.git", from: "4.0.0")
     ]
     ```
 
-    Or add PostHog to your Podfile:
+    **Using CocoaPods?**
 
-    Podfile
-
-    ```ruby
-    pod "PostHog", "~> 3.56"
-    ```
+    Version 4 is only published to Swift Package Manager. Version 3 stays on CocoaPods (`pod "PostHog", "~> 3.0"`), but [CocoaPods trunk becomes read-only on December 2, 2026](https://blog.cocoapods.org/CocoaPods-Specs-Repo/). After that, existing 3.x versions stay installable, but new releases only ship through Swift Package Manager. To switch, see the [iOS migration guide](https://github.com/PostHog/posthog-ios/blob/main/MIGRATION.md).
 
 2.  2
 

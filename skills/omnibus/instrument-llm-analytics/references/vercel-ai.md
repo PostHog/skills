@@ -37,7 +37,7 @@ Skip the manual setup — run this in your project and the wizard installs the S
     Use Node.js 22.22 or later. Install the PostHog AI package, the Vercel AI SDK, its OpenTelemetry integration, the OpenTelemetry SDK, and Zod for defining tool schemas.
 
     ```bash
-    npm install @posthog/ai@^8.7.0 @ai-sdk/openai @ai-sdk/otel ai @opentelemetry/sdk-node @opentelemetry/resources zod
+    npm install @posthog/ai@8 @ai-sdk/openai @ai-sdk/otel ai @opentelemetry/sdk-node @opentelemetry/resources zod
     ```
 
 2.  2

@@ -32,7 +32,7 @@ Skip the manual setup — run this in your project and the wizard installs the S
 
     ## Capture LLM events manually
 
-    If you use a different server-side SDK, or prefer to use the API, capture the data manually. Call the `capture` method, or use the [capture API](https://posthog.com/docs/api/capture.md).
+    If you use a different server-side SDK or a mobile SDK, or prefer to use the API, capture the data manually. Call the `capture` method (`captureAi` on Android and iOS), or use the [capture API](https://posthog.com/docs/api/capture.md).
 
     `$ai_trace_id` groups the events of one LLM interaction into a trace. `$ai_session_id` is optional and groups related traces into a session, which is what the Sessions tab reads. Set it if your product has multi-turn conversations. Workloads that finish in a single trace, like batch jobs or one-shot generation, do not need it. Send it as `null` on those to say so explicitly, which tells the instrumentation checklist the workload is complete rather than missing a session id.
 
@@ -68,7 +68,7 @@ Skip the manual setup — run this in your project and the wizard installs the S
     ### 1\. Install
 
     ```bash
-    npm install posthog-node@5
+    npm install posthog-node@6
     ```
 
     ### 2\. Initialize PostHog
@@ -112,7 +112,7 @@ Skip the manual setup — run this in your project and the wizard installs the S
     ### 1\. Install
 
     ```bash
-    pip install "posthog<8"
+    pip install posthog~=8.0
     ```
 
     ### 2\. Initialize PostHog
@@ -152,13 +152,13 @@ Skip the manual setup — run this in your project and the wizard installs the S
     ### 1\. Install
 
     ```bash
-    go get github.com/posthog/posthog-go
+    go get github.com/posthog/posthog-go/v2
     ```
 
     ### 2\. Initialize PostHog
 
     ```go
-    import "github.com/posthog/posthog-go"
+    import "github.com/posthog/posthog-go/v2"
     
     client, _ := posthog.NewWithConfig("<ph_project_token>", posthog.Config{
         Endpoint: "https://us.i.posthog.com",
@@ -194,7 +194,7 @@ Skip the manual setup — run this in your project and the wizard installs the S
     ### 1\. Install
 
     ```bash
-    gem install posthog-ruby
+    gem install posthog-ruby -v '~> 3.0'
     ```
 
     ### 2\. Initialize PostHog
@@ -270,6 +270,99 @@ Skip the manual setup — run this in your project and the wizard installs the S
             // '$ai_time_to_first_token' => 0.25
         ]
     ]);
+    ```
+
+    ## Android
+
+    Requires posthog-android 4.0 or later. `captureAi` sends events to PostHog's AI endpoint, which accepts much larger events than `capture`. The SDK doesn't redact prompts or outputs, so use `beforeSend` to remove anything you don't want to send.
+
+    ### 1\. Install
+
+    ```kotlin
+    dependencies {
+        implementation("com.posthog:posthog-android:4.+")
+    }
+    ```
+
+    ### 2\. Initialize PostHog
+
+    ```kotlin
+    // In your Application's onCreate()
+    val config = PostHogAndroidConfig(
+        projectToken = "<ph_project_token>",
+        host = "https://us.i.posthog.com"
+    )
+    PostHogAndroid.setup(this, config)
+    ```
+
+    ### 3\. Capture Event
+
+    ```kotlin
+    // After your LLM call. Returns the event's uuid, or null if it wasn't queued
+    // (for example, the user opted out).
+    val eventId = PostHog.captureAi(
+        "\$ai_generation",
+        properties = mapOf(
+            "\$ai_trace_id" to "trace_id_here",
+            "\$ai_session_id" to "conversation-abc", // optional: groups traces into one session
+            "\$ai_model" to "gpt-5-mini",
+            "\$ai_provider" to "openai",
+            "\$ai_input" to listOf(mapOf("role" to "user", "content" to "Tell me a fun fact about hedgehogs")),
+            "\$ai_input_tokens" to 10,
+            "\$ai_output_choices" to listOf(mapOf("role" to "assistant", "content" to "Hedgehogs have around 5,000 to 7,000 spines on their backs!")),
+            "\$ai_output_tokens" to 20,
+            "\$ai_latency" to 1.5,
+            // For streaming responses, also include:
+            // "\$ai_stream" to true,
+            // "\$ai_time_to_first_token" to 0.25,
+        ),
+    )
+    ```
+
+    ## iOS
+
+    Requires posthog-ios 4.0 or later. `captureAi` sends events to PostHog's AI endpoint, which accepts much larger events than `capture`. The SDK doesn't redact prompts or outputs, so use `beforeSend` to remove anything you don't want to send.
+
+    ### 1\. Install
+
+    ```swift
+    dependencies: [
+      .package(url: "https://github.com/PostHog/posthog-ios.git", from: "4.0.0")
+    ]
+    ```
+
+    ### 2\. Initialize PostHog
+
+    ```swift
+    let config = PostHogConfig(
+        projectToken: "<ph_project_token>",
+        host: "https://us.i.posthog.com"
+    )
+    PostHogSDK.shared.setup(config)
+    ```
+
+    ### 3\. Capture Event
+
+    ```swift
+    // After your LLM call. Returns the event's UUID, or nil if it wasn't queued
+    // (for example, the user opted out).
+    let eventId = PostHogSDK.shared.captureAi(
+        "$ai_generation",
+        properties: [
+            "$ai_trace_id": "trace_id_here",
+            "$ai_session_id": "conversation-abc", // optional: groups traces into one session
+            "$ai_model": "gpt-5-mini",
+            "$ai_provider": "openai",
+            "$ai_input": [["role": "user", "content": "Tell me a fun fact about hedgehogs"]],
+            "$ai_input_tokens": 10,
+            "$ai_output_choices": [["role": "assistant", "content": "Hedgehogs have around 5,000 to 7,000 spines on their backs!"]],
+            "$ai_output_tokens": 20,
+            "$ai_latency": 1.5,
+            // For streaming responses, also include:
+            // "$ai_stream": true,
+            // "$ai_time_to_first_token": 0.25,
+        ]
+    )
     ```
 
 2.  2

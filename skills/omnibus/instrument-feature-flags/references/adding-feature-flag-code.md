@@ -1695,29 +1695,40 @@ Every time a user opens the app, we send a request in the background to fetch th
 
 This means that for most screens, the feature flags are available immediately – **except for the first time a user visits**.
 
-To handle this, you can use the `onFeatureFlags` callback to wait for the feature flag request to finish:
+To handle this, register a listener with `PostHog.onFeatureFlags()` before you set up the SDK, so it also gets the first load:
 
 ```kotlin
 import com.posthog.PostHog
+import com.posthog.android.PostHogAndroid
 import com.posthog.android.PostHogAndroidConfig
-import com.posthog.PostHogOnFeatureFlags
 
-// During SDK initialization
-val config = PostHogAndroidConfig(apiKey = "<ph_project_token>").apply {
-    onFeatureFlags = PostHogOnFeatureFlags {
-        if (PostHog.isFeatureEnabled("flag-key")) {
-            // do something
-        }
+// Before setup
+val subscription = PostHog.onFeatureFlags { loaded ->
+    if (!loaded.errorsLoading && PostHog.getFeatureFlag("flag-key") == "test") {
+        // do something
     }
 }
 
+PostHogAndroid.setup(context, PostHogAndroidConfig(projectToken = "<ph_project_token>"))
+
+// Later, stop listening
+subscription.unsubscribe()
+
 // And/or after the SDK is initialized
-PostHog.reloadFeatureFlags {
-    if (PostHog.isFeatureEnabled("flag-key")) {
+PostHog.reloadFeatureFlags { loaded ->
+    if (!loaded.errorsLoading && PostHog.isFeatureEnabled("flag-key")) {
         // do something
     }
 }
 ```
+
+Both callbacks also run when loading fails. `loaded` is a `PostHogFeatureFlagsLoaded` with `flags` (the keys of the enabled flags), `variants` (their values), and `errorsLoading` (whether the load failed, in which case the values are the last known ones).
+
+The listener runs on the main thread after every flag load, and it also gets the current values if flags have already loaded. The `reloadFeatureFlags()` callback runs on a background thread, so switch to the main thread before touching UI.
+
+Read the value with `getFeatureFlag` when you act on it. It captures `$feature_flag_called`, which experiments use to record exposure, and reading `loaded.variants` doesn't.
+
+`PostHog.onFeatureFlags()` and the `loaded` argument require version 4.0 or later. On 3.x, set `onFeatureFlags = PostHogOnFeatureFlags { … }` on the config instead, and the callbacks take no arguments.
 
 ### Reloading feature flags
 
@@ -1750,6 +1761,14 @@ if let result = PostHogSDK.shared.getFeatureFlagResult("flag-key"), result.enabl
 
     // Optional: fetch the payload from the same evaluation result
     let matchedFlagPayload = result.payload
+}
+```
+
+To only check whether a flag is on, use `isFeatureEnabled`. From version 4.0, you can pass a `defaultValue` to return when the flag has no value, for example because flags haven't loaded yet or the flag doesn't exist. A flag that has a value always wins:
+
+```swift
+if PostHogSDK.shared.isFeatureEnabled("flag-key", defaultValue: true) {
+    // Do something differently for this user
 }
 ```
 
@@ -1833,33 +1852,21 @@ The callback receives a `PostHogFeatureFlagsLoaded` object with the following pr
 
 -   `errorsLoading: Bool`: `true` if the latest attempt to load feature flags failed, for example because the device is offline. The flags and variants then hold the last known values, which can be empty – for example, on a fresh install with no [bootstrap values](https://posthog.com/docs/feature-flags/bootstrapping.md). In that case, `isFeatureEnabled` returns `false` because the flag is unknown, not because PostHog evaluated it as disabled.
 
-On versions earlier than 3.89.0, observe the `PostHogSDK.didReceiveFeatureFlags` notification instead. Register the observer before calling `setup()`:
-
-```swift
-let observer = NotificationCenter.default.addObserver(
-    forName: PostHogSDK.didReceiveFeatureFlags,
-    object: nil,
-    queue: .main
-) { _ in
-    if PostHogSDK.shared.isFeatureEnabled("flag-key") {
-        // do something
-    }
-}
-
-// Later, to stop receiving updates
-NotificationCenter.default.removeObserver(observer)
-```
+Version 4.0 removes the `PostHogSDK.didReceiveFeatureFlags` notification. If you observed it, use `onFeatureFlags` instead.
 
 Alternatively, you can use the completion block of the `reloadFeatureFlags(_:)` method. This allows you to execute logic immediately after the flags are reloaded:
 
 ```swift
 // Reload feature flags and check if a specific feature is enabled
-PostHogSDK.shared.reloadFeatureFlags {
+PostHogSDK.shared.reloadFeatureFlags { result in
+    // result.errorsLoading is true if the reload failed
     if PostHogSDK.shared.isFeatureEnabled("flag-key") {
         // do something
     }
 }
 ```
+
+The block can run on a background thread. To update UI, hop with `Task { @MainActor in ... }`. On versions before 4.0, the block takes no argument.
 
 ### Tracking feature usage
 
@@ -2239,6 +2246,12 @@ The SDK deduplicates these events per `(distinct_id, flag, value)` in a local ca
 `flags.get_flag_payload()` doesn't send `$feature_flag_called` events and doesn't count as an access for `only_accessed()`.
 
 ### Blocking client
+
+With `default-features = false`, the Rust SDK 1.x.x has no TLS. Add the `tls` feature:
+
+```toml
+posthog = { version = "1", default-features = false, features = ["tls"] }
+```
 
 If you're using the blocking client (with `default-features = false`), the API is the same but without `.await`:
 

@@ -138,5 +138,5 @@ This automatic context setup requires the Node.js entry point. The SDK's edge en
 
 To read more about how to integrate specific PostHog features into Hono, have a look at our [Node SDK docs](https://posthog.com/docs/libraries/node.md) for concepts such as:
 
--   [Capturing custom events, setting properties, and more.](https://posthog.com/docs/libraries/node/reference.md#capture)
--   [Setting up feature flags including variants and payloads.](https://posthog.com/docs/libraries/node/reference.md#get-feature-flag)
+-   [Capturing custom events, setting properties, and more.](https://posthog.com/docs/libraries/node.md#capture)
+-   [Setting up feature flags including variants and payloads.](https://posthog.com/docs/libraries/node.md#get-feature-flag)

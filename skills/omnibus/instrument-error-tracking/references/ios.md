@@ -32,23 +32,19 @@ Or set it up manually by following the rest of this guide.
 
     Required
 
-    Install via Swift Package Manager:
+    Install via Swift Package Manager. PostHog requires Xcode 26 or later, and iOS 15, macOS 12, tvOS 15, watchOS 10, or visionOS 1 or later.
 
     Package.swift
 
     ```swift
     dependencies: [
-      .package(url: "https://github.com/PostHog/posthog-ios.git", from: "3.56.0")
+      .package(url: "https://github.com/PostHog/posthog-ios.git", from: "4.0.0")
     ]
     ```
 
-    Or add PostHog to your Podfile:
+    **Using CocoaPods?**
 
-    Podfile
-
-    ```ruby
-    pod "PostHog", "~> 3.56"
-    ```
+    Version 4 is only published to Swift Package Manager. Version 3 stays on CocoaPods (`pod "PostHog", "~> 3.0"`), but [CocoaPods trunk becomes read-only on December 2, 2026](https://blog.cocoapods.org/CocoaPods-Specs-Repo/). After that, existing 3.x versions stay installable, but new releases only ship through Swift Package Manager. To switch, see the [iOS migration guide](https://github.com/PostHog/posthog-ios/blob/main/MIGRATION.md).
 
 2.  2
 
@@ -195,7 +191,7 @@ Or set it up manually by following the rest of this guide.
 
     Optional
 
-    By default, PostHog automatically marks your app's code as "in-app" in stack traces to help you focus on your code rather than system frameworks.
+    By default, PostHog marks frames from your app's executable as "in-app" in stack traces, so you can focus on your code rather than system and third-party frameworks. Code linked statically into your app, such as most Swift packages, is part of the executable.
 
     You can customize this behavior with `errorTrackingConfig`:
 
@@ -209,8 +205,9 @@ Or set it up manually by following the rest of this guide.
         host: "https://us.i.posthog.com"
     )
     
-    // Mark additional packages as in-app
-    config.errorTrackingConfig.inAppIncludes = [
+    // Mark your own dynamic frameworks as in-app.
+    // Append, so your app's own entries stay in the list.
+    config.errorTrackingConfig.inAppIncludes += [
         "MySharedFramework",
         "MyUtilityLib"
     ]
@@ -221,8 +218,8 @@ Or set it up manually by following the rest of this guide.
         "SDWebImage"
     ]
     
-    // Control default behavior for unknown packages
-    config.errorTrackingConfig.inAppByDefault = true // default
+    // Whether frames from other frameworks are in-app.
+    config.errorTrackingConfig.inAppByDefault = false
     
     PostHogSDK.shared.setup(config)
     ```
@@ -233,12 +230,13 @@ Or set it up manually by following the rest of this guide.
     | --- | --- |
     | `inAppIncludes` | List of package/bundle identifiers to mark as in-app (takes precedence over excludes) |
     | `inAppExcludes` | List of package/bundle identifiers to exclude from in-app |
-    | `inAppByDefault` | Whether frames are considered in-app by default when origin cannot be determined |
+    | `inAppByDefault` | Whether frames from a framework no other rule matches are in-app. Default is `false` |
 
     **Default behavior:**
 
-    -   Your app's bundle identifier and executable name are automatically included
-    -   System frameworks (Foundation, UIKit, etc.) are automatically excluded
+    -   Your app's executable and any framework whose name starts with your app's executable name or bundle identifier are in-app
+    -   System frameworks (Foundation, UIKit, etc.) are not in-app
+    -   From SDK version 4.0, other frameworks are not in-app. If your app ships its own code in another dynamic framework, add its name to `inAppIncludes`
 
 7.  ## Verify error tracking
 
@@ -267,4 +265,4 @@ Or set it up manually by following the rest of this guide.
 ## Limitations:
 
 -   System symbols and frames are not symbolicated (UIKit, Foundation, etc.) ([issue](https://github.com/PostHog/posthog/issues/50614)).
--   Swift crashes appear as `SIGTRAP` without the actual error message ([issue](https://github.com/PostHog/posthog-ios/issues/522)).
+-   Before SDK version 3.57.3, Swift crashes appear as `SIGTRAP` without the actual error message ([issue](https://github.com/PostHog/posthog-ios/issues/522)).

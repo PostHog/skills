@@ -20,7 +20,7 @@ The PostHog Android SDK has built-in support for capturing structured Logs from 
 
 > **Manual capture only.** Logs are emitted by your code. The SDK does not autocapture system log streams (`Log.d`, `Logcat`, `Timber`).
 
-> **Minimum version:** `com.posthog:posthog-android@3.46.0` or later. Bump the dependency in your `build.gradle` (or `build.gradle.kts`) and re-sync.
+> **Minimum version:** `com.posthog:posthog-android@3.46.0` or later. Bump the dependency in your `build.gradle` (or `build.gradle.kts`) and re-sync. Versions before 3.72.0 take `apiKey` instead of `projectToken`.
 
 1.  1
 
@@ -40,7 +40,7 @@ The PostHog Android SDK has built-in support for capturing structured Logs from 
 
     ```kotlin
     val config = PostHogAndroidConfig(
-        apiKey = "<ph_project_token>",
+        projectToken = "<ph_project_token>",
         host = "https://us.i.posthog.com",
     ).apply {
         logs.serviceName = "my-app"        // OTLP service.name – shown in the Logs UI
@@ -135,7 +135,7 @@ The PostHog Android SDK has built-in support for capturing structured Logs from 
     The `logs` config has knobs for high-volume apps:
 
     ```kotlin
-    val config = PostHogAndroidConfig(apiKey = "<ph_project_token>").apply {
+    val config = PostHogAndroidConfig(projectToken = "<ph_project_token>").apply {
         logs.serviceName = "my-app"
         logs.flushIntervalSeconds = 5            // default 30
         logs.maxBufferSize = 200                 // default 1000
