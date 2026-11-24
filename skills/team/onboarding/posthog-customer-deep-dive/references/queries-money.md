@@ -22,11 +22,11 @@ The dbt line-item tables (`dbt_billing_upcoming_line_items_latest`, `dbt_billing
 
 ## credit-contract-phase
 
-Every account on a contract or holding credit. One row per org: where the contract sits, whether the renewal is signed, and when the credit runs out, in one read. Three of its fields exist nowhere else in this skill: `contract_phase`, `sf_renewal_signed` and `sf_opp_url`.
+Every account on a contract or holding credit. One row per org: where the contract sits, whether the renewal is signed, and when the credit runs out, in one read. Three of its fields exist nowhere else in this skill: `contract_phase`, `renewal_state` and `next_contract_starts_at`.
 
 ```sql
 SELECT contract_phase, contract_starts_at, contract_ends_at, contract_length_months, contract_month,
-       months_to_renewal, sf_renewal_signed, sf_opp_url, sf_order_form_url, sf_contract_credit,
+       months_to_renewal, renewal_state, next_contract_starts_at, sf_contract_credit, credit_program, is_multi_year,
        stripe_account_balance, credit_runway_days, credit_expires_at, projected_credit_depletion_date,
        credit_expiry_to_depletion_months, usage_mrr, forecasted_usage_mrr, forecasted_usage_mrr_change_pct
 FROM accounts_credit_props
@@ -34,7 +34,7 @@ WHERE organization_id = '<ORG_ID>'
 LIMIT 1
 ```
 
-`contract_phase` is set only on contract accounts, so a blank phase on a monthly self-serve account is correct and never a gap. The view holds only Customer Analytics accounts that are neither ignored nor churned, so no row means the org is outside it, not that it has no credit: `money-picture` still has the balance and the discount, and the runway is then unmeasured unless you compute it from the balance over daily spend. `forecasted_usage_mrr` is the gross figure; the forecast for the header is `forecasted_mrr` on `onboarding-state`. Credit running out before `contract_ends_at` is the header line Step 4 asks for; read `projected_credit_depletion_date` against it and show both dates.
+`contract_phase` is set only on contract accounts (plus `Expired` on any account whose plan ended in the last 30 days), so a blank phase on a monthly self-serve account is correct and never a gap. **Whether the renewal is signed is `renewal_state`, never the phase**: it reads `signed` (a closed-won next-term Salesforce opp starting in the future, dated by `next_contract_starts_at`), `lost`, or blank, and a renewal signed early leaves the phase at `Active` until the new term starts. The view no longer carries the Salesforce opp or order-form links. The view holds only Customer Analytics accounts that are neither ignored nor churned, so no row means the org is outside it, not that it has no credit: `money-picture` still has the balance and the discount, and the runway is then unmeasured unless you compute it from the balance over daily spend. `forecasted_usage_mrr` is the gross figure; the forecast for the header is `forecasted_mrr` on `onboarding-state`. Credit running out before `contract_ends_at` is the header line Step 4 asks for; read `projected_credit_depletion_date` against it and show both dates.
 
 ## money-picture
 
