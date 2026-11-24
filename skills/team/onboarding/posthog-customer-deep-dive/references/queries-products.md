@@ -109,7 +109,7 @@ Read decide requests and local-evaluation polls side by side to see which evalua
 
 **Admin activity** (the pattern, with a fixed 90 day window: flag work is sparse, and a 30 day window reads an active flag team as idle): `feature flag created` (useful properties: `creation_context`, `has_rollout_percentage`), `feature flag updated`, `feature flag scheduled`.
 
-**Config reads** (US only: flag keys, names, and rollout have no EU source; flag counts work in both regions via `ff_count`). On EU, recover the keys the SDK actually evaluated from `$feature_flag_called` on the direct connection, per the EU flag-keys note in `data-rules.md`; dormant flags stay nameless there, so pair it with `ff_count` and report "N exist, K evaluated".
+**Config reads** (US only: flag keys, names, and rollout have no EU source; flag counts work in both regions via `ff_count`). On EU, recover the keys the SDK actually evaluated from `flag_evaluations` (`flag_key`) on the direct connection, per the EU flag-keys note in `data-rules.md`; dormant flags stay nameless there, so pair it with `ff_count` and report "N exist, K evaluated".
 
 ### flag-hygiene
 
@@ -459,11 +459,13 @@ WHERE t.organization_id = '<ORG_ID>' ORDER BY hf.deleted, hf.created_at ASC LIMI
 ### batch-exports
 
 ```sql
-SELECT b.name, b.created_at, b.paused, b.interval, d.type AS destination_type
+SELECT b.name, b.created_at, b.paused, b.interval, b.model, d.type AS destination_type
 FROM postgres.posthog_batchexport b JOIN postgres.posthog_batchexportdestination d ON b.destination_id = d.id
 JOIN postgres.posthog_team t ON b.team_id = t.id
 WHERE t.organization_id = '<ORG_ID>' AND b.deleted = false ORDER BY b.created_at ASC LIMIT 50
 ```
+
+`model` is `events`, `persons`, `sessions` or `hogql` (the SQL query model). An unpaused `events` export on an account that evaluates flags is the one the flag-call move changes (`levers.md`, flag calls), so it goes into the brief as a question: does anything downstream read `$feature_flag_called` or the `$feature/<flag>` columns?
 
 Whether the exports actually run, from the run history. On EU swap every table in both queries to its `eu_postgres_` twin, never some; the destination config is encrypted, so the type is all you get. `postgres.posthog_batchexportbackfill` (joined the same way) counts backfills. **Read this before calling an export cut off**: the `rows_exported` quota can read `already limited` every period while every run still completes.
 
