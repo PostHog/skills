@@ -31,19 +31,17 @@ implementation companions below.
 ## Resolve the target canvas
 
 - If the task names a canvas id (canvas-initiated tasks do), that is the target. Do not create another.
-- Otherwise use the space the task is in, as named in the `channel_context` block or the
-  generation instructions. Use another space only when the user explicitly asks for it.
-  Do not ask the user to choose a space when the task's space is known. The canvas tools call
-  spaces channels: use `channel-list` only to resolve a space the user named to its id.
-- List that space's canvases with `canvas-list` (scope with `channel`). If one is clearly what
-  the request refers to — an earlier iteration of the same board or tool — build on it instead
-  of creating a near-duplicate, and say so in your reply so the user knows where the result landed.
-- Only when nothing existing fits, create one with `canvas-create` in that same space, named
+- Otherwise the target channel is the one the task was created in — named in the task's context
+  (the `channel_context` block or the generation instructions). List that channel's canvases with
+  `canvas-list` (scope with `channel`). If one is clearly what the request refers to — an earlier
+  iteration of the same board or tool — build on it instead of creating a near-duplicate, and say
+  so in your reply so the user knows where the result landed.
+- Only when nothing existing fits, create one with `canvas-create` in that same channel, named
   with a short descriptive title drawn from the request — never "Untitled canvas".
-- Do not choose another space from the list or default to personal space (`#me`) unless that
-  is the task's space. If the task has no space context and the user did not name a space, ask
-  which space to use. If the space the user asked for is unclear or unavailable, ask which
-  space they mean.
+- Never survey channels to choose a target yourself: use `channel-list` only to resolve a channel
+  the USER named to its id. Its listing puts the personal #me channel first, and #me is never a
+  default — a canvas filed there is invisible to everyone else. If the task names neither a canvas
+  nor a channel, ask which channel to use instead of guessing.
 
 ## Load the companion skills for the implementation
 
@@ -196,7 +194,7 @@ Save once per requested change, when the canvas is ready — not after every mic
 user asked for a draft, end your reply by saying a draft is ready to preview and promote; the
 `validating-and-publishing-canvases` skill covers the draft → build → preview → promote flow.
 
-End your reply by naming the space the canvas is in and linking it with the `url` field the
+End your reply by naming the channel the canvas is in and linking it with the `url` field the
 canvas tools return (`canvas-create`, `canvas-list`, and the publish/source responses carry it).
 That field is the only valid link to a canvas — never construct one yourself; guessed URLs
 (project pages, web routes) do not resolve.

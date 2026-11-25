@@ -119,7 +119,8 @@ Column | Type | Nullable | Description
 `should_sync` | Boolean | NOT NULL | Whether this table is enabled for syncing.
 `status` | String | NOT NULL | Latest sync status for this table, e.g. Running, Completed, Error.
 `sync_type` | String | NOT NULL | Sync strategy, e.g. 'full_refresh' or 'incremental'.
-`last_synced_at` | DateTime | NOT NULL | When this table last finished syncing.
+`last_synced_at` | DateTime | NOT NULL | When this table last loaded new rows. A sync that finds nothing new can leave it unchanged, so judge staleness with last_checked_at.
+`last_checked_at` | DateTime | NOT NULL | When a sync last checked the source successfully, including runs that found no new rows. Use this, not last_synced_at, to judge whether an enabled table is stale.
 `latest_error` | String | NOT NULL | Most recent sync error message, if any.
 `created_at` | DateTime | NOT NULL | When the schema config was created.
 `updated_at` | DateTime | NOT NULL | When the schema config was last updated.
