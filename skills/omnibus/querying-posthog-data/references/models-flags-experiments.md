@@ -6,7 +6,7 @@ Feature flags control rollouts of new features and are used for A/B testing.
 
 ### Columns
 
-These are the only columns exposed via HogQL — the full flag model (e.g. `active`, `ensure_experience_continuity`, `last_called_at`, rollback settings) is not queryable here; fetch the flag via the feature flag API tools instead.
+These are the only columns exposed via HogQL — the full flag model (e.g. `ensure_experience_continuity`, `last_called_at`, rollback settings) is not queryable here; fetch the flag via the feature flag API tools instead. `active` is 1 when the flag is enabled and 0 when it is disabled.
 
 Column | Type | Nullable | Description
 --- | --- | --- | ---
@@ -18,6 +18,7 @@ Column | Type | Nullable | Description
 `created_by_id` | Integer | NULL | User who created the flag.
 `created_at` | DateTime | NOT NULL | When the flag was created.
 `deleted` | Integer | NOT NULL | 1 if the flag has been deleted, 0 otherwise.
+`active` | Integer | NOT NULL | 1 if the flag is enabled, 0 if it is disabled.
 
 ### Filters Structure
 
@@ -140,7 +141,7 @@ Experiments are A/B tests that compare variants against a control group.
 
 ### Columns
 
-These are the only columns exposed via HogQL — the full experiment model (e.g. `deleted`, `conclusion`, `metrics`, `metrics_secondary`, `stats_config`, `exposure_criteria`, `holdout_id`, `type`) is not queryable here; fetch the experiment via the experiment API tools instead.
+These are the only columns exposed via HogQL — the rest of the experiment model (e.g. `holdout_id`, `type`, `variants`) is not queryable here; fetch the experiment via the experiment API tools instead. Computed results (lift, chance to win) are not in any system table.
 
 Column | Type | Nullable | Description
 --- | --- | --- | ---
@@ -156,6 +157,14 @@ Column | Type | Nullable | Description
 `end_date` | DateTime | NOT NULL | When the experiment was concluded; NULL if still running.
 `archived` | Integer | NOT NULL | 1 if the experiment is archived, 0 otherwise.
 `feature_flag_id` | Integer | NOT NULL | Feature flag controlling variant assignment; joins to feature_flags.id.
+`status` | String | NOT NULL | Lifecycle status: 'draft', 'running' or 'stopped'. A paused experiment reads 'running'; it is paused when its linked flag has feature_flags.active = 0.
+`conclusion` | String | NULL | Outcome set when the experiment ends: 'won', 'lost', 'inconclusive', 'stopped_early' or 'invalid'; NULL until concluded.
+`conclusion_comment` | String | NULL | Free-text note on the conclusion.
+`metrics` | JSON | NULL | JSON list of the primary metric definitions (metric type, source, conversion window, math). Saved metrics are in experiment_to_saved_metrics.
+`metrics_secondary` | JSON | NULL | JSON list of the secondary metric definitions, same shape as metrics.
+`exposure_criteria` | JSON | NULL | JSON config that decides which users count as exposed, e.g. the exposure event and multiple-variant handling.
+`stats_config` | JSON | NULL | JSON statistical settings, e.g. the method (bayesian or frequentist) and its parameters.
+`deleted` | Integer | NOT NULL | 1 if the experiment has been deleted, 0 otherwise.
 
 ### Parameters Structure
 
@@ -174,10 +183,12 @@ Variant keys and rollout percentages live on the linked flag. Read them from
 ### Key Relationships
 
 - **Feature Flag**: `feature_flag_id` -> `system.feature_flags.id` (required)
+- **Saved metrics**: `system.experiment_to_saved_metrics` links `experiment_id` to `saved_metric_id` -> `system.experiment_saved_metrics.id`; its `metadata.type` is `primary` or `secondary`
 
 ### Important Notes
 
 - An experiment is a "draft" if `start_date` is NULL
-- Soft-deleted experiments still appear in this table — there is no `deleted` column to filter them out; confirm via the experiment API tools when deletion status matters
+- Soft-deleted experiments still appear in this table — filter them out with `deleted = 0`
+- `status` is `draft`, `running` or `stopped`. A paused experiment reads `running`; check `active = 0` on its linked flag
 - Each experiment requires an associated feature flag
 - The feature flag controls variant assignment
