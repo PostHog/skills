@@ -79,7 +79,7 @@ An org missing from the result has no Cloud usage in the window, which is an ans
 
 Put the PostHog MCP on **project 2** (check its active-environment block; `switch-project` to `2` if not). It often defaults to a dev project where every query returns zero rows.
 
-Read the region from `resolve-teams` (`app_region`); an org with teams in both regions runs each team's reads in its own region. Project 2 answers almost everything for both regions; the exceptions are EU experiment definitions and the EU direct connection, both on the EU key and EU project 1.
+Read the region from `resolve-teams` (`app_region`); an org with teams in both regions runs each team's reads in its own region. Project 2 answers almost everything for both regions; the exceptions are the EU experiment, feature flag, survey and Workflow definitions and the EU direct connection, all on the EU key and EU project 1.
 
 ### How to fan out
 

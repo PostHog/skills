@@ -13,7 +13,7 @@ The shared defaults, shipped as-is and replaced on every plugin update. Your own
 | Key | Needed for | Required? |
 |---|---|---|
 | `POSTHOG_PERSONAL_API_KEY` | the direct connection to a US customer's own events (Round 1a's `customer-hosts` runs there), and the fallback for project 2 when the MCP gateway is down | Required |
-| `POSTHOG_PERSONAL_API_KEY_EU` | Two things, both on EU project 1: experiment definitions, and the **direct ClickHouse connection** that returns an EU customer's own raw product events (per-event volumes, autocapture share, identity mix). The US key 403s on `eu.posthog.com`, so mint this one in the EU instance. Without it, report both as unavailable rather than reading the gap as zero | For EU accounts, and it is what makes an EU deep dive as complete as a US one |
+| `POSTHOG_PERSONAL_API_KEY_EU` | Two things, both on EU project 1: the definitions project 2 does not mirror (experiments, feature flags, surveys, Workflows), and the **direct ClickHouse connection** that returns an EU customer's own raw product events (per-event volumes, autocapture share, identity mix). The US key 403s on `eu.posthog.com`, so mint this one in the EU instance. Without it, report both as unavailable rather than reading the gap as zero | For EU accounts, and it is what makes an EU deep dive as complete as a US one |
 
 ## Values
 

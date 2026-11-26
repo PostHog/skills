@@ -109,7 +109,7 @@ Read decide requests and local-evaluation polls side by side to see which evalua
 
 **Admin activity** (the pattern, with a fixed 90 day window: flag work is sparse, and a 30 day window reads an active flag team as idle): `feature flag created` (useful properties: `creation_context`, `has_rollout_percentage`), `feature flag updated`, `feature flag scheduled`.
 
-**Config reads** (US only: flag keys, names, and rollout have no EU source; flag counts work in both regions via `ff_count`). On EU, recover the keys the SDK actually evaluated from `flag_evaluations` (`flag_key`) on the direct connection, per the EU flag-keys note in `data-rules.md`; dormant flags stay nameless there, so pair it with `ff_count` and report "N exist, K evaluated".
+**Config reads** (both regions: on EU run the same SQL with `eu_postgres_posthog_featureflag` and `eu_postgres_posthog_team` against EU project 1, never project 2, whose catalog returns `Unknown table` for it; flag counts work in both regions via `ff_count`). Which keys the SDK actually evaluated is on `flag_evaluations` (`flag_key`) on the direct connection, per the EU flag-keys note in `data-rules.md`.
 
 ### flag-hygiene
 
@@ -271,7 +271,7 @@ GROUP BY t.name ORDER BY experiments_total DESC LIMIT 20
 
 ### experiment-definitions-eu
 
-The one read that leaves project 2: `POST https://eu.posthog.com/api/projects/1/query/` with `POSTHOG_PERSONAL_API_KEY_EU` (mechanics in `data-rules.md`). Same SQL with EU prefixes. The per-project rows sum to the org's `deleted = false` total. With no EU key set, report EU experiments as unavailable rather than reading the gap as zero.
+Runs on EU project 1, not project 2: `POST https://eu.posthog.com/api/projects/1/query/` with `POSTHOG_PERSONAL_API_KEY_EU` (mechanics in `data-rules.md`). Same SQL with EU prefixes. The per-project rows sum to the org's `deleted = false` total. With no EU key set, report EU experiments as unavailable rather than reading the gap as zero.
 ```sql
 SELECT t.name AS project_name, count() AS experiments_total,
        countIf(e.archived) AS archived_count,
@@ -306,9 +306,9 @@ GROUP BY survey_name ORDER BY launched DESC, edits DESC, survey_name LIMIT 50
 
 ### survey-definitions
 
-US only; which surveys exist and whether they ever launched. Filter `archived`, not `deleted` (the shared filter rule above); the row count cross-checks usage report `survey_count`.
+Both regions; which surveys exist and whether they ever launched. Filter `archived`, not `deleted` (the shared filter rule above); the row count cross-checks usage report `survey_count`.
 
-**On EU there is no mirror at all**: `eu_postgres_posthog_survey` does not exist under any naming, so this is UNMEASURABLE rather than "US only" in the sense of a table you could swap a prefix on. Reconstruct survey state from `survey_count` on the usage report plus the `survey created` / `survey launched` admin events, which is enough to separate the three cases that matter: never built, built and never launched, launched and silent.
+**On EU run it against EU project 1** with `eu_postgres_posthog_survey` and `eu_postgres_posthog_team`; project 2's catalog returns `Unknown table` for the survey table. With no EU key, reconstruct survey state from `survey_count` on the usage report plus the `survey created` / `survey launched` admin events, which is enough to separate the three cases that matter: never built, built and never launched, launched and silent.
 ```sql
 SELECT t.name AS project_name, s.name AS survey_name, s.type AS survey_type,
        s.archived, s.created_at, s.start_date, s.end_date,
@@ -583,7 +583,7 @@ WHERE t.organization_id = '<ORG_ID>' AND a.deleted = false ORDER BY a.name ASC L
 
 ### property-definitions
 
-US only; instrumentation breadth per project, and the event/person/group split. `posthog_propertydefinition` has no `deleted` column, so there is nothing to filter. `type` is 1 event, 2 person, 3 group. On EU, read the direct connection's `property_definitions` instead: `team_id` and `type` are Strings there, `is_numerical` does not exist (drop it from the SELECT), and rows repeat per (event, property), so `count()` overcounts; count `DISTINCT name`. That copy can lag months behind and stop short of newer projects, so compare the teams it returns with `resolve-teams` and name the ones it is missing.
+US only; instrumentation breadth per project, and the event/person/group split. `posthog_propertydefinition` has no `deleted` column, so there is nothing to filter. `type` is 1 event, 2 person, 3 group. On EU, read the direct connection's `property_definitions` instead: `team_id` (UInt32) and `type` (UInt8) are plain integers there, so no `OrZero` conversion (it errors on a non-String), `is_numerical` does not exist (drop it from the SELECT), and rows repeat per (event, property), so `count()` overcounts; count `DISTINCT name`. That copy is a frozen snapshot that stops at a fixed `team_id` (163846 on `ch-eu`), so a newer team reads zero rows with no error: compare the teams it returns with `resolve-teams`, and for any team above the ceiling read the catalogue live with `arrayJoin(JSONExtractKeys(properties))` off `events` on the direct connection, `team_id`-filtered over a short window, and say it is what they send now, not every definition they hold.
 ```sql
 SELECT t.name AS project_name, count() AS property_definitions,
        countIf(pd.is_numerical) AS numerical,
