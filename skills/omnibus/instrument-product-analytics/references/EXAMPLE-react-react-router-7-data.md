@@ -67,7 +67,7 @@ app/
 ├── root.tsx                 # Root route with error boundary
 └── routes.tsx               # Route configuration
 
-index.tsx                    # App entry point with PostHog initialization
+index.tsx                    # App entry point with PostHog initialization and router error capture
 ```
 
 ## Key Integration Points
@@ -75,6 +75,7 @@ index.tsx                    # App entry point with PostHog initialization
 ### Client-side initialization (index.tsx)
 
 ```typescript
+import { isRouteErrorResponse, type ClientOnErrorFunction } from 'react-router';
 import posthog from 'posthog-js';
 import { PostHogProvider } from '@posthog/react'
 
@@ -84,11 +85,19 @@ if (posthogToken) {
   posthog.init(posthogToken, {
     api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
     defaults: '2026-08-30',
+    capture_exceptions: true,
   });
 }
 
+// Errors React Router catches (render, loader, action, fetcher). Responses thrown on purpose,
+// such as 404s, are not errors to track.
+const onError: ClientOnErrorFunction = (error) => {
+  if (isRouteErrorResponse(error)) return;
+  posthog.captureException(error);
+};
+
 <PostHogProvider client={posthog}>
-  <RouterProvider router={router} />
+  <RouterProvider router={router} onError={onError} />
 </PostHogProvider>
 ```
 
@@ -116,21 +125,11 @@ posthog?.capture('burrito_considered', {
 });
 ```
 
-### Error tracking (root.tsx, profile.tsx)
+### Error tracking (index.tsx, profile.tsx)
 
-Errors are captured in two ways:
+React Router catches errors in rendering, loaders, actions and fetchers and shows `RootErrorBoundary`, so these errors never reach exception autocapture, and `RootErrorBoundary` only renders the error UI. Errors are captured in two ways:
 
-1. **Error boundary** - The `RootErrorBoundary` in `root.tsx` automatically captures unhandled React Router errors:
-```typescript
-export function RootErrorBoundary() {
-  const error = useRouteError();
-  const posthog = usePostHog();
-  if (error) {
-    posthog.captureException(error);
-  }
-  // ... error UI
-}
-```
+1. **Router errors** - the `onError` handler on `<RouterProvider>` in `index.tsx` (above). `capture_exceptions: true` covers errors outside the router, such as unhandled promise rejections. `onError` needs `react-router` 7.11 or later. On 7.8.2 to 7.10, the prop is `unstable_onError`, typed `unstable_ClientOnErrorFunction`. On earlier versions, capture inside a `useEffect` in every route `ErrorBoundary`, with the same check.
 
 2. **Manual error capture** in components (profile.tsx):
 ```typescript
@@ -505,7 +504,6 @@ import { Outlet, useRouteError, isRouteErrorResponse } from "react-router";
 import Header from "./components/Header";
 import { AuthProvider } from "./contexts/AuthContext";
 import "./globals.css";
-import { usePostHog } from "@posthog/react";
 
 export default function Root() {
   return (
@@ -520,11 +518,6 @@ export default function Root() {
 
 export function RootErrorBoundary() {
   const error = useRouteError();
-  
-  const posthog = usePostHog();
-  if (error) {
-    posthog.captureException(error);
-  }
 
   if (isRouteErrorResponse(error)) {
     return (
@@ -841,7 +834,7 @@ export default function ProfilePage() {
 ```tsx
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router";
+import { createBrowserRouter, isRouteErrorResponse, RouterProvider, type ClientOnErrorFunction } from "react-router";
 import Root, { RootErrorBoundary } from "./app/root";
 import Home from "./app/routes/home";
 import Burrito from "./app/routes/burrito";
@@ -856,6 +849,7 @@ if (posthogToken) {
   posthog.init(posthogToken, {
     api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
     defaults: '2026-08-30',
+    capture_exceptions: true,
   });
 } else if (import.meta.env.DEV) {
   console.warn('VITE_PUBLIC_POSTHOG_PROJECT_TOKEN is not set. Skipping PostHog initialization.');
@@ -883,10 +877,17 @@ const router = createBrowserRouter([
   },
 ]);
 
+// Errors React Router catches (render, loader, action, fetcher). Responses thrown on purpose,
+// such as 404s, are not errors to track.
+const onError: ClientOnErrorFunction = (error) => {
+  if (isRouteErrorResponse(error)) return;
+  posthog.captureException(error);
+};
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <PostHogProvider client={posthog}>
-      <RouterProvider router={router} />
+      <RouterProvider router={router} onError={onError} />
     </PostHogProvider>
   </StrictMode>
 );

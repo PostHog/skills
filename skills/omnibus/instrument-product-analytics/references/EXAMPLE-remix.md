@@ -107,7 +107,7 @@ posthog.capture({
 await posthog.flush().catch(() => {});
 ```
 
-Identity belongs to the request. `posthog-js` adds `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID` headers to same-origin requests, and the helpers use them so server events land on the same person and session as the browser. A request without them gets a random id and `$process_person_profile: false`, so it never shares one person with other visitors.
+Identity belongs to the request. `posthog-js` adds `X-POSTHOG-DISTINCT-ID` and `X-POSTHOG-SESSION-ID` headers to same-origin requests, and the helpers use them so server events land on the same person and session as the browser. A request without them gets a random id and the `process_person_profile: false` option, so it never shares one person with other visitors.
 
 ### Server events (routes/burrito.tsx)
 
@@ -300,8 +300,8 @@ function identityFrom(request: Request) {
     distinctId: distinctId ?? crypto.randomUUID(),
     properties: {
       ...(sessionId && { $session_id: sessionId }),
-      ...(!distinctId && { $process_person_profile: false }),
     },
+    options: distinctId ? {} : { process_person_profile: false },
   };
 }
 
@@ -317,6 +317,7 @@ export async function captureEvent(
     distinctId: identity.distinctId,
     event,
     properties: { ...properties, ...identity.properties },
+    options: identity.options,
   });
   await posthog.flush().catch(() => {});
 }
@@ -325,7 +326,11 @@ export async function captureError(request: Request, error: unknown) {
   if (!posthog) return;
 
   const identity = identityFrom(request);
-  posthog.captureException(error, identity.distinctId, identity.properties);
+  posthog.captureException(error, {
+    distinctId: identity.distinctId,
+    properties: identity.properties,
+    options: identity.options,
+  });
   await posthog.flush().catch(() => {});
 }
 

@@ -25,14 +25,13 @@ Run this command in your project directory to add PostHog to your Flutter projec
 
 Or set it up manually by following the rest of this guide.
 
-> **CocoaPods is becoming read-only.** [CocoaPods has announced](https://blog.cocoapods.org/CocoaPods-Specs-Repo/) the following schedule for its public specs repository:
+> **CocoaPods is becoming read-only.** [CocoaPods trunk becomes read-only on December 2, 2026](https://blog.cocoapods.org/CocoaPods-Specs-Repo/), and `posthog-ios` 4.0 and later is only published through Swift Package Manager (SPM).
 >
-> -   November 2–6, 2026: A read-only dry run will prevent us from publishing new PostHog iOS SDK versions to CocoaPods.
-> -   December 2, 2026 onward: The repository will be permanently read-only. New PostHog iOS SDK versions will only be available through Swift Package Manager (SPM).
+> `posthog_flutter` 6.0 and later uses `posthog-ios` 4.0 and installs on iOS and macOS through SPM only. It has no podspec. It needs Xcode 26 or later, iOS 15, and macOS 12. Flutter 3.44 and later turn SPM on by default. See the [Flutter migration guide](https://github.com/PostHog/posthog-flutter/blob/main/posthog_flutter/MIGRATION.md).
 >
-> Existing native SDK versions will remain available through CocoaPods. To keep receiving native SDK updates on iOS and macOS, migrate your Flutter app to SPM. The `posthog_flutter` package supports SPM, and Flutter 3.44 and later enable it by default. On earlier Flutter versions that support SPM, or if you disabled it, run `flutter config --enable-swift-package-manager`, then rebuild your app. Follow [Flutter's SPM migration guide](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers) for project setup and troubleshooting.
+> `posthog_flutter` 5.x stays on `posthog-ios` 3.x through CocoaPods or SPM. If your app can't use SPM, stay on 5.x. That includes a Flutter module embedded in an iOS app on Flutter earlier than 3.50, which installs module plugins with CocoaPods.
 >
-> This change does not affect `posthog_flutter` releases on pub.dev, Android, or web.
+> `posthog_flutter` 6.0 also needs Flutter 3.41 or later on every platform, including Android and web. `flutter pub get` fails on an older Flutter.
 
 1.  1
 
@@ -45,8 +44,12 @@ Or set it up manually by following the rest of this guide.
     pubspec.yaml
 
     ```yaml
-    posthog_flutter: ^5.24.0
+    posthog_flutter: ^6.0.0
     ```
+
+    `posthog_flutter 6.0` requires Flutter 3.41 or later on every platform.
+
+    If you embed Flutter in an iOS app as a module (`flutter create -t module`), use Flutter 3.50 or later and build it with `flutter build swift-package`. Earlier Flutter versions install module plugins with CocoaPods, and `posthog_flutter` 6.0 has no podspec, so stay on `posthog_flutter` 5.x there.
 
 2.  2
 
@@ -67,12 +70,12 @@ Or set it up manually by following the rest of this guide.
       </activity>
       <meta-data android:name="com.posthog.posthog.PROJECT_TOKEN" android:value="<ph_project_token>" />
       <meta-data android:name="com.posthog.posthog.POSTHOG_HOST" android:value="https://us.i.posthog.com" />
-      <meta-data android:name="com.posthog.posthog.TRACK_APPLICATION_LIFECYCLE_EVENTS" android:value="true" />
+      <meta-data android:name="com.posthog.posthog.CAPTURE_APPLICATION_LIFECYCLE_EVENTS" android:value="true" />
       <meta-data android:name="com.posthog.posthog.DEBUG" android:value="true" />
     </application>
     ```
 
-    Update the minimum Android SDK version to **21** in `android/app/build.gradle`:
+    posthog\_flutter needs a minimum Android SDK version of **23** or higher. New Flutter projects default to 24, so change `android/app/build.gradle` only if your app sets a lower value:
 
     android/app/build.gradle
 
@@ -103,14 +106,7 @@ Or set it up manually by following the rest of this guide.
     </dict>
     ```
 
-    Update the minimum platform version to iOS 13.0 in your `Podfile`:
-
-    Podfile
-
-    ```ruby
-    platform :ios, '13.0'
-    # rest of your config
-    ```
+    iOS and macOS builds require Xcode 26 or later. Set the minimum deployment target to iOS 15.0, or macOS 12.0 for a macOS app, in Xcode (**Runner > General > Minimum Deployments**). PostHog installs through Swift Package Manager, which is on by default from Flutter 3.44. On Flutter 3.41 to 3.43, or if you turned it off, run `flutter config --enable-swift-package-manager`. If you keep a `Podfile` for other plugins, set `platform :ios, '15.0'` there too (`platform :osx, '12.0'` in `macos/Podfile`), then run `flutter build ios --config-only` (or `flutter build macos --config-only`).
 
     ## Tab
 

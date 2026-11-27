@@ -899,7 +899,7 @@ async def dashboard(
     # Check feature flag
     show_new_feature = posthog.feature_enabled(
         "new-dashboard-feature",
-        current_user.email,
+        str(current_user.id),
         person_properties={
             "email": current_user.email,
             "is_staff": current_user.is_staff,
@@ -908,7 +908,7 @@ async def dashboard(
 
     # Get feature flag payload
     feature_config = posthog.get_feature_flag_payload(
-        "new-dashboard-feature", current_user.email
+        "new-dashboard-feature", str(current_user.id)
     )
 
     return templates.TemplateResponse(
@@ -1554,7 +1554,7 @@ fastapi>=0.109.0
 uvicorn>=0.27.0
 sqlalchemy>=2.0.0
 python-dotenv>=1.0.0
-posthog>=7,<8
+posthog>=8,<9
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
 jinja2>=3.0.0

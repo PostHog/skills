@@ -14,7 +14,7 @@ Canonical URL: https://posthog.com/docs/libraries/react-router/react-router-v7-d
 - [Verify client-side events are captured](#verify-client-side-events-are-captured)
 - [Access PostHog methods](#access-posthog-methods)
 - [Identify your user](#identify-your-user)
-- [Create an error boundary](#create-an-error-boundary)
+- [Capture router errors](#capture-router-errors)
 - [Tracking element visibility](#tracking-element-visibility)
 - [Set up server-side analytics](#set-up-server-side-analytics)
 - [Next steps](#next-steps)
@@ -92,7 +92,7 @@ This guide walks you through setting up PostHog for React Router V7 in data mode
     import { StrictMode } from "react";
     import { createRoot } from "react-dom/client";
     import { createBrowserRouter, RouterProvider } from "react-router";
-    import Root, { RootErrorBoundary } from "./app/root";
+    import Root from "./app/root";
     
     import posthog from 'posthog-js';
     import { PostHogProvider } from '@posthog/react'
@@ -215,30 +215,25 @@ This guide walks you through setting up PostHog for React Router V7 in data mode
 
 7.  6
 
-    ## Create an error boundary
+    ## Capture router errors
 
     Recommended
 
-    PostHog can capture exceptions thrown in your app through an error boundary. React Router in data mode has a built-in error boundary that you can use to capture exceptions. You can create an error boundary by exporting `RootErrorBoundary` from your `app/root.tsx` file.
-
-    app/root.tsx
+    React Router catches every error thrown while rendering a route or running a loader, action or fetcher, and shows your `ErrorBoundary`, so these errors never reach PostHog's exception autocapture. Turn on `capture_exceptions: true` and pass an `onError` handler to `<RouterProvider>`. Skip responses you throw on purpose, such as 404s.
 
     ```jsx
-    import { usePostHog } from '@posthog/react'
+    import { isRouteErrorResponse, type ClientOnErrorFunction } from 'react-router';
     
-    export function RootErrorBoundary() {
-      const error = useRouteError();
+    const onError: ClientOnErrorFunction = (error) => {
+      if (isRouteErrorResponse(error)) return;
+      posthog.captureException(error);
+    };
     
-      const posthog = usePostHog();
-      if (error) {
-        posthog.captureException(error);
-      }
-    
-      // other error handling code...
-    }
+    // ...
+    <RouterProvider router={router} onError={onError} />
     ```
 
-    This automatically captures exceptions thrown in your React Router app using the `posthog.captureException()` method.
+    `onError` needs React Router 7.11 or later. On 7.8.2 to 7.10, pass the same handler as `unstable_onError` and type it with `unstable_ClientOnErrorFunction`. On earlier versions, capture inside a `useEffect` in every `errorElement` or `ErrorBoundary` your routes use, with the same check. Do not also call `captureException` in your `ErrorBoundary`, and do not rely on a `PostHogErrorBoundary` around the router: React Router's boundaries catch these errors first. See the [React Router error tracking guide](https://posthog.com/docs/error-tracking/installation/react-router.md).
 
 8.  7
 

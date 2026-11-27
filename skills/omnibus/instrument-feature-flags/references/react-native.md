@@ -115,7 +115,7 @@ Or set it up manually by following the rest of this guide.
 
     Required
 
-    PostHog provides hooks to make it easy to use feature flags in your React Native app. Use `useFeatureFlagEnabled` for boolean flags:
+    PostHog makes it easy to use feature flags in your React Native app. Use `isFeatureEnabled` on the client (or `useFeatureFlagEnabled` in React components) for boolean flags:
 
     Component.tsx
 

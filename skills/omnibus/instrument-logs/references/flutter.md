@@ -16,7 +16,7 @@ Canonical URL: https://posthog.com/docs/logs/installation/flutter
 - [Filter or redact with beforeSend](#filter-or-redact-with-beforesend)
 - [Next steps](#next-steps)
 
-The PostHog Flutter SDK has built-in support for capturing structured Logs from your Flutter app across mobile and web. The SDK handles the OTLP encoding, batching, and flushing — and on mobile, on-disk persistence across app restarts and app-lifecycle integration (web buffers in memory via `posthog-js`). You just call `Posthog().captureLog(...)` or `Posthog().logger.{trace,debug,info,warn,error,fatal}(...)`.
+The PostHog Flutter SDK has built-in support for capturing structured Logs from your Flutter app across mobile and web. The SDK handles the OTLP encoding, batching, and flushing. On mobile, it also handles on-disk persistence across app restarts and app-lifecycle integration (web buffers in memory via `posthog-js`). You just call `Posthog().captureLog(...)` or `Posthog().logger.{trace,debug,info,warn,error,fatal}(...)`.
 
 > **Manual capture only.** Logs are emitted by your code. The SDK does not autocapture system log streams (`print`, `debugPrint`, or `dart:developer`'s `log`).
 
@@ -30,14 +30,13 @@ The PostHog Flutter SDK has built-in support for capturing structured Logs from 
 
     If you haven't installed `posthog_flutter` yet, follow the steps below. For full details, see the [Flutter SDK guide](https://posthog.com/docs/libraries/flutter.md).
 
-    > **CocoaPods is becoming read-only.** [CocoaPods has announced](https://blog.cocoapods.org/CocoaPods-Specs-Repo/) the following schedule for its public specs repository:
+    > **CocoaPods is becoming read-only.** [CocoaPods trunk becomes read-only on December 2, 2026](https://blog.cocoapods.org/CocoaPods-Specs-Repo/), and `posthog-ios` 4.0 and later is only published through Swift Package Manager (SPM).
     >
-    > -   November 2–6, 2026: A read-only dry run will prevent us from publishing new PostHog iOS SDK versions to CocoaPods.
-    > -   December 2, 2026 onward: The repository will be permanently read-only. New PostHog iOS SDK versions will only be available through Swift Package Manager (SPM).
+    > `posthog_flutter` 6.0 and later uses `posthog-ios` 4.0 and installs on iOS and macOS through SPM only. It has no podspec. It needs Xcode 26 or later, iOS 15, and macOS 12. Flutter 3.44 and later turn SPM on by default. See the [Flutter migration guide](https://github.com/PostHog/posthog-flutter/blob/main/posthog_flutter/MIGRATION.md).
     >
-    > Existing native SDK versions will remain available through CocoaPods. To keep receiving native SDK updates on iOS and macOS, migrate your Flutter app to SPM. The `posthog_flutter` package supports SPM, and Flutter 3.44 and later enable it by default. On earlier Flutter versions that support SPM, or if you disabled it, run `flutter config --enable-swift-package-manager`, then rebuild your app. Follow [Flutter's SPM migration guide](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers) for project setup and troubleshooting.
+    > `posthog_flutter` 5.x stays on `posthog-ios` 3.x through CocoaPods or SPM. If your app can't use SPM, stay on 5.x. That includes a Flutter module embedded in an iOS app on Flutter earlier than 3.50, which installs module plugins with CocoaPods.
     >
-    > This change does not affect `posthog_flutter` releases on pub.dev, Android, or web.
+    > `posthog_flutter` 6.0 also needs Flutter 3.41 or later on every platform, including Android and web. `flutter pub get` fails on an older Flutter.
 
     PostHog is available for install via [Pub](https://pub.dev/packages/posthog_flutter).
 
@@ -57,7 +56,7 @@ The PostHog Flutter SDK has built-in support for capturing structured Logs from 
     dependencies:
       flutter:
         sdk: flutter
-      posthog_flutter: ^5.26.0
+      posthog_flutter: ^6.0.0
     
     # rest of your code
     ```
@@ -122,7 +121,7 @@ The PostHog Flutter SDK has built-in support for capturing structured Logs from 
 
     There are 2 ways of initializing the SDK, automatically and manually.
 
-    The SDK supports both [CocoaPods](https://guides.cocoapods.org/using/getting-started.html) and [Swift Package Manager (SPM)](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers). Flutter 3.44 and later enable SPM by default. On earlier versions, or if you disabled SPM, enable it with `flutter config --enable-swift-package-manager`.
+    Version 6 and later install on iOS and macOS only through [Swift Package Manager (SPM)](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers), which needs Flutter 3.41 or later. Flutter 3.44 and later enable SPM by default. On earlier versions, or if you disabled SPM, enable it with `flutter config --enable-swift-package-manager`. Version 5 also supports [CocoaPods](https://guides.cocoapods.org/using/getting-started.html). Flutter add-to-app modules on iOS need Flutter 3.50 or later to install plugins through SPM. On earlier Flutter versions, they need version 5.
 
     Automatically:
 
@@ -165,21 +164,23 @@ The PostHog Flutter SDK has built-in support for capturing structured Logs from 
     </plist>
     ```
 
-    In both cases, you'll need to set the minimum platform version to iOS 13.0.
+    In both cases, you'll need to set the minimum platform version to iOS 15.0, or macOS 12.0 for a macOS app. Building for iOS or macOS requires Xcode 26 or later.
 
-    For CocoaPods projects, set it in your `Podfile`:
+    If your project has a `Podfile`, because another plugin uses CocoaPods or you're on version 5, set it there. For a macOS app, set `platform :osx, '12.0'` in `macos/Podfile`.
 
     ios/Podfile
 
     ```yaml
-    platform :ios, '13.0'
+    platform :ios, '15.0'
     # rest of your config
     ```
 
-    For Swift Package Manager projects without a `Podfile`, set the **Minimum Deployments** version to iOS 13.0 for the `Runner` target in Xcode (**Runner > General > Minimum Deployments**). After you change **Minimum Deployments**, regenerate the iOS project's configuration files:
+    Set the **Minimum Deployments** version to iOS 15.0 (or macOS 12.0) for the `Runner` target in Xcode (**Runner > General > Minimum Deployments**). After you change **Minimum Deployments**, regenerate the project's configuration files:
 
     ```bash
     flutter build ios --config-only
+    # If your app also targets macOS
+    flutter build macos --config-only
     ```
 
     #### Dart setup (For manual step only)
@@ -424,7 +425,7 @@ The PostHog Flutter SDK has built-in support for capturing structured Logs from 
 
     Optional
 
-    Use `config.logsConfig.beforeSend` for redaction, sampling, or filtering by level. It is a `List<BeforeSendLogCallback>`, where each callback is a `FutureOr<PostHogLogRecord?> Function(PostHogLogRecord)`. Callbacks run **in Dart on all platforms (including web)**, evaluated left-to-right. Each callback receives a mutable `PostHogLogRecord` (with mutable `body`, `level`, and `attributes`) and returns either the (possibly mutated) record or `null` to drop it. Callbacks can be synchronous or asynchronous.
+    Use `config.logsConfig.beforeSend` for redaction, sampling, or filtering by level. It is a `List<BeforeSendLogCallback>`, where each callback is a `PostHogLogRecord? Function(PostHogLogRecord)`. Callbacks run **in Dart on all platforms (including web)**, evaluated left-to-right. Each callback receives a mutable `PostHogLogRecord` (with mutable `body`, `level`, and `attributes`) and returns either the (possibly mutated) record or `null` to drop it. In 6.0 and later, callbacks must be synchronous. On 5.x, they can also be asynchronous.
 
     ```dart
     config.logsConfig.beforeSend = [

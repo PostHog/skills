@@ -90,11 +90,11 @@ Or set it up manually by following the rest of this guide.
     Check if a feature flag is enabled:
 
     ```python
-    is_my_flag_enabled = posthog.feature_enabled('flag-key', 'distinct_id_of_your_user')
-    if is_my_flag_enabled:
+    flags = posthog.evaluate_flags('distinct_id_of_your_user', flag_keys=['flag-key'])
+    if flags.is_enabled('flag-key'):
         # Do something differently for this user
         # Optional: fetch the payload
-        matched_flag_payload = posthog.get_feature_flag_payload('flag-key', 'distinct_id_of_your_user')
+        matched_flag_payload = flags.get_flag_payload('flag-key')
     ```
 
 5.  5
@@ -106,11 +106,12 @@ Or set it up manually by following the rest of this guide.
     For multivariate flags, check which variant the user has been assigned:
 
     ```python
-    enabled_variant = posthog.get_feature_flag('flag-key', 'distinct_id_of_your_user')
+    flags = posthog.evaluate_flags('distinct_id_of_your_user', flag_keys=['flag-key'])
+    enabled_variant = flags.get_flag('flag-key')
     if enabled_variant == 'variant-key': # replace 'variant-key' with the key of your variant
         # Do something differently for this user
         # Optional: fetch the payload
-        matched_flag_payload = posthog.get_feature_flag_payload('flag-key', 'distinct_id_of_your_user')
+        matched_flag_payload = flags.get_flag_payload('flag-key')
     ```
 
 6.  6
@@ -162,8 +163,7 @@ Or set it up manually by following the rest of this guide.
     Sometimes, you may want to evaluate feature flags using properties that haven't been ingested yet, or were set incorrectly earlier. You can provide properties to evaluate the flag with:
 
     ```python
-    posthog.get_feature_flag(
-        'flag-key',
+    flags = posthog.evaluate_flags(
         'distinct_id_of_the_user',
         person_properties={'property_name': 'value'},
         groups={
@@ -173,7 +173,9 @@ Or set it up manually by following the rest of this guide.
             'your_group_type': {'group_property_name': 'value'},
             'another_group_type': {'group_property_name': 'value'}
         },
+        flag_keys=['flag-key'],
     )
+    flag_value = flags.get_flag('flag-key')
     ```
 
 8.  8

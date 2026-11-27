@@ -75,8 +75,8 @@ STEP 6: Set up environment variables.
 - `references/libraries-dotnet.md` - .net
 - `references/elixir.md` - Elixir feature flags installation
 - `references/android.md` - Android feature flags installation
-- `references/ios.md` - Ios feature flags installation
-- `references/usage.md` - PostHog ios SDK
+- `references/installation-ios.md` - Ios feature flags installation
+- `references/libraries-ios.md` - PostHog ios SDK
 - `references/flutter.md` - Flutter feature flags installation
 - `references/api.md` - API feature flags installation
 - `references/next-js.md` - Next.js

@@ -186,7 +186,7 @@ POSTHOG_HOST=https://us.i.posthog.com
 ## requirements.txt
 
 ```txt
-posthog>=7,<8
+posthog>=8,<9
 python-dotenv>=1.0.0
 
 ```
@@ -462,7 +462,7 @@ def main():
 
         # Manually capture handled errors
         if posthog:
-            posthog.capture_exception(e, get_user_id())
+            posthog.capture_exception(e, distinct_id=get_user_id())
 
         sys.exit(1)
 

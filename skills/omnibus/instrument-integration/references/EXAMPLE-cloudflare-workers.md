@@ -113,10 +113,10 @@ posthog?.captureImmediate({
 
 ### Signed-out visitors (src/index.ts)
 
-Visitors without a `user_id` cookie get a random id in an `anon_id` cookie, reused for the visit. Their events set `$process_person_profile` to `false` so PostHog creates no person profile.
+Visitors without a `user_id` cookie get a random id in an `anon_id` cookie, reused for the visit. Their events set the `process_person_profile` option to `false` so PostHog creates no person profile.
 
 ```ts
-const anonymousProps = visitor.anonymous ? { $process_person_profile: false } : {}
+const anonymousOptions = visitor.anonymous ? { process_person_profile: false } : {}
 ```
 
 ### Feature flags (src/index.ts)
@@ -131,7 +131,12 @@ const showNewFeature = flags?.isEnabled('new-dashboard-feature') ?? false
 ### Error tracking (src/index.ts)
 
 ```ts
-track(posthog?.captureExceptionImmediate(error, visitor.id, anonymousProps))
+track(
+  posthog?.captureExceptionImmediate(error, {
+    distinctId: visitor.id,
+    properties: anonymousProps,
+  })
+)
 ```
 
 ## Reverse proxy
@@ -209,9 +214,9 @@ export default {
     const visitor = getVisitor(request)
     const url = new URL(request.url)
 
-    // Anonymous events set $process_person_profile to false so PostHog does
-    // not create a person profile for the visitor.
-    const anonymousProps = visitor.anonymous ? { $process_person_profile: false } : {}
+    // Anonymous events set the process_person_profile option to false so
+    // PostHog does not create a person profile for the visitor.
+    const anonymousOptions = visitor.anonymous ? { process_person_profile: false } : {}
 
     // Sends started during the request. They are awaited after the response
     // is returned, then the client is shut down.
@@ -224,7 +229,12 @@ export default {
     try {
       response = await route()
     } catch (error) {
-      track(posthog?.captureExceptionImmediate(error, visitor.id, anonymousProps))
+      track(
+        posthog?.captureExceptionImmediate(error, {
+          distinctId: visitor.id,
+          options: anonymousOptions,
+        })
+      )
       console.error('Unhandled error', error)
       response = new Response('Internal server error', { status: 500 })
     }
@@ -272,7 +282,8 @@ export default {
           posthog?.captureImmediate({
             distinctId: visitor.id,
             event: 'burrito_considered',
-            properties: { total_considerations: count, ...anonymousProps },
+            properties: { total_considerations: count },
+            options: anonymousOptions,
           })
         )
 
@@ -307,7 +318,12 @@ export default {
         try {
           throw new Error('Profile data is unavailable')
         } catch (error) {
-          track(posthog?.captureExceptionImmediate(error, visitor.id, anonymousProps))
+          track(
+            posthog?.captureExceptionImmediate(error, {
+              distinctId: visitor.id,
+              options: anonymousOptions,
+            })
+          )
         }
 
         return page('Profile', '<p>Profile data is unavailable. The error was reported.</p>')
