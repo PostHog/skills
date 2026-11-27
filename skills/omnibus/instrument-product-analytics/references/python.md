@@ -3225,7 +3225,7 @@ Reported by `FeatureFlagEvaluations.unresolved_flags`. Inheriting from `str` kee
 
 **Values**
 
-EXPERIENCE\_CONTINUITY: The flag has experience continuity enabled, which local evaluation never resolves. Change the flag to fix it. UNSUPPORTED\_DEFINITION: The flag uses something the local evaluator does not support, such as a static cohort, an unknown operator, a malformed value, a dependency with no loaded definition or a circular dependency. Change the flag or upgrade the SDK to fix it. UNRESOLVED\_DEPENDENCY: A flag this flag depends on has a loaded definition but was unresolved. MISSING\_CONTEXT: The call did not pass a property, group property or device id the flag needs, or passed it in an unusable form. Pass it to fix it.
+EXPERIENCE\_CONTINUITY: The flag has experience continuity enabled, which local evaluation never resolves. Change the flag to fix it. UNSUPPORTED\_DEFINITION: The flag uses something the local evaluator does not support, such as a static cohort, an unknown operator or filter type, a malformed value, a dependency with no loaded definition or a circular dependency. Change the flag or upgrade the SDK to fix it. UNRESOLVED\_DEPENDENCY: A flag this flag depends on has a loaded definition but was unresolved. MISSING\_CONTEXT: The call did not pass a property, group property or device id the flag needs, or passed it in an unusable form. Pass it to fix it.
 
 **Attributes:**
 

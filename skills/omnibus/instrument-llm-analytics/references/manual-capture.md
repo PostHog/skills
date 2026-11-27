@@ -24,15 +24,15 @@ Skip the manual setup — run this in your project and the wizard installs the S
 
 `npx @posthog/wizard ai-observability`
 
-![PostHog Wizard hedgehog](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)
+![PostHog Wizard hedgehog](https://posthog.com/static/wizard-1-86ffa0845d4096a755eace96769d7d51.png)
 
-![](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)Let AI instrument your LLM calls for you
+![](https://posthog.com/static/wizard-1-86ffa0845d4096a755eace96769d7d51.png)Let AI instrument your LLM calls for you
 
 1.  1
 
     ## Capture LLM events manually
 
-    If you use a different server-side SDK or a mobile SDK, or prefer to use the API, capture the data manually. Call the `capture` method (`captureAi` on Android and iOS), or use the [capture API](https://posthog.com/docs/api/capture.md).
+    If you use a different server-side SDK or a mobile SDK, or prefer to use the API, capture the data manually. Call the `capture` method (`captureAi` on Android, iOS, and Flutter), or use the [capture API](https://posthog.com/docs/api/capture.md).
 
     `$ai_trace_id` groups the events of one LLM interaction into a trace. `$ai_session_id` is optional and groups related traces into a session, which is what the Sessions tab reads. Set it if your product has multi-turn conversations. Workloads that finish in a single trace, like batch jobs or one-shot generation, do not need it. Send it as `null` on those to say so explicitly, which tells the instrumentation checklist the workload is complete rather than missing a session id.
 
@@ -365,6 +365,53 @@ Skip the manual setup — run this in your project and the wizard installs the S
     )
     ```
 
+    ## Flutter
+
+    Requires posthog\_flutter 6.0 or later. `captureAi` sends events to PostHog's AI endpoint, which accepts much larger events than `capture`. The SDK doesn't redact prompts or outputs, so use `beforeSend` to remove anything you don't want to send. On web, `captureAi` sends nothing and returns `null`.
+
+    ### 1\. Install
+
+    ```yaml
+    dependencies:
+      posthog_flutter: ^6.0.0
+    ```
+
+    ### 2\. Initialize PostHog
+
+    ```dart
+    final config = PostHogConfig('<ph_project_token>')
+      ..host = 'https://us.i.posthog.com';
+    await Posthog().setup(config);
+    ```
+
+    ### 3\. Capture Event
+
+    ```dart
+    // After your LLM call. Returns the event's UUID, or null if it wasn't queued
+    // (for example, the user opted out).
+    final eventId = await Posthog().captureAi(
+      eventName: r'$ai_generation',
+      properties: {
+        r'$ai_trace_id': 'trace_id_here',
+        r'$ai_session_id': 'conversation-abc', // optional: groups traces into one session
+        r'$ai_model': 'gpt-5-mini',
+        r'$ai_provider': 'openai',
+        r'$ai_input': [
+          {'role': 'user', 'content': 'Tell me a fun fact about hedgehogs'},
+        ],
+        r'$ai_input_tokens': 10,
+        r'$ai_output_choices': [
+          {'role': 'assistant', 'content': 'Hedgehogs have around 5,000 to 7,000 spines on their backs!'},
+        ],
+        r'$ai_output_tokens': 20,
+        r'$ai_latency': 1.5,
+        // For streaming responses, also include:
+        // r'$ai_stream': true,
+        // r'$ai_time_to_first_token': 0.25,
+      },
+    );
+    ```
+
 2.  2
 
     ## Event properties
@@ -565,7 +612,7 @@ Skip the manual setup — run this in your project and the wizard installs the S
     | [Generations](https://posthog.com/docs/ai-observability/generations.md) | Read about the `$ai_generation` event and its properties. |
     | [Traces](https://posthog.com/docs/ai-observability/traces.md) | Explore the trace hierarchy and how to use it to debug LLM calls. |
     | [Spans](https://posthog.com/docs/ai-observability/spans.md) | Review spans and their role in representing individual operations. |
-    | [Anaylze LLM performance](https://posthog.com/docs/ai-observability/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
+    | [Analyze LLM performance](https://posthog.com/docs/ai-observability/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
 
 ## Large events
 

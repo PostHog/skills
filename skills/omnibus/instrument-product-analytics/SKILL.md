@@ -148,7 +148,6 @@ STEP 10: Verify and clean up.
 - `references/django.md` - Django
 - `references/flask.md` - Flask
 - `references/python.md` - PostHog python SDK
-- `references/posthog-python.md` - PostHog python SDK
 - `references/dotnet.md` - .net
 - `references/elixir.md` - Elixir
 - `references/phoenix.md` - Phoenix
@@ -160,11 +159,9 @@ STEP 10: Verify and clean up.
 - `references/wordpress.md` - How to set up wordpress analytics with PostHog
 - `references/ruby-on-rails.md` - Ruby on rails
 - `references/ruby.md` - Ruby
-- `references/android.md` - Android
+- `references/android.md` - PostHog android SDK
 - `references/ios.md` - PostHog ios SDK
-- `references/usage.md` - PostHog ios SDK
-- `references/configuration.md` - PostHog ios SDK
-- `references/flutter.md` - Flutter
+- `references/flutter.md` - PostHog flutter SDK
 - `references/kmp.md` - Kotlin multiplatform
 - `references/react-native.md` - React native
 - `references/capacitor.md` - Capacitor

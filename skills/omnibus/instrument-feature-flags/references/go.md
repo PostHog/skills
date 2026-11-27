@@ -92,15 +92,18 @@ Or set it up manually by following the rest of this guide.
     Check if a feature flag is enabled:
 
     ```go
-    isMyFlagEnabled, err := client.IsFeatureEnabled(posthog.FeatureFlagPayload{
-        Key:        "flag-key",
+    flags, err := client.EvaluateFlags(posthog.EvaluateFlagsPayload{
         DistinctId: "distinct_id_of_your_user",
+        FlagKeys:   []string{"flag-key"},
     })
     if err != nil {
         // Handle error (e.g. capture error and fallback to default behaviour)
     }
-    if isMyFlagEnabled == true {
+    if flags != nil && flags.IsEnabled("flag-key") {
         // Do something differently for this user
+        // Optional: fetch the payload
+        matchedFlagPayload := flags.GetFlagPayload("flag-key")
+        _ = matchedFlagPayload
     }
     ```
 
@@ -113,15 +116,22 @@ Or set it up manually by following the rest of this guide.
     For multivariate flags, check which variant the user has been assigned:
 
     ```go
-    enabledVariant, err := client.GetFeatureFlag(posthog.FeatureFlagPayload{
-        Key:        "flag-key",
+    flags, err := client.EvaluateFlags(posthog.EvaluateFlagsPayload{
         DistinctId: "distinct_id_of_your_user",
+        FlagKeys:   []string{"flag-key"},
     })
     if err != nil {
         // Handle error (e.g. capture error and fallback to default behaviour)
     }
+    var enabledVariant interface{}
+    if flags != nil {
+        enabledVariant = flags.GetFlag("flag-key")
+    }
     if enabledVariant == "variant-key" { // replace 'variant-key' with the key of your variant
         // Do something differently for this user
+        // Optional: fetch the payload
+        matchedFlagPayload := flags.GetFlagPayload("flag-key")
+        _ = matchedFlagPayload
     }
     ```
 
@@ -173,16 +183,15 @@ Or set it up manually by following the rest of this guide.
     Sometimes, you may want to evaluate feature flags using properties that haven't been ingested yet, or were set incorrectly earlier. You can provide properties to evaluate the flag with:
 
     ```go
-    enabledVariant, err := client.GetFeatureFlag(
-        FeatureFlagPayload{
-            Key:        "flag-key",
+    flags, err := client.EvaluateFlags(
+        posthog.EvaluateFlagsPayload{
             DistinctId: "distinct_id_of_the_user",
             Groups: posthog.NewGroups().
                 Set("your_group_type", "your_group_id").
                 Set("another_group_type", "your_group_id"),
             PersonProperties: posthog.NewProperties().
                 Set("property_name", "value"),
-            GroupProperties: map[string]map[string]interface{}{
+            GroupProperties: map[string]posthog.Properties{
                 "your_group_type": {
                     "group_property_name": "value",
                 },
@@ -190,8 +199,13 @@ Or set it up manually by following the rest of this guide.
                     "group_property_name": "value",
                 },
             },
+            FlagKeys: []string{"flag-key"},
         },
     )
+    if err == nil && flags != nil {
+        enabledVariant := flags.GetFlag("flag-key")
+        _ = enabledVariant
+    }
     ```
 
 8.  8

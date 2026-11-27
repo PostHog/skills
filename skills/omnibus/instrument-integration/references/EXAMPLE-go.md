@@ -25,7 +25,7 @@ This is a [Go](https://go.dev) example demonstrating PostHog integration with pr
 ### 1. Install dependencies
 
 ```bash
-go get github.com/posthog/posthog-go
+go get github.com/posthog/posthog-go/v2
 ```
 
 ### 2. Configure environment variables
@@ -104,7 +104,7 @@ client.Enqueue(posthog.Capture{
 
 ### Signed-out visitors (handlers.go)
 
-The `visitor` helper returns the distinct id and whether the visitor is anonymous. Signed-in users (a `user_id` cookie) keep their stable user id. For everyone else it generates a random UUID, stores it in an `anon_id` cookie so it is reused for the rest of the visit, and the `properties` helper sets `$process_person_profile` to `false` so PostHog does not create a person profile for them.
+The `visitor` helper returns the distinct id and whether the visitor is anonymous. Signed-in users (a `user_id` cookie) keep their stable user id. For everyone else it generates a random UUID, stores it in an `anon_id` cookie so it is reused for the rest of the visit, and the `options` helper sets the `process_person_profile` option to `false` so PostHog does not create a person profile for them.
 
 ```go
 userId, anonymous := visitor(w, r)
@@ -112,7 +112,7 @@ userId, anonymous := visitor(w, r)
 client.Enqueue(posthog.Capture{
     DistinctId: userId,
     Event:      "burrito_considered",
-    Properties: properties(anonymous), // adds $process_person_profile=false when anonymous
+    Options:    options(anonymous), // sets process_person_profile=false when anonymous
 })
 ```
 
@@ -205,7 +205,7 @@ go 1.22
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/posthog/posthog-go v1.42.2
+	github.com/posthog/posthog-go/v2 v2.1.1
 )
 
 require (
@@ -240,8 +240,8 @@ github.com/klauspost/compress v1.17.11 h1:In6xLpyWOi1+C7tXUUWv2ot1QvBjxevKAaI6IX
 github.com/klauspost/compress v1.17.11/go.mod h1:pMDklpSncoRMuLFrf1W9Ss9KT+0rH90U12bZKk7uwG0=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/posthog/posthog-go v1.42.2 h1:JBrGCH9xyBrbmpffHAL5cJTrlW3/eSFD2SvlsFrgduk=
-github.com/posthog/posthog-go v1.42.2/go.mod h1:rN0C9Urenhytgo3KQ/QVorGkyGfpouquDTSs2Ujzr+g=
+github.com/posthog/posthog-go/v2 v2.1.1 h1:ckq30YqUrWrgnHhWtMiwGYwO1kc62B4XO9KUtSLr054=
+github.com/posthog/posthog-go/v2 v2.1.1/go.mod h1:uDmMhWSfIQB1M5xC9cU/smQjdt9HD0s6MbxdWC2beYI=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
 github.com/xyproto/randomstring v1.0.5 h1:YtlWPoRdgMu3NZtP45drfy1GKoojuR7hmRcnhZqKjWU=
@@ -271,7 +271,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/posthog/posthog-go"
+	"github.com/posthog/posthog-go/v2"
 )
 
 // app holds the shared dependencies for every request handler. The single
@@ -305,15 +305,15 @@ func visitor(w http.ResponseWriter, r *http.Request) (id string, anonymous bool)
 	return id, true
 }
 
-// properties returns event properties for a capture. Anonymous events set
-// "$process_person_profile" to false so PostHog does not create a person
+// options returns capture options for an event. Anonymous events set the
+// process_person_profile option to false so PostHog does not create a person
 // profile for the visitor.
-func properties(anonymous bool) posthog.Properties {
-	props := posthog.NewProperties()
+func options(anonymous bool) posthog.Options {
+	opts := posthog.NewOptions()
 	if anonymous {
-		props.Set("$process_person_profile", false)
+		opts.Set("process_person_profile", false)
 	}
-	return props
+	return opts
 }
 
 // home renders the login form (or a short greeting once logged in).
@@ -394,8 +394,9 @@ func (a *app) burrito(w http.ResponseWriter, r *http.Request) {
 	a.posthog.Enqueue(posthog.Capture{
 		DistinctId: userId,
 		Event:      "burrito_considered",
-		Properties: properties(anonymous).
+		Properties: posthog.NewProperties().
 			Set("total_considerations", count),
+		Options: options(anonymous),
 	})
 
 	page(w, "Burrito considered", fmt.Sprintf(`
@@ -455,7 +456,7 @@ func (a *app) profile(w http.ResponseWriter, r *http.Request) {
 			"ProfileDataError",
 			caught,
 		)
-		exception.Properties = properties(anonymous)
+		exception.Options = options(anonymous)
 		a.posthog.Enqueue(exception)
 	}
 
@@ -563,7 +564,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/posthog/posthog-go"
+	"github.com/posthog/posthog-go/v2"
 )
 
 // newPostHogClient builds the single, process-wide PostHog client.

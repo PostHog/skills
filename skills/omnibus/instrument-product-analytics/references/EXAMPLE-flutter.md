@@ -26,11 +26,11 @@ as well — a Dart-side setup alone leaves web builds capturing nothing. See
 
 ## Prerequisites
 
-1. **Flutter SDK** — follow the [install guide](https://docs.flutter.dev/get-started/install) for your OS, then verify with:
+1. **Flutter SDK 3.41+** (3.44+ enables Swift Package Manager by default) — follow the [install guide](https://docs.flutter.dev/get-started/install) for your OS, then verify with:
    ```bash
    flutter doctor
    ```
-2. **For iOS/macOS**: a Mac with Xcode and [CocoaPods](https://guides.cocoapods.org/using/getting-started.html) (`brew install cocoapods`)
+2. **For iOS/macOS**: a Mac with Xcode 26+ (`posthog_flutter` 6.x installs via Swift Package Manager only and has no CocoaPods podspec)
 3. **For Android**: Android Studio with an emulator or a connected device
 4. **For Web**: Chrome
 
@@ -73,8 +73,6 @@ flutter run -d chrome                                                 # Web (tok
 flutter run -d macos --dart-define=POSTHOG_PROJECT_TOKEN=phc_...     # macOS
 ```
 
-For iOS, install pods first (first time only): `cd ios && pod install && cd ..`
-
 ## Project structure
 
 ```
@@ -98,9 +96,9 @@ test/
 └── screens/                     # Event capture + error tracking widget tests
 
 android/                         # AUTO_INIT disabled in AndroidManifest.xml
-ios/                             # AUTO_INIT disabled in Runner/Info.plist; Podfile pins iOS 13+
+ios/                             # AUTO_INIT disabled in Runner/Info.plist; iOS 15+ (SwiftPM)
 web/                             # posthog-js snippet in index.html
-macos/                           # AUTO_INIT disabled in Runner/Info.plist;
+macos/                           # AUTO_INIT disabled in Runner/Info.plist; macOS 12+ (SwiftPM);
                                  # network.client entitlement for the app sandbox
 ```
 
@@ -512,58 +510,6 @@ android.builtInKotlin=false
 
 ```xcconfig
 #include "Generated.xcconfig"
-
-```
-
----
-
-## ios/Podfile
-
-```
-# posthog_flutter requires iOS 13.0+
-# @see https://posthog.com/docs/libraries/flutter
-platform :ios, '13.0'
-
-# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
-ENV['COCOAPODS_DISABLE_STATS'] = 'true'
-
-project 'Runner', {
-  'Debug' => :debug,
-  'Profile' => :release,
-  'Release' => :release,
-}
-
-def flutter_root
-  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
-  unless File.exist?(generated_xcode_build_settings_path)
-    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
-  end
-
-  File.foreach(generated_xcode_build_settings_path) do |line|
-    matches = line.match(/FLUTTER_ROOT\=(.*)/)
-    return matches[1].strip if matches
-  end
-  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
-end
-
-require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
-
-flutter_ios_podfile_setup
-
-target 'Runner' do
-  use_frameworks!
-
-  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-  target 'RunnerTests' do
-    inherit! :search_paths
-  end
-end
-
-post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    flutter_additional_ios_build_settings(target)
-  end
-end
 
 ```
 
@@ -2149,57 +2095,6 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
 
 ---
 
-## macos/Podfile
-
-```
-# posthog_flutter requires macOS 10.15+, matching Flutter's default
-platform :osx, '10.15'
-
-# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
-ENV['COCOAPODS_DISABLE_STATS'] = 'true'
-
-project 'Runner', {
-  'Debug' => :debug,
-  'Profile' => :release,
-  'Release' => :release,
-}
-
-def flutter_root
-  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'ephemeral', 'Flutter-Generated.xcconfig'), __FILE__)
-  unless File.exist?(generated_xcode_build_settings_path)
-    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure \"flutter pub get\" is executed first"
-  end
-
-  File.foreach(generated_xcode_build_settings_path) do |line|
-    matches = line.match(/FLUTTER_ROOT\=(.*)/)
-    return matches[1].strip if matches
-  end
-  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Flutter-Generated.xcconfig, then run \"flutter pub get\""
-end
-
-require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
-
-flutter_macos_podfile_setup
-
-target 'Runner' do
-  use_frameworks!
-
-  flutter_install_all_macos_pods File.dirname(File.realpath(__FILE__))
-  target 'RunnerTests' do
-    inherit! :search_paths
-  end
-end
-
-post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    flutter_additional_macos_build_settings(target)
-  end
-end
-
-```
-
----
-
 ## macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
 
 ```plist
@@ -3110,6 +3005,7 @@ class FakePosthogPlatform extends PosthogFlutterPlatformInterface {
     required String userId,
     Map<String, Object>? userProperties,
     Map<String, Object>? userPropertiesSetOnce,
+    Map<String, Object?>? options,
   }) async {
     callOrder.add('identify');
     identifyCalls.add((
@@ -3125,6 +3021,7 @@ class FakePosthogPlatform extends PosthogFlutterPlatformInterface {
     Map<String, Object>? properties,
     Map<String, Object>? userProperties,
     Map<String, Object>? userPropertiesSetOnce,
+    Map<String, Object?>? options,
   }) async {
     callOrder.add('capture');
     capturedEvents.add((eventName: eventName, properties: properties));
@@ -3135,6 +3032,7 @@ class FakePosthogPlatform extends PosthogFlutterPlatformInterface {
     required Object error,
     StackTrace? stackTrace,
     Map<String, Object>? properties,
+    Map<String, Object?>? options,
   }) async {
     callOrder.add('captureException');
     capturedExceptions.add((
@@ -3148,6 +3046,7 @@ class FakePosthogPlatform extends PosthogFlutterPlatformInterface {
   Future<void> screen({
     required String screenName,
     Map<String, Object>? properties,
+    Map<String, Object?>? options,
   }) async {
     callOrder.add('screen');
     screenNames.add(screenName);

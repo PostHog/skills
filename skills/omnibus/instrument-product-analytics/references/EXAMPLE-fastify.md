@@ -17,7 +17,7 @@ A small Fastify 5 API ("burrito app") that shows how to integrate PostHog with `
 - **Request context**: an `onRequest` hook runs each request inside `posthog.withContext`, so captures carry the visitor
 - **Graceful shutdown**: an `onClose` hook flushes queued events when the app closes
 - **User identification**: `POST /login` identifies the user once with their own id
-- **Signed-out visitors**: a random id kept in a cookie for the visit, with `$process_person_profile: false`
+- **Signed-out visitors**: a random id kept in a cookie for the visit, with the `process_person_profile: false` option
 - **Event capture**: `POST /burrito` sends `burrito_considered`
 - **Feature flags**: `GET /dashboard` evaluates `new-dashboard-feature`
 - **Error tracking**: `setErrorHandler` captures 5xx errors (`GET /profile` throws one)
@@ -80,7 +80,7 @@ app.decorate('posthog', posthog)
 
 // Keep this hook callback-based: done() inside withContext continues the request in that context.
 app.addHook('onRequest', (request, reply, done) => {
-  posthog.withContext({ distinctId, properties }, done, { fresh: true })
+  posthog.withContext({ distinctId, properties, options }, done, { fresh: true })
 })
 ```
 
@@ -91,7 +91,7 @@ Register the auth plugin first so `request.user` is set before this hook reads i
 ```typescript
 app.setErrorHandler((error, request, reply) => {
   if (statusCode >= 500) {
-    posthog.captureException(error, undefined, { $response_status_code: statusCode })
+    posthog.captureException(error, { properties: { $response_status_code: statusCode } })
   }
   reply.code(statusCode).send({ error: 'Internal server error' })
 })
@@ -228,10 +228,11 @@ export default fp(async (app) => {
   // the request in that context.
   app.addHook('onRequest', (request, reply, done) => {
     let distinctId = request.user?.id
-    let properties: Record<string, unknown> = {
+    const properties: Record<string, unknown> = {
       $request_method: request.method,
       request_id: request.id,
     }
+    let options: { process_person_profile?: boolean } = {}
 
     if (!distinctId) {
       // Signed-out visitors get a random id for the visit and no person profile.
@@ -240,10 +241,10 @@ export default fp(async (app) => {
         distinctId = randomUUID()
         reply.setCookie('visit_id', distinctId, { httpOnly: true, sameSite: 'lax', path: '/' })
       }
-      properties = { ...properties, $process_person_profile: false }
+      options = { process_person_profile: false }
     }
 
-    posthog.withContext({ distinctId, properties }, done, { fresh: true })
+    posthog.withContext({ distinctId, properties, options }, done, { fresh: true })
   })
 
   // Fastify handles route errors itself, so exception autocapture never sees them.
@@ -251,9 +252,11 @@ export default fp(async (app) => {
     const statusCode = error.status ?? error.statusCode ?? (reply.statusCode >= 400 ? reply.statusCode : 500)
 
     if (statusCode >= 500) {
-      posthog.captureException(error, undefined, {
-        $response_status_code: statusCode,
-        $request_path: request.routeOptions.url,
+      posthog.captureException(error, {
+        properties: {
+          $response_status_code: statusCode,
+          $request_path: request.routeOptions.url,
+        },
       })
     }
 

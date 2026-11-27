@@ -299,6 +299,8 @@ geohashDecode
 geohashEncode
 geohashesInBox
 geoToH3
+globalIn
+globalNotIn
 greatCircleAngle
 greatCircleDistance
 greater

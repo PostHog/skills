@@ -16,7 +16,7 @@ A small Hono API ("burrito app") running on Node.js that shows how to integrate 
 - **Middleware**: runs each request inside `posthog.withContext`, so captures carry the visitor
 - **One client per process**: created once in `src/posthog.ts` and flushed on shutdown
 - **User identification**: `POST /login` identifies the user once with their own id
-- **Signed-out visitors**: a random id kept in a cookie for the visit, with `$process_person_profile: false`
+- **Signed-out visitors**: a random id kept in a cookie for the visit, with the `process_person_profile: false` option
 - **Event capture**: `POST /burrito` sends `burrito_considered`
 - **Feature flags**: `GET /dashboard` evaluates `new-dashboard-feature`
 - **Error tracking**: `app.onError` captures exceptions (`GET /profile` throws one)
@@ -74,9 +74,9 @@ export const posthog = new PostHog(token ?? '', {
 })
 
 export const posthogMiddleware = createMiddleware(async (c, next) => {
-  // distinctId is the signed-in user's id, or a random visit id with
-  // $process_person_profile: false for signed-out visitors.
-  return posthog.withContext({ distinctId, properties }, next, { fresh: true })
+  // distinctId is the signed-in user's id, or a random visit id with the
+  // process_person_profile: false option for signed-out visitors.
+  return posthog.withContext({ distinctId, properties, options }, next, { fresh: true })
 })
 ```
 
@@ -96,7 +96,7 @@ flags.isEnabled('new-dashboard-feature')
 
 ```typescript
 app.onError((err, c) => {
-  posthog.captureException(err, undefined, { $request_path: c.req.path })
+  posthog.captureException(err, { properties: { $request_path: c.req.path } })
   return c.json({ error: 'Internal server error' }, 500)
 })
 ```
@@ -233,9 +233,11 @@ app.get('/profile', () => {
 })
 
 app.onError((err, c) => {
-  posthog.captureException(err, undefined, {
-    $request_path: c.req.path,
-    $request_method: c.req.method,
+  posthog.captureException(err, {
+    properties: {
+      $request_path: c.req.path,
+      $request_method: c.req.method,
+    },
   })
 
   return c.json({ error: 'Internal server error' }, 500)
@@ -288,10 +290,11 @@ export const posthog = new PostHog(token ?? '', {
 export const posthogMiddleware = createMiddleware<{ Variables: { user?: User } }>(async (c, next) => {
   const user = c.get('user')
   let distinctId = user?.id
-  let properties: Record<string, unknown> = {
+  const properties: Record<string, unknown> = {
     $request_method: c.req.method,
     $request_path: c.req.path,
   }
+  let options: { process_person_profile?: boolean } = {}
 
   if (!distinctId) {
     // Signed-out visitors get a random id for the visit and no person profile.
@@ -300,10 +303,10 @@ export const posthogMiddleware = createMiddleware<{ Variables: { user?: User } }
       distinctId = randomUUID()
       setCookie(c, 'visit_id', distinctId, { httpOnly: true, sameSite: 'Lax', path: '/' })
     }
-    properties = { ...properties, $process_person_profile: false }
+    options = { process_person_profile: false }
   }
 
-  return posthog.withContext({ distinctId, properties }, next, { fresh: true })
+  return posthog.withContext({ distinctId, properties, options }, next, { fresh: true })
 })
 
 ```

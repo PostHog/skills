@@ -103,7 +103,7 @@ Or set it up manually by following the rest of this guide.
     posthog = Posthog("<ph_project_token>", enable_exception_autocapture=True, ...)
     ```
 
-    We recommend setting up and using [contexts](https://posthog.com/docs/libraries/python/reference.md#posthognew_context) so that exceptions automatically include distinct IDs, session IDs, and other properties you can set up with tags.
+    We recommend setting up and using [contexts](https://posthog.com/docs/libraries/python.md#posthognew_context) so that exceptions automatically include distinct IDs, session IDs, and other properties you can set up with tags.
 
     You can also enable [code variables capture](https://posthog.com/docs/error-tracking/code-variables/python.md) to automatically capture the state of local variables when exceptions occur, giving you a debugger-like view of your application.
 
@@ -133,7 +133,7 @@ Or set it up manually by following the rest of this guide.
 
     ## Django
 
-    Add the Django middleware to your settings. It wraps each request in a [context](https://posthog.com/docs/libraries/python/reference.md#posthognew_context) and captures exceptions raised by your views.
+    Add the Django middleware to your settings. It wraps each request in a [context](https://posthog.com/docs/libraries/python.md#posthognew_context) and captures exceptions raised by your views.
 
     The middleware sends exceptions through the global `posthog` client. When you create your own client with `Posthog(...)`, set it as `POSTHOG_MW_CLIENT`. Otherwise the middleware sends exceptions to the unconfigured global client, and they don't reach PostHog:
 
@@ -213,7 +213,7 @@ Or set it up manually by following the rest of this guide.
     app.add_middleware(PosthogASGIMiddleware, client=posthog)
     ```
 
-    The middleware still captures an exception that an `@app.exception_handler(Exception)` catch-all handles. A handler for a specific exception class, such as `@app.exception_handler(ValueError)`, turns that exception into a response before the middleware sees it. To report those exceptions, call `posthog.capture_exception(exc)` in the handler. See the [ASGI middleware docs](https://posthog.com/docs/libraries/python/reference.md#posthogintegrationsasgiposthogasgimiddleware).
+    The middleware still captures an exception that an `@app.exception_handler(Exception)` catch-all handles. A handler for a specific exception class, such as `@app.exception_handler(ValueError)`, turns that exception into a response before the middleware sees it. To report those exceptions, call `posthog.capture_exception(exc)` in the handler. See the [ASGI middleware docs](https://posthog.com/docs/libraries/python.md#posthogintegrationsasgiposthogasgimiddleware).
 
 8.  ## Verify error tracking
 

@@ -25,9 +25,9 @@ Skip the manual setup — run this in your project and the wizard installs the S
 
 `npx @posthog/wizard ai-observability`
 
-![PostHog Wizard hedgehog](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)
+![PostHog Wizard hedgehog](https://posthog.com/static/wizard-1-86ffa0845d4096a755eace96769d7d51.png)
 
-![](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)Let AI instrument your LLM calls for you
+![](https://posthog.com/static/wizard-1-86ffa0845d4096a755eace96769d7d51.png)Let AI instrument your LLM calls for you
 
 1.  1
 
@@ -190,4 +190,4 @@ Skip the manual setup — run this in your project and the wizard installs the S
     | [Generations](https://posthog.com/docs/ai-observability/generations.md) | Read about the `$ai_generation` event and its properties. |
     | [Traces](https://posthog.com/docs/ai-observability/traces.md) | Explore the trace hierarchy and how to use it to debug LLM calls. |
     | [Spans](https://posthog.com/docs/ai-observability/spans.md) | Review spans and their role in representing individual operations. |
-    | [Anaylze LLM performance](https://posthog.com/docs/ai-observability/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
+    | [Analyze LLM performance](https://posthog.com/docs/ai-observability/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |

@@ -14,7 +14,7 @@ Canonical URL: https://posthog.com/docs/libraries/react-router/react-router-v7-f
 - [Verify client-side events are captured](#verify-client-side-events-are-captured)
 - [Access PostHog methods](#access-posthog-methods)
 - [Identify your user](#identify-your-user)
-- [Create an error boundary](#create-an-error-boundary)
+- [Capture router errors](#capture-router-errors)
 - [Tracking element visibility](#tracking-element-visibility)
 - [Install server-side SDKs](#install-server-side-sdks)
 - [Create a server-side middleware](#create-a-server-side-middleware)
@@ -233,32 +233,32 @@ This guide walks you through setting up PostHog for React Router V7 in framework
 
 7.  6
 
-    ## Create an error boundary
+    ## Capture router errors
 
     Recommended
 
-    PostHog can capture exceptions thrown in your app through an error boundary. React Router in framework mode has a built-in error boundary that you can use to capture exceptions. You can create an error boundary by exporting `ErrorBoundary` from your `app/root.tsx` file.
+    React Router catches every error thrown while rendering a route or running a loader, action or fetcher, and shows your `ErrorBoundary`, so these errors never reach PostHog's exception autocapture. Turn on `capture_exceptions: true` and pass an `onError` handler to `<HydratedRouter>` in `app/entry.client.tsx`. Skip responses you throw on purpose (404s) and the browser's copy of a server error, which React Router renames to "Unexpected Server Error": the server captures that one with its stack.
 
-    app/root.tsx
+    app/entry.client.tsx
 
     ```jsx
-    import { usePostHog } from '@posthog/react'
+    import { isRouteErrorResponse, type ClientOnErrorFunction } from 'react-router';
     
-    export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-      const posthog = usePostHog();
-      posthog?.captureException(error);
+    const onError: ClientOnErrorFunction = (error) => {
+      if (isRouteErrorResponse(error)) return;
+      if (error instanceof Error && error.message === 'Unexpected Server Error') return;
+      posthog.captureException(error);
+    };
     
-      // other error handling code...
-      return (
-        <div>
-          <h1>Something went wrong</h1>
-          <p>{error.message}</p>
-        </div>
-      );
-    }
+    // ...
+    <HydratedRouter onError={onError} />
     ```
 
-    This automatically captures exceptions thrown in your React Router app using the `posthog.captureException()` method.
+    Skip "Unexpected Server Error" only if you also capture server errors, including rejected `<Await>` promises, as below. Without server capture, it is the only report of a server error.
+
+    `onError` needs React Router 7.11 or later. On 7.8.2 to 7.10, pass the same handler as `unstable_onError` and type it with `unstable_ClientOnErrorFunction`. On earlier versions, capture inside a `useEffect` in every `ErrorBoundary` your routes export, with the same two checks. Do not also call `captureException` in your `ErrorBoundary`: each error would arrive twice.
+
+    The [React Router error tracking guide](https://posthog.com/docs/error-tracking/installation/react-router.md) covers server errors. To read minified stack traces, [upload source maps](https://posthog.com/docs/error-tracking/upload-source-maps/vite.md).
 
 8.  7
 
@@ -382,10 +382,12 @@ This guide walks you through setting up PostHog for React Router V7 in framework
      ```typescript
      import { PostHog } from 'posthog-node';
      
-     export const posthog = new PostHog(process.env.VITE_POSTHOG_PROJECT_TOKEN!, {
-       host: process.env.VITE_POSTHOG_HOST!,
+     export const posthog = new PostHog(import.meta.env.VITE_POSTHOG_PROJECT_TOKEN, {
+       host: import.meta.env.VITE_POSTHOG_HOST,
      });
      ```
+
+     Vite replaces `import.meta.env.VITE_*` in the server build too, so the server gets the same values as the browser at build time. `process.env` would need the variables again at run time, and `react-router-serve` does not load `.env`.
 
      In React Router 7, enable server middleware in `react-router.config.ts`:
 
@@ -408,7 +410,6 @@ This guide walks you through setting up PostHog for React Router V7 in framework
      type RequestIds = { distinctId?: string; sessionId?: string };
      
      export const posthogClientContext = createContext<typeof posthog>();
-     export const posthogErrorContext = createContext<RequestIds | undefined>(undefined);
      
      function tracingId(value: string | null): string | undefined {
        return value?.replace(/[\x00-\x1F\x7F-\x9F]/g, '').trim().slice(0, 1000) || undefined;
@@ -421,7 +422,6 @@ This guide walks you through setting up PostHog for React Router V7 in framework
          sessionId: existing?.sessionId ?? tracingId(request.headers.get('x-posthog-session-id')),
        };
        context.set(posthogClientContext, posthog);
-       context.set(posthogErrorContext, data);
      
        return posthog.withContext(data, () => next(), { fresh: true });
      };
@@ -442,23 +442,56 @@ This guide walks you through setting up PostHog for React Router V7 in framework
 
      Work that the request starts keeps its IDs after `next()` settles. Pass explicit context to separate jobs that need their own IDs. Flush queued events before your platform can stop server work. Call `posthog.shutdown()` once when the server stops.
 
-     To capture server errors, add the capture call to your existing `handleError` export in `app/entry.server.tsx`. The saved IDs remain available when a middleware error reaches this hook outside the scope. Errors before this middleware runs have no saved request identity.
+     To capture server errors, create a handler with `createReactRouterErrorHandler` from `posthog-node` 6.1.0 or later in `posthog.server.ts`. Add `readPostHogCookie: true` to the client options, so page loads, which send only the PostHog cookie, link to the visitor too.
+
+     app/lib/posthog.server.ts
+
+     ```typescript
+     import { createReactRouterErrorHandler, PostHog } from 'posthog-node';
+     
+     export const posthog = new PostHog(import.meta.env.VITE_POSTHOG_PROJECT_TOKEN, {
+       host: import.meta.env.VITE_POSTHOG_HOST,
+       readPostHogCookie: true,
+     });
+     
+     export const handleError = createReactRouterErrorHandler(posthog);
+     ```
+
+     Export it as `handleError` from `app/entry.server.tsx`. Errors thrown while the page streams, after the first part was sent, skip `handleError` and reach React's `onError` in the same file. Call the handler there too:
 
      app/entry.server.tsx
 
      ```typescript
-     import type { HandleErrorFunction } from 'react-router';
-     import { posthog } from './lib/posthog.server';
-     import { posthogErrorContext } from './lib/posthog-middleware.server';
+     import { handleError } from './lib/posthog.server';
      
-     export const handleError: HandleErrorFunction = (error, { context }) => {
-       const saved = context.get(posthogErrorContext);
-       posthog.captureException(error, {
-         distinctId: saved?.distinctId,
-         properties: saved?.sessionId ? { $session_id: saved.sessionId } : undefined,
-       });
-     };
+     export { handleError };
+     
+     // In handleRequest, in the renderToPipeableStream options:
+     onError(error: unknown) {
+       responseStatusCode = 500;
+       if (shellRendered) {
+         void handleError(error, { request });
+       }
+     },
      ```
+
+     When a loader returns a promise for `<Await>` and the promise rejects, React Router does not call `handleError`, and in production builds the browser receives "Unexpected Server Error", which the browser's `onError` above skips. Pass those rejections to the handler in the loader:
+
+     app/routes/product.tsx
+
+     ```typescript
+     import { handleError } from '../lib/posthog.server';
+     
+     export async function loader({ params, request }: Route.LoaderArgs) {
+       const reviews = getReviews(params.id).catch((error) => {
+         void handleError(error, { request });
+         throw error;
+       });
+       return { reviews };
+     }
+     ```
+
+     The handler uses the IDs the middleware above sets, including an application identity set before it, then the tracing headers, then the cookie. It skips canceled requests and the 404 and 405 responses React Router creates, and logs each error the way React Router does. For serverless hosts and visitors who opt out, see the [React Router error tracking guide](https://posthog.com/docs/error-tracking/installation/react-router.md).
 
      ### Optional server span context
 

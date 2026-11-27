@@ -16,7 +16,7 @@ A small NestJS API ("burrito app") that shows how to integrate PostHog with `pos
 - **Client module**: a global `PostHogModule` and an injectable `PostHogService` own the single client for the process
 - **Graceful shutdown**: `onApplicationShutdown` flushes queued events when the app stops
 - **User identification**: `POST /login` identifies the user once with their own id
-- **Signed-out visitors**: a random id kept in a cookie for the visit, with `$process_person_profile: false`
+- **Signed-out visitors**: a random id kept in a cookie for the visit, with the `process_person_profile: false` option
 - **Event capture**: `POST /burrito` sends `burrito_considered`
 - **Feature flags**: `GET /dashboard` evaluates `new-dashboard-feature`
 - **Error tracking**: `PostHogInterceptor` captures unhandled 5xx errors (`GET /profile` throws one)
@@ -114,7 +114,7 @@ this.posthog.client.identify({ distinctId: user.id, properties: { username: user
 this.posthog.client.capture({
   distinctId: req.visitor.distinctId,
   event: 'burrito_considered',
-  properties: req.visitor.properties, // { $process_person_profile: false } when signed out
+  options: req.visitor.options, // { process_person_profile: false } when signed out
 })
 ```
 
@@ -209,7 +209,8 @@ export class AppController {
     this.posthog.client.capture({
       distinctId: req.visitor.distinctId,
       event: 'burrito_considered',
-      properties: { ...req.visitor.properties, source: 'api' },
+      properties: { source: 'api' },
+      options: req.visitor.options,
     })
 
     return { considered: true }
@@ -410,7 +411,7 @@ export interface Visitor {
   distinctId: string
   user?: { id: string; username: string }
   // Signed-out visitors get no person profile.
-  properties: Record<string, unknown>
+  options: { process_person_profile?: boolean }
 }
 
 export type VisitorRequest = Request & { visitor: Visitor }
@@ -425,7 +426,7 @@ export class VisitorMiddleware implements NestMiddleware {
     const user = this.auth.findBySession(req.cookies?.session)
 
     if (user) {
-      ;(req as VisitorRequest).visitor = { distinctId: user.id, user, properties: {} }
+      ;(req as VisitorRequest).visitor = { distinctId: user.id, user, options: {} }
     } else {
       let visitId: string | undefined = req.cookies?.visit_id
       if (!visitId) {
@@ -434,7 +435,7 @@ export class VisitorMiddleware implements NestMiddleware {
       }
       ;(req as VisitorRequest).visitor = {
         distinctId: visitId,
-        properties: { $process_person_profile: false },
+        options: { process_person_profile: false },
       }
     }
 

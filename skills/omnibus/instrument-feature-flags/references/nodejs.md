@@ -115,11 +115,11 @@ Or set it up manually by following the rest of this guide.
     Check if a feature flag is enabled:
 
     ```javascript
-    const isFeatureFlagEnabled = await client.isFeatureEnabled('flag-key', 'distinct_id_of_your_user')
-    if (isFeatureFlagEnabled) {
+    const flags = await client.evaluateFlags('distinct_id_of_your_user', { flagKeys: ['flag-key'] })
+    if (flags.isEnabled('flag-key')) {
         // Your code if the flag is enabled
         // Optional: fetch the payload
-        const matchedFlagPayload = await client.getFeatureFlagPayload('flag-key', 'distinct_id_of_your_user', isFeatureFlagEnabled)
+        const matchedFlagPayload = flags.getFlagPayload('flag-key')
     }
     ```
 
@@ -132,11 +132,12 @@ Or set it up manually by following the rest of this guide.
     For multivariate flags, check which variant the user has been assigned:
 
     ```javascript
-    const enabledVariant = await client.getFeatureFlag('flag-key', 'distinct_id_of_your_user')
+    const flags = await client.evaluateFlags('distinct_id_of_your_user', { flagKeys: ['flag-key'] })
+    const enabledVariant = flags.getFlag('flag-key')
     if (enabledVariant === 'variant-key') {  // replace 'variant-key' with the key of your variant
         // Do something differently for this user
         // Optional: fetch the payload
-        const matchedFlagPayload = await client.getFeatureFlagPayload('flag-key', 'distinct_id_of_your_user', enabledVariant)
+        const matchedFlagPayload = flags.getFlagPayload('flag-key')
     }
     ```
 
@@ -189,8 +190,7 @@ Or set it up manually by following the rest of this guide.
     Sometimes, you may want to evaluate feature flags using properties that haven't been ingested yet, or were set incorrectly earlier. You can provide properties to evaluate the flag with:
 
     ```javascript
-    await client.getFeatureFlag(
-        'flag-key',
+    const flags = await client.evaluateFlags(
         'distinct_id_of_the_user',
         {
             personProperties: {
@@ -208,8 +208,10 @@ Or set it up manually by following the rest of this guide.
                     'group_property_name': 'value'
                 },
             },
+            flagKeys: ['flag-key'],
         }
     )
+    const flagValue = flags.getFlag('flag-key')
     ```
 
 8.  8

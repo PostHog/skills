@@ -1209,7 +1209,7 @@ A client is disabled when configured with `disabled(true)`, when the project API
 pub struct ClientOptionsBuilder
 ```
 
-Builder for [`ClientOptions`](struct.ClientOptions.html).
+Builder for [`ClientOptions`](#clientoptions).
 
 #### `ClientOptionsBuilder::host`
 
@@ -2515,7 +2515,7 @@ let options = ErrorTrackingOptionsBuilder::default()
 pub struct ErrorTrackingOptionsBuilder
 ```
 
-Builder for [`ErrorTrackingOptions`](struct.ErrorTrackingOptions.html).
+Builder for [`ErrorTrackingOptions`](#errortrackingoptions).
 
 #### `ErrorTrackingOptionsBuilder::capture_stacktrace`
 

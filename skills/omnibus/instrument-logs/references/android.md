@@ -28,7 +28,7 @@ The PostHog Android SDK has built-in support for capturing structured Logs from 
 
     Required
 
-    If you haven't installed `posthog-android` yet, follow the [Android SDK installation guide](https://posthog.com/docs/libraries/android.md#installation).
+    If you haven't installed `posthog-android` yet, follow the [Android SDK installation guide](https://posthog.com/docs/libraries/android.md#getting-started).
 
 2.  2
 
