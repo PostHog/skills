@@ -1,7 +1,7 @@
 # PostHog FastAPI Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/fastapi
+Path: example-apps/fastapi
 
 ---
 
@@ -446,8 +446,7 @@ class PostHogMiddleware:
 
         with new_context():
             if user:
-                identify_context(user.email)
-                tag("email", user.email)
+                identify_context(str(user.id))
                 tag("is_staff", user.is_staff)
 
             await self.app(scope, receive, send)
@@ -753,7 +752,7 @@ import posthog
 from fastapi import APIRouter, Cookie, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from posthog import capture
+from posthog import capture, identify_context, new_context
 
 from app.dependencies import (
     CurrentUser,
@@ -793,15 +792,15 @@ async def login(
 
     if user:
         is_new_user = user.record_login(db)
-        posthog.identify(user.email, {"email": user.email, "is_staff": user.is_staff})
-        posthog.capture(
-            user.email,
-            "user_logged_in",
-            properties={
-                "username": user.email,
-                "is_new_user": is_new_user,
-            },
-        )
+        with new_context():
+            identify_context(str(user.id))
+            capture(
+                "user_logged_in",
+                properties={
+                    "$set": {"email": user.email, "is_staff": user.is_staff},
+                    "is_new_user": is_new_user,
+                },
+            )
 
         # Create session and redirect
         response = RedirectResponse(url="/dashboard", status_code=302)
@@ -858,15 +857,15 @@ async def signup(
     # Create new user
     user = User.create_user(db, email=email, password=password, is_staff=False)
 
-    posthog.identify(user.email, {"email": user.email, "is_staff": user.is_staff})
-    posthog.capture(
-        user.email,
-        "user_signed_up",
-        properties={
-            "username": user.email,
-            "signup_method": "form",
-        },
-    )
+    with new_context():
+        identify_context(str(user.id))
+        capture(
+            "user_signed_up",
+            properties={
+                "$set": {"email": user.email, "is_staff": user.is_staff},
+                "signup_method": "form",
+            },
+        )
 
     # Create session and redirect
     response = RedirectResponse(url="/dashboard", status_code=302)

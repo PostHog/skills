@@ -1,3 +1,9 @@
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Supported aggregations - Docs
+
+Copy page
+
 # Supported aggregations - Docs
 
 This is an [ever-expanding](https://github.com/PostHog/posthog/blob/dfce91d924fe038568c626416fa23e67d0f0906f/posthog/hogql/constants.py#L489) list of enabled aggregations.
@@ -184,9 +190,9 @@ You can find their full definitions in the [ClickHouse documentation](https://cl
 -   `string_agg`
 -   `every`
 
-### Community questions
+### Still have questions?
 
-Ask a question
+Ask PostHog AI
 
 ### Was this page useful?
 

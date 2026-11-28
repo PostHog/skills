@@ -1,7 +1,7 @@
 # PostHog react-react-router-7-data Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/react-react-router-7-data
+Path: example-apps/react-react-router-7-data
 
 ---
 
@@ -676,7 +676,7 @@ export default function Home() {
     return (
       <div className="container">
         <h1>Welcome back, {user.username}!</h1>
-        <p>You are now logged in. Feel free to explore:</p>
+        <p>You are logged in. Feel free to explore:</p>
         <ul>
           <li>Consider the potential of burritos</li>
           <li>View your profile and statistics</li>

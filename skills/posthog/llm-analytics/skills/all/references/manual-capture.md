@@ -1,10 +1,32 @@
-# Manual capture LLM analytics installation - Docs
+> AI agents: this is one page from PostHog's docs. Full index of Markdown docs for LLMs: https://posthog.com/llms.txt
+
+# Manual capture AI Observability installation - Docs
+
+Copy page
+
+# Manual capture AI Observability installation - Docs
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_9608fcca70)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/texture_tan_dark_a92b0e022d)
+
+Let AI instrument your LLM calls for you
+
+Skip the manual setup — run this in your project and the wizard installs the SDK and wires up AI Observability for you.
+
+`npx @posthog/wizard ai-observability`
+
+[Learn more](/wizard.md)
+
+![PostHog Wizard hedgehog](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)
+
+![](https://res.cloudinary.com/dmukukwp6/image/upload/wizard_3f8bb7a240.png)Let AI instrument your LLM calls for you
 
 1.  1
 
     ## Capture LLM events manually
 
-    If you're using a different server-side SDK or prefer to use the API, you can manually capture the data by calling the `capture` method or using the [capture API](/docs/api/capture.md).
+    If you use a different server-side SDK, or prefer to use the API, capture the data manually. Call the `capture` method, or use the [capture API](/docs/api/capture.md).
 
     ## API
 
@@ -161,7 +183,7 @@
     ### 2\. Initialize PostHog
 
     ```ruby
-    require 'posthog-ruby'
+    require 'posthog'
     posthog = PostHog::Client.new({
         api_key: '<ph_project_token>',
         host: 'https://us.i.posthog.com'
@@ -229,7 +251,9 @@
     ]);
     ```
 
-    ### Event Properties
+2.  2
+
+    ## Event properties
 
     Each event type has specific properties. See the tabs below for detailed property documentation for each event type.
 
@@ -259,6 +283,7 @@
     | $ai_request_url | (Optional) The full URL of the request made to the LLM APIExample: https://api.openai.com/v1/chat/completions |
     | $ai_is_error | (Optional) Boolean to indicate if the request was an error |
     | $ai_error | (Optional) The error message or object |
+    | $ai_stop_reason | (Optional) The reason the model stopped generating tokensExample: end_turn, stop, max_tokens, tool_use |
 
     ### Cost properties
 
@@ -281,7 +306,8 @@
     | $ai_input_token_price | (Optional) Price per input token (used to calculate $ai_input_cost_usd) |
     | $ai_output_token_price | (Optional) Price per output token (used to calculate $ai_output_cost_usd) |
     | $ai_cache_read_token_price | (Optional) Price per cached token read |
-    | $ai_cache_write_token_price | (Optional) Price per cached token write |
+    | $ai_cache_write_token_price | (Optional) Price per cached token write. For custom Anthropic pricing, this applies to both cache TTLs unless $ai_cache_write_1h_token_price is set. |
+    | $ai_cache_write_1h_token_price | (Optional) Price per token written to Anthropic's 1-hour cache. Takes precedence over $ai_cache_write_token_price for 1-hour writes. |
     | $ai_request_price | (Optional) Price per request |
     | $ai_request_count | (Optional) Number of requests (defaults to 1 if $ai_request_price is set) |
     | $ai_web_search_price | (Optional) Price per web search |
@@ -292,7 +318,9 @@
     | Property | Description |
     | --- | --- |
     | $ai_cache_read_input_tokens | (Optional) Number of tokens read from cache |
-    | $ai_cache_creation_input_tokens | (Optional) Number of tokens written to cache (Anthropic-specific) |
+    | $ai_cache_creation_input_tokens | (Optional) Number of tokens written to cache (Anthropic-specific)When both TTL-specific counts are present, PostHog uses them instead of this aggregate. The aggregate should equal their sum; if either count is missing, PostHog uses the aggregate. |
+    | $ai_cache_creation_5m_input_tokens | (Optional) Number of tokens written to Anthropic's 5-minute cache |
+    | $ai_cache_creation_1h_input_tokens | (Optional) Number of tokens written to Anthropic's 1-hour cache |
     | $ai_cache_reporting_exclusive | (Optional) Whether cache tokens are excluded from $ai_input_tokens. When true, cache tokens are separate from input tokens. When false, input tokens already include cache tokens. Defaults to true for Anthropic provider or Claude models, false otherwise. |
 
     ### Model parameters
@@ -314,7 +342,7 @@
     | Property | Description |
     | --- | --- |
     | $ai_trace_id | The trace ID (a UUID to group related AI events together)Must contain only letters, numbers, and special characters: -, _, ~, ., @, (, ), !, ', :, \|Example: d9222e05-8708-41b8-98ea-d4a21849e761 |
-    | $ai_session_id | (Optional) Groups related traces together. Use this to organize traces by whatever grouping makes sense for your application (user sessions, workflows, conversations, or other logical boundaries).Example: session-abc-123, conv-user-456 |
+    | $ai_session_id | (Optional) Groups related traces together. Use this to organize traces by whatever grouping makes sense for your application (user sessions, workflows, conversations, or other logical boundaries).Must contain only letters, numbers, and special characters: -, _, ~, ., @, (, ), !, ', :, \|Example: session-abc-123, conv-user-456 |
     | $ai_latency | (Optional) The latency of the trace in seconds |
     | $ai_span_name | (Optional) The name of the traceExample: chat_completion, rag_pipeline |
     | $ai_is_error | (Optional) Boolean to indicate if the trace encountered an error |
@@ -388,9 +416,41 @@
     | $ai_output_cost_usd | (Optional) Cost in USD for output tokens (usually 0 for embeddings) |
     | $ai_total_cost_usd | (Optional) Total cost in USD |
 
-### Community questions
+3.  ## Verify traces and generations
 
-Ask a question
+    Recommended
+
+    *Confirm LLM events are being sent to PostHog*
+
+    Let's make sure LLM events are being captured and sent to PostHog. Under **AI Observability**, you should see rows of data appear in the **Traces** and **Generations** tabs.
+
+    ![LLM generations in PostHog](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250807_syne_ecd0801880.png)![LLM generations in PostHog](https://res.cloudinary.com/dmukukwp6/image/upload/SCR_20250807_syjm_5baab36590.png)
+
+    [Check for LLM events in PostHog](https://app.posthog.com/ai-observability/generations)
+
+4.  3
+
+    ## Next steps
+
+    Recommended
+
+    Now that you're capturing AI conversations, continue with the resources below to learn what else AI Observability enables within the PostHog platform.
+
+    | Resource | Description |
+    | --- | --- |
+    | [Basics](/docs/ai-observability/basics.md) | Learn the basics of how LLM calls become events in PostHog. |
+    | [Generations](/docs/ai-observability/generations.md) | Read about the $ai_generation event and its properties. |
+    | [Traces](/docs/ai-observability/traces.md) | Explore the trace hierarchy and how to use it to debug LLM calls. |
+    | [Spans](/docs/ai-observability/spans.md) | Review spans and their role in representing individual operations. |
+    | [Anaylze LLM performance](/docs/ai-observability/dashboard.md) | Learn how to create dashboards to analyze LLM performance. |
+
+## Large events
+
+For large events, use the dedicated AI ingestion path – see [capturing large AI events](/docs/ai-observability/large-events.md).
+
+### Still have questions?
+
+Ask PostHog AI
 
 ### Was this page useful?
 

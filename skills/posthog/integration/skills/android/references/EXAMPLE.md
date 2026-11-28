@@ -1,7 +1,7 @@
 # PostHog Android Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/android
+Path: example-apps/android
 
 ---
 

@@ -1,7 +1,7 @@
 # PostHog next-pages-router Example Project
 
 Repository: https://github.com/PostHog/context-mill
-Path: basics/next-pages-router
+Path: example-apps/next-pages-router
 
 ---
 
@@ -172,6 +172,20 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN!, {
 
 ---
 
+## next-env.d.ts
+
+```ts
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+/// <reference path="./.next/types/routes.d.ts" />
+
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/pages/api-reference/config/typescript for more information.
+
+```
+
+---
+
 ## next.config.ts
 
 ```ts
@@ -185,6 +199,10 @@ const nextConfig: NextConfig = {
       {
         source: "/ingest/static/:path*",
         destination: "https://us-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ingest/array/:path*",
+        destination: "https://us-assets.i.posthog.com/array/:path*",
       },
       {
         source: "/ingest/:path*",
@@ -464,7 +482,6 @@ export default async function handler(
     distinctId: username,
     event: 'server_login',
     properties: {
-      username: username,
       isNewUser: isNewUser,
       source: 'api'
     }
@@ -478,6 +495,9 @@ export default async function handler(
       createdAt: isNewUser ? new Date().toISOString() : undefined
     }
   });
+
+  // This handler is short-lived; flush so the enqueued events send before it returns
+  await posthog.flush();
 
   return res.status(200).json({ success: true, user });
 }
@@ -628,7 +648,7 @@ export default function Home() {
         {user ? (
           <div className="container">
             <h1>Welcome back, {user.username}!</h1>
-            <p>You are now logged in. Feel free to explore:</p>
+            <p>You are logged in. Feel free to explore:</p>
             <ul>
               <li>Consider the potential of burritos</li>
               <li>View your profile and statistics</li>
