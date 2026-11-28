@@ -166,6 +166,7 @@ signals-scout-inbox-validation
 signals-scout-insight-alerts
 signals-scout-logs
 signals-scout-mcp-tool-calls
+signals-scout-missing-analytics
 signals-scout-observability-gaps
 signals-scout-pr-follow-up
 signals-scout-product-analytics
